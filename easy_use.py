@@ -55,7 +55,7 @@ def execute(p=None, excel=None, is_verbose=False):
     ###### PARAMETERS
     ######
     if p is None: # Load
-        if excel is not None:
+        if excel is None:
             excel = aux.get_default_file('ExcelFile_default.xlsx')
         p = Parameter().from_excel(excel=excel)
     
