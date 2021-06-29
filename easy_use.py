@@ -56,7 +56,7 @@ def execute(p=None, excel=None, is_verbose=False):
     ######
     if p is None: # Load
         if excel is None:
-            excel = aux.get_default_file('ExcelFile_default.xlsx')
+            excel = aux.get_default_file(r'ExcelFile_default.xlsx')
         p = Parameter().from_excel(excel=excel)
     
     if np.logical_and(p.residual_global,p.residual_local):

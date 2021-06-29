@@ -243,9 +243,14 @@ def load_rawEntso(mix_data, freq='H'):
 
 # -
 
-def get_default_file(name):
+def get_default_file(name,level=2):
     """Function to load a default file form directory 'support_file'"""
     ### Default RELATIVE path (indepenently of the file structure)
-    path = os.path.abspath(__file__).split("/")[:-2] # List to main directory of EcoDyn
+    path = os.path.abspath(r"{}".format(__file__)).split("/")[:-level] # List to main directory of EcoDyn
     path = path + ['support_files',name] # add the default SwissGrid file
-    return "/".join(path) # Recreate the file address
+    if os.path.isfile(r"{}".format("/".join(path))):
+        return r"{}".format("/".join(path)) # Recreate the file address
+    elif level==2:
+        return get_default_file(name,level=1)
+    else:
+        raise KeyError(f"Default support file {name} not found.")

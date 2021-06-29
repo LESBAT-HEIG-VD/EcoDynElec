@@ -157,10 +157,10 @@ class Filepath():
     def __setattr__(self, name, value):
         if pd.isna(value):
             super().__setattr__(name, None) # set an empty info
-        elif os.path.isdir(value):
-            super().__setattr__(name, os.path.abspath(value)+"/")
-        elif os.path.isfile(value):
-            super().__setattr__(name, os.path.abspath(value))
+        elif os.path.isdir(r"{}".format(value)):
+            super().__setattr__(name, os.path.abspath(r"{}".format(value))+"/")
+        elif os.path.isfile(r"{}".format(value)):
+            super().__setattr__(name, os.path.abspath(r"{}".format(value)))
         else:
             raise ValueError(f'Unidentified file or directory: {os.path.abspath(value)}')
     
