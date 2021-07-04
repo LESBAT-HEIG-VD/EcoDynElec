@@ -377,14 +377,17 @@ def fill_occasional(table, empty, n_hours=2):
     for t in empty: # for all missing dates
         col = table.loc[t][table.loc[t]==0].index # list of power station to fill (not always all)
         
-        if t+pd.Timedelta("1 hour") in miss: # If 2 hours in a row
-            # Replace first missing value with: 1/3 of difference between value(2h after) and value(1h before)
-            filled_table.loc[t,col] = round((1/3)*filled_table.loc[t+pd.Timedelta("2 hour"),col]\
-                    + (2/3)*filled_table.loc[t-pd.Timedelta("1 hour"),col]  , 2) # rounded at 0.01
+        try:
+            if t+pd.Timedelta("1 hour") in miss: # If 2 hours in a row
+                # Replace first missing value with: 1/3 of difference between value(2h after) and value(1h before)
+                filled_table.loc[t,col] = round((1/3)*filled_table.loc[t+pd.Timedelta("2 hour"),col]\
+                        + (2/3)*filled_table.loc[t-pd.Timedelta("1 hour"),col]  , 2) # rounded at 0.01
 
-        else: # if single missing hour (or second of a pair) -> linear extrapolation
-            filled_table.loc[t,col] = (1/2)*(filled_table.loc[t+pd.Timedelta("1 hour"),col] \
-                    + filled_table.loc[t-pd.Timedelta("1 hour"),col])
+            else: # if single missing hour (or second of a pair) -> linear extrapolation
+                filled_table.loc[t,col] = (1/2)*(filled_table.loc[t+pd.Timedelta("1 hour"),col] \
+                        + filled_table.loc[t-pd.Timedelta("1 hour"),col])
+        except KeyError as e:
+            raise ValueError(f"Missing data identified in the first or last time step. Impossible to fix: {e}")
 
         miss.remove(t) # treated hour removed from copied list (to avoid errors)
     return filled_table

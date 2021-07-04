@@ -34,11 +34,14 @@ def load_swissGrid(path_sg, start, end, freq='H'):
         path_sg = get_default_file(name='SwissGrid_total.csv')
     
     ### Import SwissGrid data
-    parser = lambda x: (pd.to_datetime(x, format='%d.%m.%Y %H:%M')
-                        - pd.Timedelta("15min")) # starts at 00:00 (not 00:15)
-    sg = pd.read_csv(path_sg, sep=";",index_col=0, parse_dates=[0], date_parser=parser)
+    parser = lambda x: pd.to_datetime(x, format='%d.%m.%Y %H:%M')
+    sg = pd.read_csv(path_sg, index_col=0, parse_dates=[0], date_parser=parser,dtype="float32")
+    
     sg = sg.drop(columns=["Consommation_CH","Consommation_Brut_CH"]) # Remove unused columns
-
+    # Clear ambiguous dates and set dates to utc
+    sg = clear_ambiguous_dates(sg).tz_localize(tz='cet',ambiguous='infer').tz_convert(tz='utc').tz_localize(None)
+    sg.index -= pd.Timedelta("15min") # starts at 00:00 CET (not 00:15)
+    
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
     if 'Production_CH' not in sg.columns:
         raise KeyError("Missing information 'Production_CH' in SwissGrid Data.")
@@ -52,6 +55,37 @@ def load_swissGrid(path_sg, start, end, freq='H'):
 
     ### Select the interesting data, resample to right frequency and convert kWh -> MWh
     return sg.loc[start:end,:].resample(freq).sum() / 1000
+
+
+# +
+
+
+###########################
+# #########################
+# Clear Ambiguous Dates
+# #########################
+###########################
+
+# -
+
+def clear_ambiguous_dates(sg):
+    """Function to clear ambiguous dates in SwissGrid raw data"""
+    # Gather ambiguous dates
+    ambiguous = pd.Series(np.unique(sg.index,return_counts=True)[1], index=np.unique(sg.index),
+                          name='Occurrence').reset_index()
+    ambiguous = ambiguous[((ambiguous.loc[:,'Occurrence']==2)
+                           &(ambiguous.loc[:,'index']==ambiguous.loc[:,'index'].round("H")))]
+
+    # Create the new date for ambiguous dates
+    ambiguous['replace'] = ambiguous.loc[:,'index'].apply(lambda x: x if x.hour==2 else x-pd.Timedelta("1H"))
+
+    # Find the right index of first occurrence
+    ambiguous.index = pd.Series(np.arange(sg.shape[0]),index=sg.index).loc[ambiguous.loc[:,'index']].values[::2]
+    
+    # Clear SG dates
+    sg_cleared = sg.reset_index()
+    sg_cleared.loc[ambiguous.index,"Date"] = ambiguous.loc[:,'replace']
+    return sg_cleared.set_index("Date")
 
 
 # +

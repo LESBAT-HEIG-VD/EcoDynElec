@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import numpy as np
 import pandas as pd
 import os
@@ -341,12 +339,15 @@ def fill_occasional(table, empty, n_hours=2):
     for t in empty: # for all missing dates
         col = table.loc[t][table.loc[t]==0].index # list of power station to fill (not always all)
         
-        if t+pd.Timedelta("1 hour") in miss: # If 2 hours in a row
-            # Replace first missing value with: 1/3 of difference between value(2h after) and value(1h before)
-            filled_table.loc[t,col] = round((1/3)*filled_table.loc[t+pd.Timedelta("2 hour"),col]                    + (2/3)*filled_table.loc[t-pd.Timedelta("1 hour"),col]  , 2) # rounded at 0.01
+        try:
+            if t+pd.Timedelta("1 hour") in miss: # If 2 hours in a row
+                # Replace first missing value with: 1/3 of difference between value(2h after) and value(1h before)
+                filled_table.loc[t,col] = round((1/3)*filled_table.loc[t+pd.Timedelta("2 hour"),col]                        + (2/3)*filled_table.loc[t-pd.Timedelta("1 hour"),col]  , 2) # rounded at 0.01
 
-        else: # if single missing hour (or second of a pair) -> linear extrapolation
-            filled_table.loc[t,col] = (1/2)*(filled_table.loc[t+pd.Timedelta("1 hour"),col]                     + filled_table.loc[t-pd.Timedelta("1 hour"),col])
+            else: # if single missing hour (or second of a pair) -> linear extrapolation
+                filled_table.loc[t,col] = (1/2)*(filled_table.loc[t+pd.Timedelta("1 hour"),col]                         + filled_table.loc[t-pd.Timedelta("1 hour"),col])
+        except KeyError as e:
+            raise ValueError(f"Missing data identified in the first or last time step. Impossible to fix: {e}")
 
         miss.remove(t) # treated hour removed from copied list (to avoid errors)
     return filled_table
@@ -734,11 +735,14 @@ def load_swissGrid(path_sg, start, end, freq='H'):
         path_sg = get_default_file(name='SwissGrid_total.csv')
     
     ### Import SwissGrid data
-    parser = lambda x: (pd.to_datetime(x, format='%d.%m.%Y %H:%M')
-                        - pd.Timedelta("15min")) # starts at 00:00 (not 00:15)
-    sg = pd.read_csv(path_sg, sep=";",index_col=0, parse_dates=[0], date_parser=parser)
+    parser = lambda x: pd.to_datetime(x, format='%d.%m.%Y %H:%M')
+    sg = pd.read_csv(path_sg, index_col=0, parse_dates=[0], date_parser=parser,dtype="float32")
+    
     sg = sg.drop(columns=["Consommation_CH","Consommation_Brut_CH"]) # Remove unused columns
-
+    # Clear ambiguous dates and set dates to utc
+    sg = clear_ambiguous_dates(sg).tz_localize(tz='cet',ambiguous='infer').tz_convert(tz='utc').tz_localize(None)
+    sg.index -= pd.Timedelta("15min") # starts at 00:00 CET (not 00:15)
+    
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
     if 'Production_CH' not in sg.columns:
         raise KeyError("Missing information 'Production_CH' in SwissGrid Data.")
@@ -754,9 +758,34 @@ def load_swissGrid(path_sg, start, end, freq='H'):
     return sg.loc[start:end,:].resample(freq).sum() / 1000
 
 
-# ### Load useful countries
+# ### Clear Ambiguous dates
 
 # In[20]:
+
+
+def clear_ambiguous_dates(sg):
+    """Function to clear ambiguous dates in SwissGrid raw data"""
+    # Gather ambiguous dates
+    ambiguous = pd.Series(np.unique(sg.index,return_counts=True)[1], index=np.unique(sg.index),
+                          name='Occurrence').reset_index()
+    ambiguous = ambiguous[((ambiguous.loc[:,'Occurrence']==2)
+                           &(ambiguous.loc[:,'index']==ambiguous.loc[:,'index'].round("H")))]
+
+    # Create the new date for ambiguous dates
+    ambiguous['replace'] = ambiguous.loc[:,'index'].apply(lambda x: x if x.hour==2 else x-pd.Timedelta("1H"))
+
+    # Find the right index of first occurrence
+    ambiguous.index = pd.Series(np.arange(sg.shape[0]),index=sg.index).loc[ambiguous.loc[:,'index']].values[::2]
+    
+    # Clear SG dates
+    sg_cleared = sg.reset_index()
+    sg_cleared.loc[ambiguous.index,"Date"] = ambiguous.loc[:,'replace']
+    return sg_cleared.set_index("Date")
+
+
+# ### Load useful countries
+
+# In[21]:
 
 
 def load_useful_countries(path_neighbour, ctry):
@@ -780,7 +809,7 @@ def load_useful_countries(path_neighbour, ctry):
 
 # ### Load GridLosses
 
-# In[21]:
+# In[22]:
 
 
 def load_grid_losses(network_loss_path, start, end):
@@ -803,7 +832,7 @@ def load_grid_losses(network_loss_path, start, end):
 
 # ### Load gap content
 
-# In[22]:
+# In[23]:
 
 
 def load_gap_content(path_gap, start, end, freq='H', header=59):
@@ -847,9 +876,7 @@ def load_gap_content(path_gap, start, end, freq='H', header=59):
     #####
     res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
     res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
-    
     df = df.loc[res_start:res_end, ['Hydro_Res','Other_Res']] # Select information only for good duration
-    
     
     ################################
     ##### Build the adapted time series with right time step
@@ -881,13 +908,12 @@ def load_gap_content(path_gap, start, end, freq='H', header=59):
         
         if freq in ["W","w"]: # Aggregate into weeks
             gap = gap.fillna(method='ffill').resample(freq).mean()
-
     return gap.dropna(axis=0)
 
 
 # ### Load raw Entso
 
-# In[23]:
+# In[24]:
 
 
 def load_rawEntso(mix_data, freq='H'):
@@ -915,7 +941,7 @@ def load_rawEntso(mix_data, freq='H'):
 
 # ### Get default file
 
-# In[24]:
+# In[25]:
 
 
 def get_default_file(name,level=2):
@@ -935,7 +961,7 @@ def get_default_file(name,level=2):
 
 # ## Track mix
 
-# In[25]:
+# In[26]:
 
 
 def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
@@ -984,7 +1010,7 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
 
 # ## Reorder info
 
-# In[26]:
+# In[27]:
 
 
 def reorder_info(data):
@@ -1022,7 +1048,7 @@ def reorder_info(data):
 
 # ## Create net exchanges
 
-# In[27]:
+# In[28]:
 
 
 def create_net_exchange(data, ctry):
@@ -1046,7 +1072,7 @@ def create_net_exchange(data, ctry):
 
 # ## Get grid losses
 
-# In[28]:
+# In[29]:
 
 
 def get_grid_losses(data, losses=None):
@@ -1062,7 +1088,7 @@ def get_grid_losses(data, losses=None):
 
 # ## Set FU vector
 
-# In[29]:
+# In[30]:
 
 
 def set_FU_vector(all_sources, target='CH'):
@@ -1076,7 +1102,7 @@ def set_FU_vector(all_sources, target='CH'):
 
 # ## Compute tracking
 
-# In[30]:
+# In[31]:
 
 
 def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
@@ -1154,7 +1180,7 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
 
 # ## Build technology matrix
 
-# In[31]:
+# In[32]:
 
 
 def build_technology_matrix(data, ctry, ctry_mix, prod_means):
@@ -1201,7 +1227,7 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means):
 
 # ## Clean technology matrix
 
-# In[32]:
+# In[33]:
 
 
 def clean_technology_matrix(A):
@@ -1223,7 +1249,7 @@ def clean_technology_matrix(A):
 
 # ## Invert technology matrix
 
-# In[33]:
+# In[34]:
 
 
 def invert_technology_matrix(A, presence, L):
@@ -1252,7 +1278,7 @@ def invert_technology_matrix(A, presence, L):
 
 # ## Compute impacts
 
-# In[34]:
+# In[35]:
 
 
 def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
@@ -1288,7 +1314,7 @@ def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
 
 # ## Adapt impacts
 
-# In[35]:
+# In[36]:
 
 
 def adapt_impacts(impact_data=None, production_units=None):
@@ -1305,7 +1331,7 @@ def adapt_impacts(impact_data=None, production_units=None):
 
 # ## Compute global impacts
 
-# In[36]:
+# In[37]:
 
 
 def compute_global_impacts(mix_data, impact_data=None, freq='H'):
@@ -1328,7 +1354,7 @@ def compute_global_impacts(mix_data, impact_data=None, freq='H'):
 
 # ## Compute detailed impacts
 
-# In[37]:
+# In[38]:
 
 
 def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
@@ -1354,7 +1380,7 @@ def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
 
 # ## Import Residual
 
-# In[38]:
+# In[39]:
 
 
 def import_residual(prod, sg_data, gap=None):
@@ -1377,6 +1403,8 @@ def import_residual(prod, sg_data, gap=None):
     residual_energy = sg_data.loc[:,'Production_CH'] - prod.sum(axis=1) # everything in "Residue_other"
     
     # Split residual into its nature
+    #print("GAP\n",gap.loc[prod.index])
+    #print("PROD\n",prod.index)
     all_prod["Residual_Hydro_CH"] = residual_energy * gap.loc[prod.index, "Hydro_Res"]
     all_prod["Residual_Other_CH"] = residual_energy * gap.loc[prod.index, "Other_Res"]
     
@@ -1387,7 +1415,7 @@ def import_residual(prod, sg_data, gap=None):
 
 # ## Include Global residual
 
-# In[39]:
+# In[40]:
 
 
 def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_verbose=False):
@@ -1429,7 +1457,7 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
 
 # ### Include local residual
 
-# In[40]:
+# In[41]:
 
 
 def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=None, freq='H', target='CH'):
@@ -1458,7 +1486,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
 
 # ### Define local gap
 
-# In[41]:
+# In[42]:
 
 
 def define_local_gap(local_prod, sg_data, freq='H', gap=None, target='CH'):
@@ -1483,7 +1511,7 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None, target='CH'):
 
 # ### Adjust mix local
 
-# In[42]:
+# In[43]:
 
 
 def adjust_mix_local(mix_data, local_residual, target='CH'):
@@ -1514,7 +1542,7 @@ def adjust_mix_local(mix_data, local_residual, target='CH'):
 
 # ## Save impact vector
 
-# In[43]:
+# In[44]:
 
 
 def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False):
@@ -1535,10 +1563,10 @@ def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False)
 
 # ## Save Dataset
 
-# In[44]:
+# In[45]:
 
 
-def save_dataset(data, savedir, name, target, freq='H'):
+def save_dataset(data, savedir, name, target=None, freq='H'):
     """Function to save the datasets with information of the frequency.
     
     Parameter:
@@ -1550,15 +1578,17 @@ def save_dataset(data, savedir, name, target, freq='H'):
     ### Formating the time extension
     tPass = {'15min':'15min','30min':'30min',"H":"hour","D":"day",'d':'day','W':"week",
              "w":"week","MS":"month","M":"month","YS":"year","Y":"year"}
+    as_target = "" if target is None else f"_{target}"
+    
     ### Saving
-    data.to_csv(savedir+f"{name}_{target}_{tPass[freq]}.csv",sep=";",index=True)
+    data.to_csv(savedir+f"{name}{as_target}_{tPass[freq]}.csv",sep=";",index=True)
 
 
 # # Checking
 
 # ## Check frequency
 
-# In[45]:
+# In[46]:
 
 
 def check_frequency(freq):
@@ -1571,7 +1601,7 @@ def check_frequency(freq):
 
 # ## Check residual availability
 
-# In[46]:
+# In[47]:
 
 
 def check_residual_avaliability(prod, residual, freq='H'):
@@ -1618,7 +1648,7 @@ def check_residual_avaliability(prod, residual, freq='H'):
 
 # ## Parameter
 
-# In[47]:
+# In[48]:
 
 
 class Parameter():
@@ -1725,7 +1755,7 @@ class Parameter():
 
 # ## Filepath
 
-# In[48]:
+# In[49]:
 
 
 class Filepath():
@@ -1796,7 +1826,7 @@ class Filepath():
 
 # ## Localize from UTC
 
-# In[49]:
+# In[50]:
 
 
 def localize_from_utc(data, timezone='CET'):
@@ -1812,7 +1842,7 @@ def localize_from_utc(data, timezone='CET'):
 
 # ## Execute
 
-# In[50]:
+# In[51]:
 
 
 def execute(p=None, excel=None, is_verbose=False):
@@ -1870,7 +1900,7 @@ def execute(p=None, excel=None, is_verbose=False):
     # Load impact matrix
     impact_matrix = extract_impacts(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
                                     residual=np.logical_or(p.residual_global, p.residual_local),
-                                    target=p.target, is_verbose=True)
+                                    target=p.target, is_verbose=is_verbose)
     
 
     # Load generation and exchange data from entso-e    
@@ -1934,11 +1964,3 @@ def execute(p=None, excel=None, is_verbose=False):
     if is_verbose: print("done.")
     return imp
 
-
-# **Commentaires**:
-# + Il faut trouver un moyer d'importer sa propre donnée d'Entso-E (hors utilisation de fichiers). Dépendra du format de données renvoyé par l'ancien fichier R une fois traduit en Python. Les fonctions impliquées seront alors **import data**, **import generation** et **import exchanges**. La méthode à entreprendre devra être similaire à l'esprit de la fonction *Load mix*.
-# + Le paramètre *correct_imp* et la fonction *adjust_exchanges* consistent à mettre les échanges de swiss-grid à la place ce ceux d'Entso-E. C'est prévu. Il faut faire une litérature pour s'en rapeler...
-# + Dans *load mix*, si un dataset est donnée en entrée, le pas de temps n'est pas adapté. Il est supposé que le resampling a déjà eu lieux.
-# + Les fonctions d'import sont spécifiques aux formats de donnée utilisées durant le projet EcoDynBat. Chaque brique est facilement modifiable. De fait, il faut changer ces briques pour s'adapter à des formats de donnée plus communs.
-# + ***ATTENTION !!*** Les fonction **import generation** et **import exchanges** ont une data (2021) spécifiée pour le choix des fichiers. Cela doit être enlevé à la fin, lorsque tous les fichiers des dossiers seront de la même date.
-# + ***ATTENTION !!*** Les fonctions **import generation** et **import exchanges** comportent toujours un resampling **heure** $\to$ **15 minutes**, comme les donneés disponibles dans les fichiers sont en heure. Il faudra supprimer les lignes dès que les fichiers seront en 15 minutes. **Le vrai resampling** (si le pas de temps désiré n'est pas 15 minutes) est présent dans la fonction *resample generation* pour les données de production et directement à la fin de *import exchanges* pour les échanges. **Les données swissGrid** sont remises au bon pas de temps dès l'import de données dans la fonction *load swissGrid*
