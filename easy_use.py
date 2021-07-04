@@ -87,7 +87,7 @@ def execute(p=None, excel=None, is_verbose=False):
     # Load impact matrix
     impact_matrix = extract_impacts(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
                                     residual=np.logical_or(p.residual_global, p.residual_local),
-                                    target=p.target, is_verbose=True)
+                                    target=p.target, is_verbose=is_verbose)
     
 
     # Load generation and exchange data from entso-e    
