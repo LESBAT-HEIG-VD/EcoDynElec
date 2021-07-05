@@ -155,6 +155,80 @@ def execute(p=None, excel=None, is_verbose=False):
 
 
 
+########################################
+# ######################################
+# Get inverted matrix
+# ######################################
+# ######################################
+# -
+def get_inverted_matrix(p=None, excel=None, is_verbose=False):
+    """
+    Execute the whole process until matrix inversion, but does not extract target.
+    
+    Parameter:
+        p: the parameter object (from class Parameter). Default: None
+        excel: str to the excel file with parameters. Default: None
+        is_verbose: bool to display information. Default: False
+    
+    Return:
+        list of pandas DataFrame with the impacts of 1kWh of electricity.
+    
+    """
+    ###########################
+    ###### PARAMETERS
+    ######
+    if p is None: # Load
+        if excel is None:
+            excel = get_default_file('ExcelFile_default.xlsx')
+        p = Parameter().from_excel(excel=excel)
+    
+    if np.logical_and(p.residual_global,p.residual_local):
+        raise ValueError("Residual can not be both global and local.")
+    
+    ###########################
+    ###### LOAD DATASETS
+    ######
+    if is_verbose: print("Load auxiliary datasets...")
+    # Load SwissGrid -> if Residual or SG exchanges
+    if np.logical_or(np.logical_or(p.residual_global,p.residual_local), p.sg_imports):
+        sg = aux.load_swissGrid(path_sg=p.path.swissGrid, start=p.start, end=p.end, freq=p.freq)
+    else: sg=None
+
+    # Load Country of interest -> Always
+    neighbours = aux.load_useful_countries(path_neighbour=p.path.neighbours, ctry=p.ctry)
+
+    # Load network losses -> if Network Loss asked
+    if p.network_losses:
+        network_losses = aux.load_grid_losses(network_loss_path=p.path.networkLosses, start=p.start, end=p.end)
+    else: network_losses = None
+        
+    # Load production gap data -> if Residual
+    if np.logical_or(p.residual_global,p.residual_local):
+        prod_gap = aux.load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
+    else: prod_gap=None
+    
+
+    # Load generation and exchange data from entso-e    
+    raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
+                               involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
+                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               residual_global=p.residual_global, correct_imp=p.sg_imports,
+                               is_verbose=is_verbose)
+    
+    
+    ########################
+    ###### COMPUTE TRACKING
+    ######
+    mix = track_mix(raw_data=raw_prodExch, freq=p.freq, network_losses=network_losses,
+                    target=p.target, residual_global=p.residual_global,
+                    net_exchange=p.net_exchanges, return_matrix=True, is_verbose=is_verbose)
+    
+    if is_verbose: print("done.")
+    return mix
+
+
+# +
+
 #######################################
 # ######################################
 # Localize from UTC
