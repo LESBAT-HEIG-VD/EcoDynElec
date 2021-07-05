@@ -167,8 +167,9 @@ def adjust_mix_local(mix_data, local_residual, target='CH'):
     new_mix.loc[:,f'Mix_{target}'] -=1 # Not consider the part produced and directly consummed in Swizerland
     for c in new_mix.columns:
         new_mix.loc[:,c] *= (1-local_residual.sum(axis=1)) # Reduce the actual part of the kWh
-    for c in local_residual.columns: # put all the residual
-        new_mix[c] = local_residual.loc[:,c] # Add the part of Residue
+    
+    # put all the residual
+    new_mix = pd.concat( [new_mix,local_residual], axis=1 ) # Add the part of Residue
     
     # Locate first column for producers of target country
     lim = list(new_mix.columns).index([k for k in new_mix.columns

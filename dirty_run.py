@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from time import time
 
-
 # # Data Import Group
 
 # ## Import Entso-E
@@ -965,7 +964,7 @@ def get_default_file(name,level=2):
 
 
 def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
-              net_exchange=False, is_verbose=False):
+              net_exchange=False, return_matrix=False, is_verbose=False):
     """Master function for the electricity mix computation.
     Parameter:
         data_path: path to entso-e data (str), or data Frame. If None, load default data. Default: None
@@ -974,7 +973,7 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
         target: the studied country (str). Default: 'CH'
         residual_global: if swiss residual data was included at transmission level
         net_exchange: to consider net cross-border flows (bool). Default: False (total bi-directional flows)
-        path: the path where to save (str). Default: None
+        return_matrix: return inverted technology matrix, not applying FU vector.
         is_verbose: show text during computation.
     Return
         pandas DataFrame containing the electricity mix of the studied country."""
@@ -1001,7 +1000,7 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
     if is_verbose: print("Tracking origin of electricity...")
     mixE = compute_tracking(df, all_sources=all_sources, u=u, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
                             prod_means=prod_means, residual=residual_global,freq=freq,
-                            is_verbose=is_verbose)
+                            return_matrix=return_matrix, is_verbose=is_verbose)
     
 
     if is_verbose: print("\n\tElectricity tracking: {:.1f} sec.\n".format(time()-t0))
@@ -1106,7 +1105,7 @@ def set_FU_vector(all_sources, target='CH'):
 
 
 def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
-                     residual=False, freq='H', is_verbose=False):
+                     residual=False, freq='H', return_matrix=False, is_verbose=False):
     """Function leading the electricity tracking: by building the technology matrix, computing the
     inversion and selecting of the information for the target country.
     
@@ -1120,12 +1119,16 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
         prod_means: list of production means, without mixes (list)
         residual: if residual are considered (bool, default: False)
         freq: the time step (str, default: H)
+        return_matrix: return inverted technology matrix, not applying FU vector.
         is_verbose: to display information (bool, default: False)
     
     Return:
         pandas DataFrame with the electricity mix in the target country.
     """
-    mixE = pd.DataFrame(data=None,index=data.index,columns=all_sources) # Output DataFrame
+    if not return_matrix:
+        mixE = pd.DataFrame(data=None,index=data.index,columns=all_sources,dtype='float32') # Output DataFrame
+    else:
+        mixE = []
     
     if is_verbose:
         check_frequency(freq)
@@ -1133,13 +1136,13 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
                 'W':1,'w':1,'M':1, 'MS':1, 'Y':1, 'YS':1}[freq]
         step_name = {'15min':"day", '30min':"day", 'H':"day", 'd':"week", 'D':"week",
                      'W':'week', 'w':'week','M':"month", 'MS':"month", 'Y':"year", 'YS':"year"}[freq]
-        total = np.ceil(mixE.shape[0]/step).astype('int32') # total nb of steps to display
+        total = np.ceil(data.shape[0]/step).astype('int32') # total nb of steps to display
     else:
-        step = mixE.shape[0]
+        step = data.shape[0]
     
         
     # For each considered step of time
-    for t in range(mixE.shape[0]):
+    for t in range(data.shape[0]):
         
         if ((is_verbose)&(t%step==0)):
             print(f"\tcompute for {step_name} {(t//step)+1}/{total}   ", end="\r")
@@ -1163,8 +1166,11 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
         #################################
         # Select only target country
         #################################
-        # Extraction of the target country (multiply Ainv, basic FU vector and losses rate for the step of time)
-        mixE.iloc[t,:] = np.dot(Ainv, u*uP.iloc[t]) # Extract for target country and store it in the output table
+        if not return_matrix:
+            # Extraction of the target country (multiply Ainv, FU vector and losses for that step)
+            mixE.iloc[t,:] = np.dot(Ainv, u*uP.iloc[t]) # Extract for target country
+        else:
+            mixE.append( pd.DataFrame(Ainv, index=all_sources, columns=all_sources, dtype="float32") )
     
     #######################################################################
     # Clear columns related to residual in other countries than CH
@@ -1172,8 +1178,13 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
 
     # Possibly non-used residue columns are deleted (Only residual for CH can be considered)
     if residual:
-        mixE = mixE.drop(columns=[k for k in mixE.columns
-                                  if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
+        if not return_matrix:
+            mixE = mixE.drop(columns=[k for k in mixE.columns
+                                      if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
+        else:
+            mixE = [m.drop(columns=[k for k in m.columns
+                                    if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
+                    for m in mixE]
 
     return mixE
 
@@ -1522,8 +1533,9 @@ def adjust_mix_local(mix_data, local_residual, target='CH'):
     new_mix.loc[:,f'Mix_{target}'] -=1 # Not consider the part produced and directly consummed in Swizerland
     for c in new_mix.columns:
         new_mix.loc[:,c] *= (1-local_residual.sum(axis=1)) # Reduce the actual part of the kWh
-    for c in local_residual.columns: # put all the residual
-        new_mix[c] = local_residual.loc[:,c] # Add the part of Residue
+    
+    # put all the residual
+    new_mix = pd.concat( [new_mix,local_residual], axis=1 ) # Add the part of Residue
     
     # Locate first column for producers of target country
     lim = list(new_mix.columns).index([k for k in new_mix.columns
@@ -1964,3 +1976,73 @@ def execute(p=None, excel=None, is_verbose=False):
     if is_verbose: print("done.")
     return imp
 
+
+# ## Get inverted matrix
+
+# In[52]:
+
+
+def get_inverted_matrix(p=None, excel=None, is_verbose=False):
+    """
+    Execute the whole process until matrix inversion, but does not extract target.
+    
+    Parameter:
+        p: the parameter object (from class Parameter). Default: None
+        excel: str to the excel file with parameters. Default: None
+        is_verbose: bool to display information. Default: False
+    
+    Return:
+        list of pandas DataFrame with the impacts of 1kWh of electricity.
+    
+    """
+    ###########################
+    ###### PARAMETERS
+    ######
+    if p is None: # Load
+        if excel is None:
+            excel = get_default_file('ExcelFile_default.xlsx')
+        p = Parameter().from_excel(excel=excel)
+    
+    if np.logical_and(p.residual_global,p.residual_local):
+        raise ValueError("Residual can not be both global and local.")
+    
+    ###########################
+    ###### LOAD DATASETS
+    ######
+    if is_verbose: print("Load auxiliary datasets...")
+    # Load SwissGrid -> if Residual or SG exchanges
+    if np.logical_or(np.logical_or(p.residual_global,p.residual_local), p.sg_imports):
+        sg = load_swissGrid(path_sg=p.path.swissGrid, start=p.start, end=p.end, freq=p.freq)
+    else: sg=None
+
+    # Load Country of interest -> Always
+    neighbours = load_useful_countries(path_neighbour=p.path.neighbours, ctry=p.ctry)
+
+    # Load network losses -> if Network Loss asked
+    if p.network_losses:
+        network_losses = load_grid_losses(network_loss_path=p.path.networkLosses, start=p.start, end=p.end)
+    else: network_losses = None
+        
+    # Load production gap data -> if Residual
+    if np.logical_or(p.residual_global,p.residual_local):
+        prod_gap = load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
+    else: prod_gap=None
+    
+
+    # Load generation and exchange data from entso-e    
+    raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
+                               involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
+                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               residual_global=p.residual_global, correct_imp=p.sg_imports,
+                               is_verbose=is_verbose)
+    
+    
+    ########################
+    ###### COMPUTE TRACKING
+    ######
+    mix = track_mix(raw_data=raw_prodExch, freq=p.freq, network_losses=network_losses,
+                    target=p.target, residual_global=p.residual_global,
+                    net_exchange=p.net_exchanges, return_matrix=True, is_verbose=is_verbose)
+    
+    if is_verbose: print("done.")
+    return mix
