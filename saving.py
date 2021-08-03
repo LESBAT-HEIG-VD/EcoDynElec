@@ -23,7 +23,7 @@ def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False)
     if residual: add_on += "_Res"
     file_name = f"Impact_Vector{add_on}.csv"
     
-    impact_matrix.to_csv(savedir + file_name, sep=";", index=True)
+    impact_matrix.to_csv(savedir + file_name, index=True)
 
 
 # +
@@ -49,4 +49,4 @@ def save_dataset(data, savedir, name, target=None, freq='H'):
     as_target = "" if target is None else f"_{target}"
     
     ### Saving
-    data.to_csv(savedir+f"{name}{as_target}_{tPass[freq]}.csv",sep=";",index=True)
+    data.to_csv(savedir+f"{name}{as_target}_{tPass[freq]}.csv",index=True)
