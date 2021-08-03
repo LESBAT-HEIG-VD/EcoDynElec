@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from time import time
-
+from ecodyn.load_data.auxiliary import get_default_file
 
 
 # +
@@ -47,6 +47,9 @@ def extract_impacts(ctry, mapping_path, cst_import=False, residual=False, target
                             "Fossil_Brown_coal/Lignite","Nuclear","Fossil_Oil","Hydro_Pumped_Storage",
                             "Wind_Offshore","Fossil_Hard_coal","Geothermal",
                             "Fossil_Coal-derived_gas","Marine"])
+    ### Verify mapping file
+    if mapping_path is None:
+        mapping_path = get_default_file(name='Mapping_default.xlsx')
     
     ### Extract the impact information
     impacts = {}

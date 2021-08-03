@@ -35,7 +35,7 @@ def import_residual(prod, sg_data, gap=None):
     init_cols = list(prod.columns)
     
     # Create residual
-    residual_energy = sg_data.loc[:,'Production_CH'] - prod.sum(axis=1) # everything in "Residue_other"
+    residual_energy = np.maximum(0, sg_data.loc[:,'Production_CH'] - prod.sum(axis=1) ) # all in "Residue_other"
     
     # Split residual into its nature
     all_prod["Residual_Hydro_CH"] = residual_energy * gap.loc[prod.index, "Hydro_Res"]

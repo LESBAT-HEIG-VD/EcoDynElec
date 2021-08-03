@@ -131,9 +131,11 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
     for c in ctry:# Preprocess all files / data per country
         # Extract the generation data file
         if path_gen is not None: # Load preprocessed files
-            Gen[c] = pd.read_csv(path+files[c],sep=";") # Extraction of preprocessed files
-        elif path_raw is not None: # Changes labels of already loaded tables
-            Gen[c].columns = Gen[c].columns+" "
+            Gen[c] = pd.read_csv(path+files[c],index_col=0) # Extraction of preprocessed files
+        
+        # Check and modify labels if needed
+        add_space = pd.Index(np.array([k[-1] for k in Gen[c].columns])!=[' ']) # all cols not ending with ' '
+        Gen[c].columns = Gen[c].columns + add_space*" "
             
         # Set indexes to time data
         Gen[c].index = pd.to_datetime(Gen[c].index,yearfirst=True) # Convert index into datetime
@@ -142,7 +144,8 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
         Gen[c] = Gen[c].loc[start:end]
 
         source = list(Gen[c].columns) # production plants types
-        source[source.index("Other ")] = "Other fossil " # rename one specific column (space at the end is important !)
+        if np.any(source=="Other "): # rename one specific column
+            source[source.index("Other ")] = "Other fossil "
 
         Gen[c].columns = [s.replace(" ","_")+c for s in source] # rename columns
         
@@ -488,13 +491,13 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
         
     elif path_raw is not None: # Just fill the Gen directly for row files
         Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,
-                      save_resolution=savedir, is_verbose=is_verbose) # if from raw files
+                        save_resolution=savedir, is_verbose=is_verbose) # if from raw files
 
     
     for i,c in enumerate(ctry):# File extraction
         if path_imp is not None:
             if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
-            Cross[c] = pd.read_csv(path_imp+files[c],sep=";") # Extraction
+            Cross[c] = pd.read_csv(path_imp+files[c],index_col=0) # Extraction
 
         # Transform index in time data and convert it from UTC to CET, then keeps only period of interest
         Cross[c].index = pd.to_datetime(Cross[c].index,yearfirst=True) # Considered period only
@@ -602,6 +605,9 @@ def extract_impacts(ctry, mapping_path, cst_import=False, residual=False, target
                             "Fossil_Brown_coal/Lignite","Nuclear","Fossil_Oil","Hydro_Pumped_Storage",
                             "Wind_Offshore","Fossil_Hard_coal","Geothermal",
                             "Fossil_Coal-derived_gas","Marine"])
+    ### Verify mapping file
+    if mapping_path is None:
+        mapping_path = get_default_file(name='Mapping_default.xlsx')
     
     ### Extract the impact information
     impacts = {}
@@ -834,7 +840,7 @@ def load_useful_countries(path_neighbour, ctry):
         path_neighbour = get_default_file(name='Neighbourhood_EU.csv')
     
     ### For importing only the usefull data
-    neighbouring = pd.read_csv(path_neighbour,sep=";",index_col=0)
+    neighbouring = pd.read_csv(path_neighbour,index_col=0)
     useful = list(ctry) # List of countries considered + neighbours
     for c in ctry:
         useful += list(neighbouring.loc[c].dropna().values)
@@ -857,7 +863,7 @@ def load_grid_losses(network_loss_path, start=None, end=None):
         network_loss_path = get_default_file(name='Pertes_OFEN.csv')
     
     # Get and calculate new power demand for the FU vector
-    losses = pd.read_csv(network_loss_path, sep=";")
+    losses = pd.read_csv(network_loss_path)
     losses['Rate'] = 1 + (losses.loc[:,'Pertes']/losses.loc[:,'Conso_CH'])
     
     if start is None:
@@ -977,7 +983,7 @@ def load_rawEntso(mix_data, freq='H'):
         tPass = {'15min':'15min','30min':'30min',"H":"hour","D":"day",'d':'day','W':"week",
                  "w":"week","MS":"month","M":"month","YS":"year","Y":"year"}
         
-        data = pd.read_csv(mix_data+f"ProdExchange_{tPass[freq]}.csv",sep=";",
+        data = pd.read_csv(mix_data+f"ProdExchange_{tPass[freq]}.csv",
                                index_col=0, parse_dates=[0])
             
     elif type(mix_data)==pd.core.frame.DataFrame: # import from the DataFrame passed as argument
@@ -1652,11 +1658,9 @@ def import_residual(prod, sg_data, gap=None):
     init_cols = list(prod.columns)
     
     # Create residual
-    residual_energy = sg_data.loc[:,'Production_CH'] - prod.sum(axis=1) # everything in "Residue_other"
+    residual_energy = np.maximum(0, sg_data.loc[:,'Production_CH'] - prod.sum(axis=1)) # all in "Residue_other"
     
     # Split residual into its nature
-    #print("GAP\n",gap.loc[prod.index])
-    #print("PROD\n",prod.index)
     all_prod["Residual_Hydro_CH"] = residual_energy * gap.loc[prod.index, "Hydro_Res"]
     all_prod["Residual_Other_CH"] = residual_energy * gap.loc[prod.index, "Other_Res"]
     
@@ -1811,7 +1815,7 @@ def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False)
     if residual: add_on += "_Res"
     file_name = f"Impact_Vector{add_on}.csv"
     
-    impact_matrix.to_csv(savedir + file_name, sep=";", index=True)
+    impact_matrix.to_csv(savedir + file_name, index=True)
 
 
 # ## Save Dataset
@@ -1834,7 +1838,7 @@ def save_dataset(data, savedir, name, target=None, freq='H'):
     as_target = "" if target is None else f"_{target}"
     
     ### Saving
-    data.to_csv(savedir+f"{name}{as_target}_{tPass[freq]}.csv",sep=";",index=True)
+    data.to_csv(savedir+f"{name}{as_target}_{tPass[freq]}.csv",index=True)
 
 
 # # Checking
