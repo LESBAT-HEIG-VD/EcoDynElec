@@ -1,69 +1,54 @@
+"""Extract information from the raw Entso-e file and save it separately per country"""
+
 import pandas as pd
 import numpy as np
 from time import time
 import os
 
-# +
-
-#################
-#################
-# ## Extract
-##############
-
-# -
 
 
-def extract(ctry=None, dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp=None,
-            save_resolution=None, is_verbose=False):
+def extract(dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp=None, save_resolution="./", is_verbose=False):
     """Easy command to execute all at once"""
     t0 = time()
-    if os.path.isdir(r"{}".format(dir_gen)):
-        if is_verbose: print("\tGeneration data.")
-        Gen = create_per_country(path_dir=dir_gen, case='generation', ctry=ctry, savedir=savedir_gen,
-                           savedir_resolution=save_resolution,is_verbose=is_verbose)
+    if os.path.isdir(dir_gen):
+        if os.path.isdir(savedir_gen):
+            if is_verbose: print("\tGeneration data.")
+            create_per_country(path_dir=dir_gen, case='generation', savedir=savedir_gen,
+                               savedir_resolution=save_resolution)
+        else:
+            raise KeyError("Missing directory path to save generation data")
+    else:
+        if is_verbose: print("\tGeneration data skiped.")
             
-    if os.path.isdir(r"{}".format(dir_imp)):
-        if is_verbose: print("\tCross-border flow data.")
-        Imp = create_per_country(path_dir=dir_imp, case='import', ctry=ctry, savedir=savedir_imp,
-                           savedir_resolution=save_resolution, is_verbose=is_verbose)
-    
+    if os.path.isdir(dir_imp):
+        if os.path.isdir(savedir_imp):
+            if is_verbose: print("\tCross-border flow data.")
+            create_per_country(path_dir=dir_imp, case='import', savedir=savedir_imp,
+                               savedir_resolution=save_resolution)
+        else:
+            raise KeyError("Missing directory path to save cross-border flow data")
+    else:
+        if is_verbose: print("\tCross-border folw data skiped.")
     if is_verbose: print("\tExtraction time: {:.2f} sec.".format(time()-t0))
-    
-    if ((dir_gen is not None)&(dir_imp is None)): return Gen
-    elif ((dir_gen is None)&(dir_imp is not None)): return Imp
-    else: return Gen, Imp
 
 
-# +
 
-#################
-#################
-# ## Create per country
-##############
-
-# -
-
-
-def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resolution=None, is_verbose=False):
+def create_per_country(path_dir, case, savedir, savedir_resolution="./"):
     # Obtain parameter set for the specific case
     destination,origin,data,area = get_parameters(case)
     
     # Import content of raw files
-    df = load_files(path_dir, destination,origin,data,area,is_verbose=is_verbose)
+    df = load_files(path_dir, destination,origin,data,area)
     
     # Get auxilary information
-    resolution = get_best_resolution(df, destination, case, savedir=savedir_resolution,
-                                     is_verbose=is_verbose) # Resolutions
+    resolution = get_best_resolution(df, destination, case, savedir=savedir_resolution) # Resolutions
     prod_units = get_origin_unit(df,origin) # list of prod units or origin countries
     time_line = get_time_line(unique_dates=df.DateTime.unique()) # time line of the data
     
     # Format and save files for every country
-    Data = {} # Data storage object
     t0 = time()
     for i,c in enumerate(resolution.index): # for all countries
-        if ctry is not None:
-            if c not in ctry: continue; # skip if c not in ctry list.
-        if is_verbose: print(f"Extracting {case} for {c} ({i+1}/{resolution.shape[0]})...", end="\r")
+        print(f"Saving {case} for {c} ({i+1}/{resolution.shape[0]})...", end="\r")
         # Get data from the country and sort by date
         country_data = df[df.loc[:,destination]==c].drop_duplicates().sort_values(by="DateTime")
 
@@ -83,25 +68,15 @@ def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resoluti
         country_detailed /= 4
 
         # Save files
-        if savedir is not None:
-            country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
-        Data[c] = country_detailed # Store information
+        country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
         del country_detailed # free memory space
-    if is_verbose: print(f"Extract raw {case}: {round(time()-t0,2)} sec.             ")
-    return Data
+    print(f"Save per country: {round(time()-t0,2)} sec.             ")
 
 
-# +
-
-#################
-#################
-# ## Load files
-##############
-
-# -
 
 
-def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
+
+def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None):
     if None in [destination,origin,data,area]:
         if case is None:
             raise KeyError("Missing information to load files: what 'case' is it ?")
@@ -118,7 +93,7 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
     t0 = time()
     container = []
     for i,f in enumerate(files): # For all files
-        if is_verbose: print(f"Extract file {i+1}/{len(files)}...", end="\r")
+        print(f"Extract file {i+1}/{len(files)}...", end="\r")
         # Extract the information
         d = pd.read_csv(f,sep="\t", encoding='utf-16', parse_dates=['DateTime'], dtype=column_types)
 
@@ -128,61 +103,32 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
         del d # free memory space
 
     # Concatenates all files
-    if is_verbose: print("Concatenate all files...",end="\r")
+    print("Concatenate all files...",end="\r")
     df = pd.concat(container)
     del container # free memory space
 
-    if is_verbose: print(f"Data loading: {round(time()-t0,2)} sec")
-    if is_verbose: print(f"Memory usage table: {round(df.memory_usage().sum()/(1024**2),2)} MB")
+    print(f"Data loading: {round(time()-t0,2)} sec")
+    print(f"Memory usage table: {round(df.memory_usage().sum()/(1024**2),2)} MB")
     return df
 
 
-# +
 
-#################
-#################
-# ## Get best resolution
-##############
-
-# -
-
-
-def get_best_resolution(df, destination, case, savedir=None, is_verbose=False):
+def get_best_resolution(df, destination, case, savedir="./"):
     """Get the resolution map for all countries"""
     t0 = time()
     get_resolution = lambda x: x[2:4]+"min" # mini-function to extract resolution in minutes
     resolution = pd.Series({c: df[df.loc[:,destination]==c].loc[:,'ResolutionCode'].apply(get_resolution).unique().min()
                              for c in df.loc[:,destination].unique()},name="Resolution").sort_index() # gather all at once
-    if os.path.isdir(r"{}".format(savedir)):
+    if os.path.isdir(savedir):
         resolution.to_csv(f"{savedir}Original_resolution_{case}.csv") # save file
     else: resolution.to_csv(f"./Original_resolution_{case}.csv") # save file
-    if is_verbose: print(f"Get original resolutions: {round(time()-t0,2)} sec.")
+    print(f"Get original resolutions: {round(time()-t0,2)} sec.")
     return resolution
-
-
-# +
-
-####################
-####################
-# ## Get origin unit
-##############
-
-# -
 
 
 def get_origin_unit(df,origin):
     """Gets ordered list of sources (origin countries or production units)"""
     return np.sort(df.loc[:,origin].unique())
-
-
-# +
-
-#################
-#################
-# ## Get time line
-##############
-
-# -
 
 
 def get_time_line(unique_dates):
@@ -197,14 +143,6 @@ def get_time_line(unique_dates):
     return time_line
 
 
-# +
-
-#################
-#################
-# ## Get parameters
-##############
-
-# -
 
 def get_parameters(case):
     """Function used to define parameters for later code"""

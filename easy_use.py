@@ -93,7 +93,9 @@ def execute(p=None, excel=None, is_verbose=False):
     # Load generation and exchange data from entso-e    
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
+                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               savedir=p.path.savedir, savegen=p.path.savegen, saveimp=p.path.saveimp,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                is_verbose=is_verbose)
 
@@ -211,7 +213,9 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
     # Load generation and exchange data from entso-e    
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
+                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               savedir=p.path.savedir, savegen=p.path.savegen, saveimp=p.path.saveimp,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                is_verbose=is_verbose)
     

@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import os
+import warnings
 
 ################# Local functions
 from checking import check_frequency
@@ -17,14 +18,14 @@ from checking import check_frequency
 
 # -
 
-def load_swissGrid(path_sg, start, end, freq='H'):
+def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     """
     Function to load production and cross-border flows information from Swiss Grid. Data used many times
     along the algorithm.
     Parameter:
         path_sg: path to the file with Swiss Grid information (str)
-        start: starting date (datetime or str)
-        end: ending date (datetime or str)
+        start: starting date (datetime or str, default None)
+        end: ending date (datetime or str, default None)
         freq: time step (str, default H)
     Return:
         pandas DataFrame with SwissGrid information in MWh and at the good time step.
@@ -45,9 +46,12 @@ def load_swissGrid(path_sg, start, end, freq='H'):
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
     if 'Production_CH' not in sg.columns:
         raise KeyError("Missing information 'Production_CH' in SwissGrid Data.")
-    if ((start<sg.index[0])|(end>sg.index[-1])): # print information only
-        warning = "Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
-        print(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+    if ((start is None) | (end is None)):
+        warning = "  /!\ Some date limits are None. SwissGrid is on period {} - {}. It may not match the Generation and Exchange."
+        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+    elif ((start<sg.index[0])|(end>sg.index[-1])): # print information only
+        warning = "  /!\ Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
+        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
         
     ### Rename the columns
     sg.columns = ["Production_CH","Mix_CH_AT","Mix_AT_CH","Mix_CH_DE","Mix_DE_CH",
@@ -109,7 +113,7 @@ def load_useful_countries(path_neighbour, ctry):
         path_neighbour = get_default_file(name='Neighbourhood_EU.csv')
     
     ### For importing only the usefull data
-    neighbouring = pd.read_csv(path_neighbour,sep=";",index_col=0)
+    neighbouring = pd.read_csv(path_neighbour,index_col=0)
     useful = list(ctry) # List of countries considered + neighbours
     for c in ctry:
         useful += list(neighbouring.loc[c].dropna().values)
@@ -127,7 +131,7 @@ def load_useful_countries(path_neighbour, ctry):
 
 # -
 
-def load_grid_losses(network_loss_path, start, end):
+def load_grid_losses(network_loss_path, start=None, end=None):
     """
     Function that loads network grid losses and returns a pandas DataFrame with the fraction of
     network loss in the transmitted electricity for each month.
@@ -137,10 +141,20 @@ def load_grid_losses(network_loss_path, start, end):
         network_loss_path = get_default_file(name='Pertes_OFEN.csv')
     
     # Get and calculate new power demand for the FU vector
-    losses = pd.read_csv(network_loss_path, sep=";")
+    losses = pd.read_csv(network_loss_path)
     losses['Rate'] = 1 + (losses.loc[:,'Pertes']/losses.loc[:,'Conso_CH'])
 
-    localize = ((losses.annee>=start.year) & (losses.annee<=end.year))
+    if start is None:
+        if end is None:
+            output = losses.loc[:, ['annee','mois','Rate']].rename(columns={'annee':'year','mois':'month'})
+            return output.reset_index(drop=True)
+        else:
+            localize = (losses.annees<=end.year)
+    else:
+        if end is None:
+            localize = (losses.annees>=start.year)
+        else:
+            localize = ((losses.annee>=start.year) & (losses.annee<=end.year))
     output = losses.loc[localize, ['annee','mois','Rate']].rename(columns={'annee':'year', 'mois':'month'})
     return output.reset_index(drop=True)
 
@@ -155,14 +169,14 @@ def load_grid_losses(network_loss_path, start, end):
 
 # -
 
-def load_gap_content(path_gap, start, end, freq='H', header=59):
+def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     """
     Function that defines the relative composition of the swiss residual production. The function is very
     file format specific.
     Parameter:
         path_gap: path to the file containing residual content information (str)
-        start: starting date (datetime or str)
-        end: ending date (datetime or str)
+        start: starting date (datetime or str, default None)
+        end: ending date (datetime or str, default None)
         freq: time step (str, default H)
         header: row in the file to use as header (int, default 59)
     Return:
@@ -194,10 +208,12 @@ def load_gap_content(path_gap, start, end, freq='H', header=59):
     ###############################
     ##### Select information
     #####
-    res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
-    res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
-    
+    res_start, res_end = None,None
+    if start is not None: res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
+    if end is not None: res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
     df = df.loc[res_start:res_end, ['Hydro_Res','Other_Res']] # Select information only for good duration
+    if start is None: res_start = df.index[0]
+    if end is None: res_end = df.index[-1]
     
     
     ################################
@@ -256,7 +272,7 @@ def load_rawEntso(mix_data, freq='H'):
         tPass = {'15min':'15min','30min':'30min',"H":"hour","D":"day",'d':'day','W':"week",
                  "w":"week","MS":"month","M":"month","YS":"year","Y":"year"}
         
-        data = pd.read_csv(mix_data+f"ProdExchange_{tPass[freq]}.csv",sep=";",
+        data = pd.read_csv(mix_data+f"ProdExchange_{tPass[freq]}.csv",
                                index_col=0, parse_dates=[0])
             
     elif type(mix_data)==pd.core.frame.DataFrame: # import from the DataFrame passed as argument

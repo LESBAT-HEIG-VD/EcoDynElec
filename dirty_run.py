@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from time import time
+import warnings
 
 # # Data Import Group
 
@@ -14,8 +15,9 @@ from time import time
 
 def import_data(ctry, start=None, end=None, freq="H", target="CH",
                 involved_countries=None, prod_gap=None, sg_data=None,
-                path_gen=None, path_imp=None, residual_global=False,
-                correct_imp=True, n_hours=2, days_around=7, is_verbose=True):
+                path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None,
+                savedir=None, savegen=None, saveimp=None,
+                residual_global=False, correct_imp=True, n_hours=2, days_around=7, is_verbose=True):
     
     """
     Main function managing the import and pre-treatment of Entso-e production and cross-border flow data.
@@ -31,8 +33,13 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                             (list, default: None)
         prod_gap: information about the nature of the residual (pandas DataFrame)
         sg_data: information from Swiss Grid (pandas DataFrame, default: None)
-        path_gen: directory where Entso-e generation files are stored (str)
-        path_imp: directory containing the files for cross-border flow data (str)
+        path_gen: directory where preprocessed Entso-e generation files are stored (str)
+        path_imp: directory containing the files for preprocessed cross-border flow data (str)
+        path_gen_raw: directory where raw Entso-e generation files are stored (str)
+        path_imp_raw: directory containing the raw Entso-E files for cross-border flow data (str)
+        savedir: directory to save auxilary information for loaded data (str, default: None)
+        savegen: directory to save generation data from raw files (str, default: None)
+        saveimp: directory to save exchanges data from raw files (str, default: None)
         residual_global: to consider the production residual as produced electricity that can be
                         exchanged with neighbour countries (bool, default: False)
         correct_imp: to replace cross-border flow of Entso-e for Swizerland with data from Swiss Grid
@@ -50,15 +57,17 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     t0 = time()
     
     ### GENERATION DATA
-    Gen = import_generation(path_gen=path_gen, ctry=ctry, start=start, end=end,
+    Gen = import_generation(path_gen=path_gen, path_raw=path_gen_raw, ctry=ctry,
+                            start=start, end=end, savedir=savedir, savegen=savegen,
                             is_verbose=is_verbose) # import generation data
     Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
                             n_hours=n_hours, days_around=days_around, prod_gap=prod_gap,
                             is_verbose=is_verbose) # adjust the generation data
     
     ### EXCHANGE DATA
-    Cross = import_exchanges(path_imp=path_imp, neighbourhood=involved_countries, ctry=ctry,
-                             start=start, end=end, freq=freq, is_verbose=is_verbose) # Imprt data
+    Cross = import_exchanges(neighbourhood=involved_countries, ctry=ctry,
+                             start=start, end=end, savedir=savedir, saveimp=saveimp,
+                             path_imp=path_imp, path_raw=path_imp_raw, freq=freq, is_verbose=is_verbose) # Imprt data
     
     # Correct the cross-border flows at Swiss border.
     if correct_imp:
@@ -78,44 +87,59 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
 # In[3]:
 
 
-def import_generation(path_gen, ctry, start, end, is_verbose=False):
+def import_generation(ctry, start, end, path_gen=None, path_raw=None,
+                      savedir=None, savegen=None, saveimp=None, is_verbose=False):
     """
     Function to import generation data from Entso-e information source.
     
     Parameter:
-        path_gen: directory where Entso-e generation files are stored (str)
+        path_gen: directory where preprocessed Entso-e generation files are stored (str) [prioritary path]
+        path_gen_raw: directory where raw Entso-e generation files are stored (str) [secondary path]
         ctry: countries to incldue in the study (list)
         start: starting date (str or datetime)
         end: ending date (str or datetime)
+        savedir: directory path to save auxilary results (str, default: None)
+        savegen: directory path to save generation files (str, if path_raw not None, default: None)
         is_verbose: to display information (bool, default: False)
     """
+    path = None
+    if path_gen is None: path = path_raw
+    else: path = path_gen # default path is the preprocessed files
+    if path is None:
+        raise KeyError("No path is given for Generation data.")
+    
     #######################
     ###### Generation data
     #######################
 
     if is_verbose: print("Load generation data...")
     # Selecton of right files according to the choice of countres
-    files = {}
-    for c in ctry:
-        try:
-            files[c] = [f for f in os.listdir(path_gen)
-                        if ((f.split("_")[5]==c) & (f.split("_")[0]=='2021'))][0]
-        except Exception as e:
-            raise KeyError(f"No generation data for {c}: {e}")
-    
-    Gen = {} # Dict for the generation of each country
-    for c in files:# File extraction
-        # Extract the generation data file
-        Gen[c] = pd.read_csv(path_gen+files[c],sep=";") # Extraction
+    if path_gen is not None:
+        files = {}
+        for c in ctry: # Gather prepared files per country
+            try:
+                files[c] = [f for f in os.listdir(path) if f.find(c)!=-1][0]
+            except Exception as e:
+                raise KeyError(f"No generation data for {c}: {e}")
+                
+        Gen = {} # Dict for the generation of each country
+        
+    elif path_raw is not None: # Just fill the Gen directly for row files
+        Gen = extract(ctry=ctry, dir_gen=path, savedir_gen=savegen,
+                      save_resolution=savedir, is_verbose=is_verbose) # if from raw files
 
-        # Set time info from UTC to Central European Time
+    for c in ctry:# Preprocess all files / data per country
+        # Extract the generation data file
+        if path_gen is not None: # Load preprocessed files
+            Gen[c] = pd.read_csv(path+files[c],sep=";") # Extraction of preprocessed files
+        elif path_raw is not None: # Changes labels of already loaded tables
+            Gen[c].columns = Gen[c].columns+" "
+            
+        # Set indexes to time data
         Gen[c].index = pd.to_datetime(Gen[c].index,yearfirst=True) # Convert index into datetime
         
         # Only select the required piece of information
         Gen[c] = Gen[c].loc[start:end]
-        
-        # RESAMPLE hourly -> 15min: to be removed
-        Gen[c] = Gen[c].resample('15min').asfreq(None).interpolate('linear') / 4 # Energy, not power.
 
         source = list(Gen[c].columns) # production plants types
         source[source.index("Other ")] = "Other fossil " # rename one specific column (space at the end is important !)
@@ -428,7 +452,8 @@ def resample_generation(Gen, freq, add_on=False, is_verbose=False):
 # In[11]:
 
 
-def import_exchanges(path_imp, neighbourhood, ctry, start, end, freq='H', is_verbose=False):
+def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=None,
+                     savedir=None, saveimp=None, freq='H', is_verbose=False):
     """
     Function to import the cross-border flows.
     Finds the useful files to load, load the data, group relevant information and adjust time step.
@@ -442,31 +467,39 @@ def import_exchanges(path_imp, neighbourhood, ctry, start, end, freq='H', is_ver
         freq: time step (str, default: H)
         is_verbose: display information (bool, default: False)
     """
+    path = None
+    if path_imp is None: path = path_raw
+    else: path = path_imp # default path is the preprocessed files
+    if path is None:
+        raise KeyError("No path is given for Exchange data.")
     
     if is_verbose: print("Get and reduce importation data...")
         
     ### Files to consider
-    files = {}
-    for c in ctry:
-        try:
-            files[c] = [f for f in os.listdir(path_imp)
-                        if ( (f.split("_")[5]==c) & (f.split("_")[0]=='2021'))][0]
-        except Exception as e:
-            raise KeyError(f"No exchange data for {c}: {e}")
+    if path_imp is not None:
+        files = {}
+        for c in ctry:
+            try:
+                files[c] = [f for f in os.listdir(path_imp) if f.find(c)!=-1][0]
+            except Exception as e:
+                raise KeyError(f"No exchange data for {c}: {e}")
+                
+        Cross = {} # Dict for the generation of each country
+        
+    elif path_raw is not None: # Just fill the Gen directly for row files
+        Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,
+                      save_resolution=savedir, is_verbose=is_verbose) # if from raw files
 
-
-    Cross = {} # tables of importation data
-    for i,c in enumerate(files):# File extraction
-        if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
-        Cross[c] = pd.read_csv(path_imp+files[c],sep=";") # Extraction
+    
+    for i,c in enumerate(ctry):# File extraction
+        if path_imp is not None:
+            if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
+            Cross[c] = pd.read_csv(path_imp+files[c],sep=";") # Extraction
 
         # Transform index in time data and convert it from UTC to CET, then keeps only period of interest
         Cross[c].index = pd.to_datetime(Cross[c].index,yearfirst=True) # Considered period only
         Cross[c] = Cross[c].loc[start:end] # select right period
         
-        ## RESAMPLING hour -> 15min: to be removed
-        Cross[c] = Cross[c].resample('15min').asfreq(None).interpolate('linear')/4 # basic resample
-
         # Format the import data by selecting and gathering columns
         Cross[c] = Cross[c].loc[:,neighbourhood] # Keep only usefull countries
         other = [c for c in neighbourhood if c not in ctry] # Label as 'other' all non-main selected countries
@@ -717,14 +750,14 @@ def residual_from_excel(impact_ch, mapping):
 # In[19]:
 
 
-def load_swissGrid(path_sg, start, end, freq='H'):
+def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     """
     Function to load production and cross-border flows information from Swiss Grid. Data used many times
     along the algorithm.
     Parameter:
         path_sg: path to the file with Swiss Grid information (str)
-        start: starting date (datetime or str)
-        end: ending date (datetime or str)
+        start: starting date (datetime or str, default None)
+        end: ending date (datetime or str, default None)
         freq: time step (str, default H)
     Return:
         pandas DataFrame with SwissGrid information in MWh and at the good time step.
@@ -745,9 +778,12 @@ def load_swissGrid(path_sg, start, end, freq='H'):
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
     if 'Production_CH' not in sg.columns:
         raise KeyError("Missing information 'Production_CH' in SwissGrid Data.")
-    if ((start<sg.index[0])|(end>sg.index[-1])): # print information only
-        warning = "Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
-        print(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+    if ((start is None) | (end is None)):
+        warning = "  /!\ Some date limits are None. SwissGrid is on period {} - {}. It may not match the Generation and Exchange."
+        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+    elif ((start<sg.index[0])|(end>sg.index[-1])): # print information only
+        warning = "  /!\ Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
+        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
         
     ### Rename the columns
     sg.columns = ["Production_CH","Mix_CH_AT","Mix_AT_CH","Mix_CH_DE","Mix_DE_CH",
@@ -811,7 +847,7 @@ def load_useful_countries(path_neighbour, ctry):
 # In[22]:
 
 
-def load_grid_losses(network_loss_path, start, end):
+def load_grid_losses(network_loss_path, start=None, end=None):
     """
     Function that loads network grid losses and returns a pandas DataFrame with the fraction of
     network loss in the transmitted electricity for each month.
@@ -823,8 +859,19 @@ def load_grid_losses(network_loss_path, start, end):
     # Get and calculate new power demand for the FU vector
     losses = pd.read_csv(network_loss_path, sep=";")
     losses['Rate'] = 1 + (losses.loc[:,'Pertes']/losses.loc[:,'Conso_CH'])
-
-    localize = ((losses.annee>=start.year) & (losses.annee<=end.year))
+    
+    if start is None:
+        if end is None:
+            output = losses.loc[:, ['annee','mois','Rate']].rename(columns={'annee':'year',
+                                                                            'mois':'month'})
+            return output.reset_index(drop=True)
+        else:
+            localize = (losses.annees<=end.year)
+    else:
+        if end is None:
+            localize = (losses.annees>=start.year)
+        else:
+            localize = ((losses.annee>=start.year) & (losses.annee<=end.year))
     output = losses.loc[localize, ['annee','mois','Rate']].rename(columns={'annee':'year', 'mois':'month'})
     return output.reset_index(drop=True)
 
@@ -834,14 +881,14 @@ def load_grid_losses(network_loss_path, start, end):
 # In[23]:
 
 
-def load_gap_content(path_gap, start, end, freq='H', header=59):
+def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     """
     Function that defines the relative composition of the swiss residual production. The function is very
     file format specific.
     Parameter:
         path_gap: path to the file containing residual content information (str)
-        start: starting date (datetime or str)
-        end: ending date (datetime or str)
+        start: starting date (datetime or str, default None)
+        end: ending date (datetime or str, default None)
         freq: time step (str, default H)
         header: row in the file to use as header (int, default 59)
     Return:
@@ -873,15 +920,18 @@ def load_gap_content(path_gap, start, end, freq='H', header=59):
     ###############################
     ##### Select information
     #####
-    res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
-    res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
+    res_start, res_end = None,None
+    if start is not None: res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
+    if end is not None: res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
     df = df.loc[res_start:res_end, ['Hydro_Res','Other_Res']] # Select information only for good duration
+    if start is None: res_start = df.index[0]
+    if end is None: res_end = df.index[-1]
     
     ################################
     ##### Build the adapted time series with right time step
     #####
     gap = pd.DataFrame(None, columns=df.columns,
-                       index = pd.date_range(start=res_start,
+                       index = pd.date_range(start=min(res_start, df.index[0]),
                                              end=max(res_end, df.index[-1]), freq=localFreq))
 
     if localFreq[0]=='Y':
@@ -956,11 +1006,202 @@ def get_default_file(name,level=2):
         raise KeyError(f"Default support file {name} not found.")
 
 
+# ## Raw Entos-E
+
+# ### Extract
+
+# In[26]:
+
+
+def extract(ctry=None, dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp=None,
+            save_resolution=None, is_verbose=False):
+    """Easy command to execute all at once"""
+    t0 = time()
+    if os.path.isdir(r"{}".format(dir_gen)):
+        if is_verbose: print("\tGeneration data.")
+        Gen = create_per_country(path_dir=dir_gen, case='generation', ctry=ctry, savedir=savedir_gen,
+                           savedir_resolution=save_resolution,is_verbose=is_verbose)
+            
+    if os.path.isdir(r"{}".format(dir_imp)):
+        if is_verbose: print("\tCross-border flow data.")
+        Imp = create_per_country(path_dir=dir_imp, case='import', ctry=ctry, savedir=savedir_imp,
+                           savedir_resolution=save_resolution, is_verbose=is_verbose)
+    
+    if is_verbose: print("\tExtraction time: {:.2f} sec.".format(time()-t0))
+    
+    if ((dir_gen is not None)&(dir_imp is None)): return Gen
+    elif ((dir_gen is None)&(dir_imp is not None)): return Imp
+    else: return Gen, Imp
+
+
+# ### Create per country
+
+# In[27]:
+
+
+def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resolution=None, is_verbose=False):
+    # Obtain parameter set for the specific case
+    destination,origin,data,area = get_parameters(case)
+    
+    # Import content of raw files
+    df = load_files(path_dir, destination,origin,data,area,is_verbose=is_verbose)
+    
+    # Get auxilary information
+    resolution = get_best_resolution(df, destination, case, savedir=savedir_resolution,
+                                     is_verbose=is_verbose) # Resolutions
+    prod_units = get_origin_unit(df,origin) # list of prod units or origin countries
+    time_line = get_time_line(unique_dates=df.DateTime.unique()) # time line of the data
+    
+    # Format and save files for every country
+    Data = {} # Data storage object
+    t0 = time()
+    for i,c in enumerate(resolution.index): # for all countries
+        if ctry is not None:
+            if c not in ctry: continue; # skip if c not in ctry list.
+        if is_verbose: print(f"Extracting {case} for {c} ({i+1}/{resolution.shape[0]})...", end="\r")
+        # Get data from the country and sort by date
+        country_data = df[df.loc[:,destination]==c].drop_duplicates().sort_values(by="DateTime")
+
+        # Select only the Generation data, then resample in 15min and interpolate (regardless of ResolutionCode)
+        country_prod = country_data.pivot(index='DateTime',columns=origin, values=data)
+        country_prod = country_prod.fillna(0).resample('15min').asfreq(None).interpolate()
+        del country_data # free memory space
+
+        # Add all columns
+        country_detailed = pd.DataFrame(None,columns=prod_units,index=time_line,
+                                        dtype='float32').resample('15min').asfreq(None) # init. with None
+        country_detailed.loc[:,country_prod.columns] = country_prod # fill with data
+        del country_prod # free memory space
+        country_detailed = country_detailed.interpolate().fillna(0) # NAN: interpolate (& ffill), then 0 for remaining
+
+        # Transform MW every 15min --> MWh every 15 min
+        country_detailed /= 4
+
+        # Save files
+        if savedir is not None:
+            country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
+        Data[c] = country_detailed # Store information
+        del country_detailed # free memory space
+    if is_verbose: print(f"Extract raw {case}: {round(time()-t0,2)} sec.             ")
+    return Data
+
+
+# ### Load files
+
+# In[28]:
+
+
+def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
+    if None in [destination,origin,data,area]:
+        if case is None:
+            raise KeyError("Missing information to load files: what 'case' is it ?")
+        else:
+            destination,origin,data,area = get_parameters(case)
+    
+    # Types to reduce size of data table
+    column_types = {'Year':'int8', 'Month':'int8', 'Day':'int8', 'FlowValue':'float32',
+                    'ActualGenerationOutput': 'float32', 'ActualConsumption': 'float32'}
+    useful = ['DateTime',destination,'ResolutionCode',origin,data] # columns to keep
+
+    files = [path_dir + f for f in os.listdir(path_dir)] # gather file pathways
+
+    t0 = time()
+    container = []
+    for i,f in enumerate(files): # For all files
+        if is_verbose: print(f"Extract file {i+1}/{len(files)}...", end="\r")
+        # Extract the information
+        d = pd.read_csv(f,sep="\t", encoding='utf-16', parse_dates=['DateTime'], dtype=column_types)
+
+        # Only select country level & Useful columns
+        d = d.loc[d.loc[:,area]=="CTY", useful]
+        container.append(d)
+        del d # free memory space
+
+    # Concatenates all files
+    if is_verbose: print("Concatenate all files...",end="\r")
+    df = pd.concat(container)
+    del container # free memory space
+
+    if is_verbose: print(f"Data loading: {round(time()-t0,2)} sec")
+    if is_verbose: print(f"Memory usage table: {round(df.memory_usage().sum()/(1024**2),2)} MB")
+    return df
+
+
+# ### Get best resolution
+
+# In[29]:
+
+
+def get_best_resolution(df, destination, case, savedir=None, is_verbose=False):
+    """Get the resolution map for all countries"""
+    t0 = time()
+    get_resolution = lambda x: x[2:4]+"min" # mini-function to extract resolution in minutes
+    resolution = pd.Series({c: df[df.loc[:,destination]==c].loc[:,'ResolutionCode'].apply(get_resolution).unique().min()
+                             for c in df.loc[:,destination].unique()},name="Resolution").sort_index() # gather all at once
+    if os.path.isdir(r"{}".format(savedir)):
+        resolution.to_csv(f"{savedir}Original_resolution_{case}.csv") # save file
+    else: resolution.to_csv(f"./Original_resolution_{case}.csv") # save file
+    if is_verbose: print(f"Get original resolutions: {round(time()-t0,2)} sec.")
+    return resolution
+
+
+# ### Get origin unit
+
+# In[30]:
+
+
+def get_origin_unit(df,origin):
+    """Gets ordered list of sources (origin countries or production units)"""
+    return np.sort(df.loc[:,origin].unique())
+
+
+# ### Get time line
+
+# In[31]:
+
+
+def get_time_line(unique_dates):
+    """Gets the time line and corrects it if needed"""
+    # Get the time line
+    time_line = pd.DatetimeIndex(np.sort(unique_dates))
+
+    # Add last hour in 15min, if not already here
+    if ((time_line[-1].hour==23) & (time_line[-1].minute==0)):
+        time_line = pd.DatetimeIndex(time_line.to_list() + [time_line[-1]+pd.Timedelta("45T")])
+
+    return time_line
+
+
+# ### Get parameters
+
+# In[32]:
+
+
+def get_parameters(case):
+    """Function used to define parameters for later code"""
+    if case=='import':
+        destination = 'InMapCode'
+        origin = 'OutMapCode'
+        data = 'FlowValue'
+        area = 'OutAreaTypeCode'
+
+    elif case=='generation':
+        destination = 'MapCode'
+        origin = 'ProductionType'
+        data = 'ActualGenerationOutput'
+        area = 'AreaTypeCode'
+
+    else:
+        raise KeyError(f"case {case} not understood.")
+    
+    return destination, origin, data, area
+
+
 # # Mix computation Group
 
 # ## Track mix
 
-# In[26]:
+# In[33]:
 
 
 def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
@@ -1009,7 +1250,7 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
 
 # ## Reorder info
 
-# In[27]:
+# In[34]:
 
 
 def reorder_info(data):
@@ -1047,7 +1288,7 @@ def reorder_info(data):
 
 # ## Create net exchanges
 
-# In[28]:
+# In[35]:
 
 
 def create_net_exchange(data, ctry):
@@ -1071,7 +1312,7 @@ def create_net_exchange(data, ctry):
 
 # ## Get grid losses
 
-# In[29]:
+# In[36]:
 
 
 def get_grid_losses(data, losses=None):
@@ -1087,7 +1328,7 @@ def get_grid_losses(data, losses=None):
 
 # ## Set FU vector
 
-# In[30]:
+# In[37]:
 
 
 def set_FU_vector(all_sources, target='CH'):
@@ -1101,7 +1342,7 @@ def set_FU_vector(all_sources, target='CH'):
 
 # ## Compute tracking
 
-# In[31]:
+# In[38]:
 
 
 def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
@@ -1191,7 +1432,7 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
 
 # ## Build technology matrix
 
-# In[32]:
+# In[39]:
 
 
 def build_technology_matrix(data, ctry, ctry_mix, prod_means):
@@ -1238,7 +1479,7 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means):
 
 # ## Clean technology matrix
 
-# In[33]:
+# In[40]:
 
 
 def clean_technology_matrix(A):
@@ -1260,7 +1501,7 @@ def clean_technology_matrix(A):
 
 # ## Invert technology matrix
 
-# In[34]:
+# In[41]:
 
 
 def invert_technology_matrix(A, presence, L):
@@ -1289,7 +1530,7 @@ def invert_technology_matrix(A, presence, L):
 
 # ## Compute impacts
 
-# In[35]:
+# In[42]:
 
 
 def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
@@ -1325,7 +1566,7 @@ def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
 
 # ## Adapt impacts
 
-# In[36]:
+# In[43]:
 
 
 def adapt_impacts(impact_data=None, production_units=None):
@@ -1342,7 +1583,7 @@ def adapt_impacts(impact_data=None, production_units=None):
 
 # ## Compute global impacts
 
-# In[37]:
+# In[44]:
 
 
 def compute_global_impacts(mix_data, impact_data=None, freq='H'):
@@ -1365,7 +1606,7 @@ def compute_global_impacts(mix_data, impact_data=None, freq='H'):
 
 # ## Compute detailed impacts
 
-# In[38]:
+# In[45]:
 
 
 def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
@@ -1391,7 +1632,7 @@ def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
 
 # ## Import Residual
 
-# In[39]:
+# In[46]:
 
 
 def import_residual(prod, sg_data, gap=None):
@@ -1426,7 +1667,7 @@ def import_residual(prod, sg_data, gap=None):
 
 # ## Include Global residual
 
-# In[40]:
+# In[47]:
 
 
 def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_verbose=False):
@@ -1468,7 +1709,7 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
 
 # ### Include local residual
 
-# In[41]:
+# In[48]:
 
 
 def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=None, freq='H', target='CH'):
@@ -1497,7 +1738,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
 
 # ### Define local gap
 
-# In[42]:
+# In[49]:
 
 
 def define_local_gap(local_prod, sg_data, freq='H', gap=None, target='CH'):
@@ -1522,7 +1763,7 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None, target='CH'):
 
 # ### Adjust mix local
 
-# In[43]:
+# In[50]:
 
 
 def adjust_mix_local(mix_data, local_residual, target='CH'):
@@ -1554,7 +1795,7 @@ def adjust_mix_local(mix_data, local_residual, target='CH'):
 
 # ## Save impact vector
 
-# In[44]:
+# In[51]:
 
 
 def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False):
@@ -1575,7 +1816,7 @@ def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False)
 
 # ## Save Dataset
 
-# In[45]:
+# In[52]:
 
 
 def save_dataset(data, savedir, name, target=None, freq='H'):
@@ -1600,7 +1841,7 @@ def save_dataset(data, savedir, name, target=None, freq='H'):
 
 # ## Check frequency
 
-# In[46]:
+# In[53]:
 
 
 def check_frequency(freq):
@@ -1613,7 +1854,7 @@ def check_frequency(freq):
 
 # ## Check residual availability
 
-# In[47]:
+# In[54]:
 
 
 def check_residual_avaliability(prod, residual, freq='H'):
@@ -1660,7 +1901,7 @@ def check_residual_avaliability(prod, residual, freq='H'):
 
 # ## Parameter
 
-# In[48]:
+# In[55]:
 
 
 class Parameter():
@@ -1718,6 +1959,7 @@ class Parameter():
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
         date = array.fillna(0)
+        if date.sum()==0: return None
         return "{0}-{1}-{2} {3}:{4}".format(*date.apply(adapt).values)
     
     def _set_to_None(self):
@@ -1767,7 +2009,7 @@ class Parameter():
 
 # ## Filepath
 
-# In[49]:
+# In[56]:
 
 
 class Filepath():
@@ -1779,6 +2021,8 @@ class Filepath():
         - generation: directory containing Entso generation files
         - exchanges: directory containing Entso cross-border flow files
         - savedir: directory where to save the results. Default: None (no saving)
+        - savgen: directory where to save generation from raw files. Default: None (no saving)
+        - saveimp: directory to save exchange from raw files. Default: None (no saving)
         - mapping: file with the mapping (impact per kWh produced for each production unit)
         - neighbours: file gathering the list of neighbours of each european country
         - gap: file with estimations of the nature of the residual
@@ -1792,7 +2036,11 @@ class Filepath():
         
         self.generation = None
         self.exchanges = None
+        self.raw_generation = None
+        self.raw_exchanges = None
         self.savedir = None
+        self.savegen = None
+        self.saveimp = None
         
         self.mapping = None
         self.neighbours = None
@@ -1801,8 +2049,9 @@ class Filepath():
         self.networkLosses = None
         
     def __repr__(self):
-        attributes = ["generation","exchanges","savedir", "mapping","neighbours",
-                      "gap","swissGrid","networkLosses"]
+        attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
+                      "savegen","saveimp","mapping","neighbours","gap","swissGrid",
+                      "networkLosses"]
         text = ""
         for a in attributes:
             text += f"Filepath to {a} --> {getattr(self, a)}\n"
@@ -1823,7 +2072,11 @@ class Filepath():
         
         self.generation = param_excel.loc['generation directory'].iloc[0]
         self.exchanges = param_excel.loc['exchange directory'].iloc[0]
+        self.raw_generation = param_excel.loc['raw generation directory'].iloc[0]
+        self.raw_exchanges = param_excel.loc['raw exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
+        self.savegen = param_excel.loc['saving generation'].iloc[0]
+        self.saveimp = param_excel.loc['saving exchanges'].iloc[0]
         
         self.mapping = param_excel.loc['mapping file'].iloc[0]
         self.neighbours = param_excel.loc['neighboring file'].iloc[0]
@@ -1838,7 +2091,7 @@ class Filepath():
 
 # ## Localize from UTC
 
-# In[50]:
+# In[57]:
 
 
 def localize_from_utc(data, timezone='CET'):
@@ -1854,7 +2107,7 @@ def localize_from_utc(data, timezone='CET'):
 
 # ## Execute
 
-# In[51]:
+# In[58]:
 
 
 def execute(p=None, excel=None, is_verbose=False):
@@ -1915,10 +2168,13 @@ def execute(p=None, excel=None, is_verbose=False):
                                     target=p.target, is_verbose=is_verbose)
     
 
-    # Load generation and exchange data from entso-e    
+    # Load generation and exchange data from entso-e
+    
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
+                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               savedir=p.path.savedir, savegen=p.path.savegen, saveimp=p.path.saveimp,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                is_verbose=is_verbose)
 
@@ -1979,7 +2235,7 @@ def execute(p=None, excel=None, is_verbose=False):
 
 # ## Get inverted matrix
 
-# In[52]:
+# In[59]:
 
 
 def get_inverted_matrix(p=None, excel=None, is_verbose=False):
@@ -2032,7 +2288,9 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
     # Load generation and exchange data from entso-e    
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_imp=p.path.exchanges,
+                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
+                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               savedir=p.path.savedir, savegen=p.path.savegen, saveimp=p.path.saveimp,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                is_verbose=is_verbose)
     

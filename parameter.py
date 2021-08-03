@@ -65,6 +65,7 @@ class Parameter():
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
         date = array.fillna(0)
+        if date.sum()==0: return None
         return "{0}-{1}-{2} {3}:{4}".format(*date.apply(adapt).values)
     
     def _set_to_None(self):
@@ -125,6 +126,8 @@ class Filepath():
         - generation: directory containing Entso generation files
         - exchanges: directory containing Entso cross-border flow files
         - savedir: directory where to save the results. Default: None (no saving)
+        - savgen: directory where to save generation from raw files. Default: None (no saving)
+        - saveimp: directory to save exchange from raw files. Default: None (no saving)
         - mapping: file with the mapping (impact per kWh produced for each production unit)
         - neighbours: file gathering the list of neighbours of each european country
         - gap: file with estimations of the nature of the residual
@@ -138,7 +141,11 @@ class Filepath():
         
         self.generation = None
         self.exchanges = None
+        self.raw_generation = None
+        self.raw_exchanges = None
         self.savedir = None
+        self.savegen = None
+        self.saveimp = None
         
         self.mapping = None
         self.neighbours = None
@@ -147,8 +154,9 @@ class Filepath():
         self.networkLosses = None
         
     def __repr__(self):
-        attributes = ["generation","exchanges","savedir", "mapping","neighbours",
-                      "gap","swissGrid","networkLosses"]
+        attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
+                      "savegen","saveimp","mapping","neighbours","gap","swissGrid",
+                      "networkLosses"]
         text = ""
         for a in attributes:
             text += f"Filepath to {a} --> {getattr(self, a)}\n"
@@ -169,7 +177,11 @@ class Filepath():
         
         self.generation = param_excel.loc['generation directory'].iloc[0]
         self.exchanges = param_excel.loc['exchange directory'].iloc[0]
+        self.raw_generation = param_excel.loc['raw generation directory'].iloc[0]
+        self.raw_exchanges = param_excel.loc['raw exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
+        self.savegen = param_excel.loc['saving generation'].iloc[0]
+        self.saveimp = param_excel.loc['saving exchanges'].iloc[0]
         
         self.mapping = param_excel.loc['mapping file'].iloc[0]
         self.neighbours = param_excel.loc['neighboring file'].iloc[0]
