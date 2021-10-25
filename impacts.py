@@ -87,7 +87,7 @@ def compute_global_impacts(mix_data, impact_data, freq='H'):
 
     
     # Compute the impacts
-    pollution = pd.DataFrame(np.dot(mix.values,impact_data.values),
+    pollution = pd.DataFrame(np.dot(mix.values,impact_data.loc[mix.columns].values),
                              index=mix.index,columns=impact_data.columns)
 
     return pollution
@@ -111,8 +111,8 @@ def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
                                  if ((k.split("_")[0]=="Mix")&(k.find("Other")==-1))]) # delete "Mix"
     
     # Impact data already charged & grid data already without useless "Mix" columns
-    pollution = pd.DataFrame(np.dot(mix,np.diag(impact_data)),
-                             columns=impact_data.index, index=mix.index) # Calculation & storage
+    pollution = pd.DataFrame(np.dot(mix,np.diag(impact_data.loc[mix.columns])),
+                             columns=mix.columns, index=mix.index) # Calculation & storage
     pollution.rename_axis("{}_source".format(indicator),
                           axis="columns",inplace=True) # Rename the main axis of the table
     

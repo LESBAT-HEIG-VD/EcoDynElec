@@ -88,7 +88,7 @@ class Parameter():
             super().__setattr__(name, value) # otherwise just set value
     
     def from_excel(self, excel):
-        param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None)
+        param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None, dtype='O')
         
 
         self.ctry = np.sort(param_excel.loc["countries"].dropna().values)

@@ -120,7 +120,7 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
     for i,f in enumerate(files): # For all files
         if is_verbose: print(f"Extract file {i+1}/{len(files)}...", end="\r")
         # Extract the information
-        d = pd.read_csv(f,sep="\t", encoding='utf-16', parse_dates=['DateTime'], dtype=column_types)
+        d = pd.read_csv(f,sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
 
         # Only select country level & Useful columns
         d = d.loc[d.loc[:,area]=="CTY", useful]
