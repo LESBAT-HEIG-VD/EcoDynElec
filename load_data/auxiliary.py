@@ -40,7 +40,7 @@ def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     
     sg = sg.drop(columns=["Consommation_CH","Consommation_Brut_CH"]) # Remove unused columns
     # Clear ambiguous dates and set dates to utc
-    sg = clear_ambiguous_dates(sg).tz_localize(tz='cet',ambiguous='infer').tz_convert(tz='utc').tz_localize(None)
+    sg = clear_ambiguous_dates(sg).tz_localize(tz='CET',ambiguous='infer').tz_convert(tz='UTC').tz_localize(None)
     sg.index -= pd.Timedelta("15min") # starts at 00:00 CET (not 00:15)
     
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
