@@ -84,6 +84,8 @@ class Parameter():
             super().__setattr__(name, pd.to_datetime(value, yearfirst=True)) # set as time
         elif name == 'ctry':
             super().__setattr__(name, sorted(value)) # always keep sorted
+        elif ((name == 'frequency') & (value in ['Y','M'])): # Start of Month or Year only.
+            super().__setattr__(name, value+"S")
         else:
             super().__setattr__(name, value) # otherwise just set value
     
