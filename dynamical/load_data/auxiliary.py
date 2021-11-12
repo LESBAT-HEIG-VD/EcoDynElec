@@ -298,7 +298,6 @@ def get_default_file(name,level=3):
     ### Default RELATIVE path (indepenently of the file structure)
     path = os.path.abspath(r"{}".format(__file__)).replace("\\","/").split("/")[:-level] # List to main directory of EcoDyn
     path = path + ['support_files',name] # add the default SwissGrid file
-    print(level, " >> ", path)
     if os.path.isfile(r"{}".format("/".join(path))):
         return r"{}".format("/".join(path)) # Recreate the file address
     elif level<=2:
