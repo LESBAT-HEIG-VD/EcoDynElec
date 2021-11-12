@@ -48,7 +48,7 @@ def execute(p=None, excel=None, is_verbose=False):
         is_verbose: bool to display information. Default: False
     
     Return:
-        dict if pandas DataFrame with the impacts of 1kWh of electricity.
+        dict of pandas DataFrame with the impacts of 1kWh of electricity.
     
     """
     ###########################

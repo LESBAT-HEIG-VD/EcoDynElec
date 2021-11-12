@@ -155,7 +155,6 @@ def get_best_resolution(df, destination, case, savedir=None, is_verbose=False):
                              for c in df.loc[:,destination].unique()},name="Resolution").sort_index() # gather all at once
     if os.path.isdir(r"{}".format(savedir)):
         resolution.to_csv(f"{savedir}Original_resolution_{case}.csv") # save file
-    else: resolution.to_csv(f"./Original_resolution_{case}.csv") # save file
     if is_verbose: print(f"Get original resolutions: {round(time()-t0,2)} sec.")
     return resolution
 
