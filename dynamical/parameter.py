@@ -41,8 +41,8 @@ class Parameter():
         self.ctry = sorted(["CH","FR","IT","DE","CZ","AT"])
         self.target = "CH"
         
-        self.start = pd.to_datetime("2018-01-01 00:00", yearfirst=True) # first considered date
-        self.end = pd.to_datetime("2018-12-31 23:00", yearfirst=True) # last considered date
+        self.start = pd.to_datetime("2017-02-01 00:00", yearfirst=True) # first considered date
+        self.end = pd.to_datetime("2017-02-01 23:00", yearfirst=True) # last considered date
         self.freq = 'H'
         self.timezone = 'CET'
         
