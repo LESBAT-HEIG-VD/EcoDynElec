@@ -29,7 +29,9 @@ def extract(ctry=None, dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp
     
     if is_verbose: print("\tExtraction time: {:.2f} sec.".format(time()-t0))
     
-    if ((dir_gen is not None)&(dir_imp is None)): return Gen
+    if [dir_gen, dir_imp].count(None)==2:
+        raise KeyError("No files passed to extract data.")
+    elif ((dir_gen is not None)&(dir_imp is None)): return Gen
     elif ((dir_gen is None)&(dir_imp is not None)): return Imp
     else: return Gen, Imp
 
@@ -63,6 +65,7 @@ def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resoluti
     for i,c in enumerate(resolution.index): # for all countries
         if ctry is not None:
             if c not in ctry: continue; # skip if c not in ctry list.
+        else: raise ValueError("No country to consider")
         if is_verbose: print(f"Extracting {case} for {c} ({i+1}/{resolution.shape[0]})...", end="\r")
         # Get data from the country and sort by date
         country_data = df[df.loc[:,destination]==c].drop_duplicates().sort_values(by="DateTime")

@@ -400,7 +400,7 @@ def fill_occasional(table, empty, n_hours=2):
     filled_table = table.copy()
     miss = empty.copy() # copy of list of missing dates
     
-    for t in empty: # for all missing dates
+    for n,t in enumerate(empty): # for all missing dates
         col = table.loc[t][table.loc[t]==0].index # list of power station to fill (not always all)
         
         try:
@@ -413,7 +413,12 @@ def fill_occasional(table, empty, n_hours=2):
                 filled_table.loc[t,col] = (1/2)*(filled_table.loc[t+pd.Timedelta("1 hour"),col] \
                         + filled_table.loc[t-pd.Timedelta("1 hour"),col])
         except KeyError as e:
-            raise ValueError(f"Missing data identified in the first or last time step. Impossible to fix: {e}")
+            #raise ValueError(f"Missing data identified in the first or last time step. Impossible to fix: {e}")
+            try:
+                filled_table.loc[t,col] = filled_table.loc[t-pd.Timedelta("1 hour"),col] # Fill with previous if at the end
+            except KeyError as e:
+                next_full = (t+pd.Timedelta("2H") if t+pd.Timedelta("1H") in empty else t+pd.Timedelta("1H"))
+                filled_table.loc[t,col] = filled_table.loc[next_full,col] # Fill with next if at the start
 
         miss.remove(t) # treated hour removed from copied list (to avoid errors)
     return filled_table
@@ -452,7 +457,7 @@ def fill_periods(table, empty, days_around=7):
         # Creates the "typical mean day" (Average of the considered period)
         early = t[0]-pd.Timedelta("{} days".format(days_around))
         late = t[0]+pd.Timedelta("{} days + {} minutes".format(days_around, 15*(t[1]-1)))
-        period = filled_table.loc[early:late,col].copy() # surrounding table
+        period = filled_table.loc[early:late,col].copy() # surrounding table (if available)
 
         typ_day = period.groupby(by=lambda x:(x.hour,x.minute)).mean() # "typical mean day"
         typ_day.index = pd.date_range(start="2018", periods=typ_day.shape[0], freq="15min")

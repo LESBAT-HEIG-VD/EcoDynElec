@@ -18,12 +18,12 @@ from load_data.auxiliary import get_default_file
 
 # -
 
-def extract_impacts(ctry, mapping_path, cst_import=False, residual=False, target='CH', is_verbose=False):
+def extract_impacts(ctry, mapping_path=None, cst_import=False, residual=False, target='CH', is_verbose=False):
     """
     Function to build the impact matrix from mapping stored in files.
     Parameter:
         ctry: list of countries to load the impacts of (list)
-        mapping_path: excel file where to find the mapping data (str)
+        mapping_path: excel file where to find the mapping data (str, default: None)
         cst_import: whether to consider all impacts of non-traget countres 
                     as the impact of 'Other' (bool, default: False)
         residual: whether to consider production residual for the target country (bool, default: False)
@@ -67,6 +67,8 @@ def extract_impacts(ctry, mapping_path, cst_import=False, residual=False, target
     ### Add impact of residual
     if residual: # Mix from the residual part -> direct after "Mix_Other" (residual only in CH)
         if is_verbose: print("+ Residual ",end="")
+        if 'CH' not in impacts:
+            raise ValueError("Including residual only available for CH. Please include CH in the list of countries")
         impacts['CH'] = residual_from_excel(impact_ch=impacts['CH'],mapping=mapping_path)
         
     ### Gather impacts in one table
@@ -168,8 +170,9 @@ def shape_country(d, place, expected, is_old=True, imp_other=None, cst_import=Fa
     imp_ctry.replace("-",0,inplace=True) # replace missing datas for computer understanding
 
     if cst_import: # put every value to constant like "Other"
+        if imp_other is None: raise KeyError("Must pass a parameter imp_other to account for exchanges if cst_import is True")
         for k in imp_ctry.columns:
-            imp_ctry.loc[:,k] = imp_other[k].values[0]
+            imp_ctry.loc[:,k] = imp_other.loc[:,k].iloc[0]
 
     return imp_ctry.reindex(expected+"_"+place,fill_value=0) # Set data in the right order + fill missing lines
 

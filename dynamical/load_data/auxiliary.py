@@ -33,6 +33,10 @@ def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     ### Default path
     if path_sg is None:
         path_sg = get_default_file(name='SwissGrid_total.csv')
+        
+    ### Date safety
+    if start is not None: start = pd.to_datetime(start)
+    if end is not None: end = pd.to_datetime(end)
     
     ### Import SwissGrid data
     parser = lambda x: pd.to_datetime(x, format='%d.%m.%Y %H:%M')
@@ -149,11 +153,14 @@ def load_grid_losses(network_loss_path, start=None, end=None):
             output = losses.loc[:, ['annee','mois','Rate']].rename(columns={'annee':'year','mois':'month'})
             return output.reset_index(drop=True)
         else:
-            localize = (losses.annees<=end.year)
+            end = pd.to_datetime(end) # Savety, redefine as datetime
+            localize = (losses.annee<=end.year)
     else:
+        start = pd.to_datetime(start) # Savety, redefine as datetime
         if end is None:
-            localize = (losses.annees>=start.year)
+            localize = (losses.annee>=start.year)
         else:
+            end = pd.to_datetime(end) # Savety, redefine as datetime
             localize = ((losses.annee>=start.year) & (losses.annee<=end.year))
     output = losses.loc[localize, ['annee','mois','Rate']].rename(columns={'annee':'year', 'mois':'month'})
     return output.reset_index(drop=True)
@@ -209,8 +216,12 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     ##### Select information
     #####
     res_start, res_end = None,None
-    if start is not None: res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
-    if end is not None: res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
+    if start is not None:
+        start = pd.to_datetime(start) # Savety, redefine as datetime
+        res_start = start + pd.offsets.MonthBegin(-1) # Round at 1 month before start
+    if end is not None:
+        end = pd.to_datetime(end) # Savety, redefine as datetime
+        res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
     df = df.loc[res_start:res_end, ['Hydro_Res','Other_Res']] # Select information only for good duration
     if start is None: res_start = df.index[0]
     if end is None: res_end = df.index[-1]
