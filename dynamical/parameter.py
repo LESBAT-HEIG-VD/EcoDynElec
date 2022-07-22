@@ -37,6 +37,7 @@ class Parameter():
     
     def __init__(self):
         self.path = Filepath()
+        self.server = Server()
         
         self.ctry = sorted(["CH","FR","IT","DE","CZ","AT"])
         self.target = "CH"
@@ -60,7 +61,8 @@ class Parameter():
         for a in attributes:
             text[a] = getattr(self, a)
         
-        return "\n".join( [f"{a} --> {text[a]}" for a in text] ) + f"\n{self.path}"
+        return ( "\n".join( [f"{a} --> {text[a]}" for a in text] )
+                + f"\n\n{self.path} \n{self.server}" )
     
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
@@ -84,7 +86,7 @@ class Parameter():
             super().__setattr__(name, pd.to_datetime(value, yearfirst=True)) # set as time
         elif name == 'ctry':
             super().__setattr__(name, sorted(value)) # always keep sorted
-        elif ((name == 'frequency') & (value in ['Y','M'])): # Start of Month or Year only.
+        elif ((name in ['freq','frequency']) & (value in ['Y','M'])): # Start of Month or Year only.
             super().__setattr__(name, value+"S")
         else:
             super().__setattr__(name, value) # otherwise just set value
@@ -110,6 +112,7 @@ class Parameter():
 
         
         self.path = self.path.from_excel(excel)
+        self.server = self.server.from_excel(excel)
         
         self._set_to_None()
         return self
@@ -190,5 +193,73 @@ class Filepath():
         self.gap = param_excel.loc['gap file'].iloc[0]
         self.swissGrid = param_excel.loc['file swissGrid'].iloc[0]
         self.networkLosses = param_excel.loc['file grid losses'].iloc[0]
+        
+        return self
+
+
+
+# +
+## SERVER
+# -
+
+class Server():
+    """Server object allowing to parametrize the automatic downloading of data files.
+    
+    Attributes:
+    
+    Methods:
+    """
+    def __init__(self):
+        # Root of file names on server
+        self._nameGenerationFile = "AggregatedGenerationPerType_16.1.B_C.csv"
+        self._nameExchangesFile = "PhysicalFlows_12.1.G.csv"
+        
+        # Directory with files
+        self._remoteGenerationDir = "/TP_export/AggregatedGenerationPerType_16.1.B_C/"
+        self._remoteExchangesDir = "/TP_export/PhysicalFlows_12.1.G/"
+        
+        # Information about the server connection
+        self.useServer = False
+        self.removeUnused = False
+        self.host = "sftp-transparency.entsoe.eu"
+        self.port = 22
+        
+        # Connection login
+        self.username = None
+        self.password = None # Preferable to ask for it. May be interesting to store if we can encrypt.
+        
+        
+    def __repr__(self):
+        attributes = ['useServer','host','port','username','password','removeUnused',
+                      '_remoteGenerationDir','_remoteExchangesDir']
+        text = ""
+        for a in attributes:
+            if a!='password': text += f"Server for {a} --> {getattr(self, a)}\n"
+            elif isinstance( getattr(self, a), str ): text += f"Server for {a} --> {'*'*len(a)}\n"
+            else: text += f"Server for {a} --> \n"
+        return text
+    
+    def __setattr__(self, name, value):
+        if pd.isna(value):
+            if name in ['useServer','removeUnused']:
+                super().__setattr__(name, False) # set False
+            else: super().__setattr__(name, None) # set an empty info
+        elif name in ['useServer','removeUnused']:
+            if value in ['False','No','',' ','-','/']:
+                super().__setattr__(name, False)
+            else: super().__setattr__(name, value)
+        else:
+            super().__setattr__(name, value) # Set the value
+        
+    
+    def from_excel(self, excel):
+        param_excel = pd.read_excel(excel, sheet_name="Server", index_col=0, header=None)
+        
+        self.host = param_excel.loc['host'].iloc[0]
+        self.port = param_excel.loc['port'].iloc[0]
+        self.username = param_excel.loc['username'].iloc[0]
+        self.password = param_excel.loc['password'].iloc[0]
+        self.useServer = param_excel.loc['use server'].iloc[0]
+        self.removeUnused = param_excel.loc['remove unused'].iloc[0]
         
         return self

@@ -9,6 +9,7 @@ import os
 ####### Local modules
 from parameter import Parameter
 
+from load_data.download_raw import download
 import load_data.auxiliary as aux
 from load_data.impacts import extract_impacts
 from load_data.generation_exchanges import import_data
@@ -61,6 +62,16 @@ def execute(p=None, excel=None, is_verbose=False):
     
     if np.logical_and(p.residual_global,p.residual_local):
         raise ValueError("Residual can not be both global and local.")
+    
+    ###########################
+    ###### DOWNLOAD FROM SERVER
+    ######
+    if p.server.useServer:
+        if None in [p.path.raw_generation, p.path.raw_exchanges]: # If one path was not given
+            raise KeyError("Can not download files: missing path raw_generation and/or raw_exchange to save files.")
+        if is_verbose: print("Download Entso-E data from server...")
+        download(p, is_verbose=is_verbose) # Save files in a local dirrectory
+        
     
     ###########################
     ###### LOAD DATASETS
