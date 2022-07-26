@@ -26,7 +26,8 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                 involved_countries=None, prod_gap=None, sg_data=None,
                 path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None,
                 savedir=None, savegen=None, saveimp=None,
-                residual_global=False, correct_imp=True, n_hours=2, days_around=7, is_verbose=True):
+                residual_global=False, correct_imp=True,
+                clean_generation=True, n_hours=2, days_around=7, is_verbose=True):
     
     """
     Main function managing the import and pre-treatment of Entso-e production and cross-border flow data.
@@ -53,6 +54,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                         exchanged with neighbour countries (bool, default: False)
         correct_imp: to replace cross-border flow of Entso-e for Swizerland with data from Swiss Grid
                     (bool, default: False)
+        clean_generation: to enable automatic data cleaning / filling (bool, default: True)
         n_hours: Max number of successive missing hours to be considered as occasional event
                 (int, default: 2)
         days_around: number of days after and before a gap to consider to create a 'typical mean day'
@@ -70,7 +72,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                             start=start, end=end, savedir=savedir, savegen=savegen,
                             is_verbose=is_verbose) # import generation data
     Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
-                            n_hours=n_hours, days_around=days_around, prod_gap=prod_gap,
+                            clean_generation=clean_generation, n_hours=n_hours, days_around=days_around, prod_gap=prod_gap,
                             is_verbose=is_verbose) # adjust the generation data
     
     ### EXCHANGE DATA
@@ -175,7 +177,7 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
 
 # -
 
-def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None, n_hours=2, days_around=7,
+def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None, clean_generation=True, n_hours=2, days_around=7,
                       prod_gap=None, is_verbose=False):
     """Function that leads organizes the data adjustment.
     It sorts finds and sorts missing values, fills it, resample the data and
@@ -186,6 +188,7 @@ def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None, n_hour
         freq: time step durtion (str, default: H)
         residual_prod: whether to include the residual or not (bool, default: False)
         sg_data: information from Swiss Grid (pandas DataFrame, default: None)
+        clean_generation: to enable automatic data cleaning / filling (bool, default: True)
         n_hours: Max number of successive missing hours to be considered as occasional event
                 (int, default: 2)
         days_around: number of days after and before a gap to consider to create a 'typical mean day'
@@ -206,14 +209,23 @@ def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None, n_hour
                                                           n_hours=n_hours,
                                                           add_on=residual_global,
                                                           is_verbose=is_verbose)
-    ### Fill missing values consequently
-    Gen = fill_missing_generation(Gen,
-                                   Empty_Unique=Empty_Unique,
-                                   Empty_Period=Empty_Period,
-                                   n_hours=n_hours,
-                                   days_around=days_around,
-                                   add_on=residual_global,
-                                   is_verbose=is_verbose)
+    
+    if clean_generation:
+        ### Fill missing values consequently
+        Gen = fill_missing_generation(Gen,
+                                       Empty_Unique=Empty_Unique,
+                                       Empty_Period=Empty_Period,
+                                       n_hours=n_hours,
+                                       days_around=days_around,
+                                       add_on=residual_global,
+                                       is_verbose=is_verbose)
+    elif is_verbose: # If no data cleaning but verbose: count the missings
+        missing_report = pd.DataFrame({f: {'count':len(Empty_Gen[f]), 'percent': round(100*len(Empty_Gen[f])/Gen[f].shape[0],1)}
+                         for f in Gen})
+        if missing_report.values.sum()>0:
+            print(f"\nNumber of generation hours suspected as missing:")
+            print(pd.DataFrame(missing_report),end="\n\n")
+        
     
     ### Resample data to the right frequence
     Gen = resample_generation(Gen=Gen, freq=freq, add_on=residual_global, is_verbose=is_verbose)

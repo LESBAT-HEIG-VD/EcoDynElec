@@ -108,7 +108,7 @@ def execute(p=None, excel=None, is_verbose=False):
                                path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
                                savedir=p.path.savedir, savegen=p.path.savegen, saveimp=p.path.saveimp,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
-                               is_verbose=is_verbose)
+                               clean_generation=p.data_cleaning, is_verbose=is_verbose)
 
 
 

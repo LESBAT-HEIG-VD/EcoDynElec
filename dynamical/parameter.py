@@ -26,6 +26,7 @@ class Parameter():
         - net_exchanges: boolean to consider net exchanges at each border (no bidirectional)
         - residual_local: to include a residual (for CH) as if it was all consumed in the country.
         - residual_global: to include a residual (for CH) that can be exchanged.
+        - data_cleaning:to enable automatic data cleaning / filling
     
     Methods:
         - from_excel: to load parameters from a excel sheet
@@ -53,11 +54,12 @@ class Parameter():
         self.network_losses = False
         self.residual_local = False
         self.residual_global = False
+        self.data_cleaning = True
         
     def __repr__(self):
         text = {}
         attributes = ["ctry","target","start","end","freq","timezone","cst_imports","net_exchanges",
-                      "network_losses","sg_imports", "residual_local", "residual_global"]
+                      "network_losses","sg_imports", "residual_local", "residual_global", 'data_cleaning']
         for a in attributes:
             text[a] = getattr(self, a)
         
@@ -109,6 +111,7 @@ class Parameter():
         self.network_losses = self._set_bool(param_excel.loc['network losses'].iloc[0])
         self.residual_local = self._set_bool(param_excel.loc['residual local'].iloc[0])
         self.residual_global = self._set_bool(param_excel.loc['residual global'].iloc[0])
+        self.data_cleaning = self._set_bool(param_excel.loc['data cleaning'].iloc[0])
 
         
         self.path = self.path.from_excel(excel)
