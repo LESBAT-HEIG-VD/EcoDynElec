@@ -46,7 +46,7 @@ class Parameter():
         self.start = pd.to_datetime("2017-02-01 00:00", yearfirst=True) # first considered date
         self.end = pd.to_datetime("2017-02-01 23:00", yearfirst=True) # last considered date
         self.freq = 'H'
-        self.timezone = 'CET'
+        self.timezone = 'UTC'
         
         self.cst_imports = False
         self.sg_imports = False
