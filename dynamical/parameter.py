@@ -36,7 +36,7 @@ class Parameter():
                     + ctry remain a sorted list even if an unsorted list is passed
     """
     
-    def __init__(self):
+    def __init__(self, excel=None):
         self.path = Filepath()
         self.server = Server()
         
@@ -55,6 +55,9 @@ class Parameter():
         self.residual_local = False
         self.residual_global = False
         self.data_cleaning = True
+        
+        if excel is not None: # Initialize with an excel file
+            self.from_excel(excel)
         
     def __repr__(self):
         text = {}
