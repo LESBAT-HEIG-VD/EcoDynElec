@@ -5,8 +5,8 @@ import os
 from time import time
 
 ############### Local functions
-from checking import check_frequency
-from load_data.auxiliary import load_rawEntso
+from dynamical.checking import check_frequency
+from dynamical.load_data.auxiliary import load_rawEntso
 
 
 #

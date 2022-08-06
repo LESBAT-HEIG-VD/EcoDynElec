@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 ########### Local functions
-from checking import check_residual_avaliability
+from dynamical.checking import check_residual_avaliability
 
 
 # +

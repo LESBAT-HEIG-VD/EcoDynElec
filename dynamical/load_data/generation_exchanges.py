@@ -4,9 +4,9 @@ import os
 from time import time
 
 #################### Local functions
-from checking import check_frequency
-from residual import include_global_residual
-from load_data.raw_entsoe import extract
+from dynamical.checking import check_frequency
+from dynamical.residual import include_global_residual
+from dynamical.load_data.raw_entsoe import extract
 
 
 # +

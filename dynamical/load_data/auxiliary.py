@@ -5,7 +5,7 @@ import os
 import warnings
 
 ################# Local functions
-from checking import check_frequency
+from dynamical.checking import check_frequency
 
 
 # +

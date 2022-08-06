@@ -7,18 +7,18 @@ import os
 
 # +
 ####### Local modules
-from parameter import Parameter
+from dynamical.parameter import Parameter
 
-from load_data.download_raw import download
-import load_data.auxiliary as aux
-from load_data.impacts import extract_impacts
-from load_data.generation_exchanges import import_data
+from dynamical.load_data.download_raw import download
+import dynamical.load_data.auxiliary as aux
+from dynamical.load_data.impacts import extract_impacts
+from dynamical.load_data.generation_exchanges import import_data
 
-from tracking import track_mix
-from residual import include_local_residual
-from impacts import compute_impacts
+from dynamical.tracking import track_mix
+from dynamical.residual import include_local_residual
+from dynamical.impacts import compute_impacts
 
-import saving
+from dynamical import saving
 
 # +
 

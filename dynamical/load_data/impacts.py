@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from time import time
-from load_data.auxiliary import get_default_file
+from dynamical.load_data.auxiliary import get_default_file
 
 
 # +

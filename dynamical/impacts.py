@@ -4,7 +4,7 @@ import os
 from time import time
 
 ############# Local functions
-from checking import check_frequency
+from dynamical.checking import check_frequency
 
 
 #
