@@ -6,19 +6,106 @@ from dynamical.load_data.auxiliary import get_default_file
 
 
 # +
-# This module of function extracts the impact information from the excels
+# This module of function extracts the impact information from the files
 
 # +
 
 #################################
 # ################################
-# EXTRACT IMPACTS
+# EXTRACT FUNCTIONAL UNIT VECTOR
 # ################################
 # ################################
 
 # -
 
-def extract_impacts(ctry, mapping_path=None, cst_import=False, residual=False, target='CH', is_verbose=False):
+def extract_FU(path_fu, ctry:list=None, target:str='CH', residual:bool=False, cst_imports:bool=False):
+    """Function to extract and modify the FU vector"""
+    ### Get default file if None
+    if path_fu is None:
+        path_fu = get_default_file(name='Functional_Unit_Vector.csv')
+    
+    ### Import the FU
+    fu = pd.read_csv(path_fu, index_col=[0])
+    
+    ### Selection of countries
+    fu = select_fu_indexes(fu, ctry=ctry, residual=residual)
+    
+    ### Create constant import impacts
+    if cst_imports:
+        fu = set_constant_imports(fu, target=target)
+    
+    return fu
+
+# +
+
+#################################
+# ################################
+# SET CONSTANT IMPORTS FROM FU
+# ################################
+# ################################
+
+# -
+
+def set_constant_imports(fu, target:str='CH'):
+    """Set the impacts of non-target countries to average Entsoe"""
+    
+    ### Selection of unique countries
+    countries = np.unique( [i.split("_")[-1] for i in fu.index] )
+    
+    # The indexes to systematically exclude
+    exclude = ['Mix_Other'] + [i for i in fu.index if str(i).endswith(f'_{target}')]
+    # The value to turn all but target into
+    how = fu.loc['Mix_Other',:]
+    
+    ### Change the information
+    new_fu = fu.copy()
+    new_fu.loc[~new_fu.index.isin(exclude),:] = how.values
+    return new_fu
+
+# +
+
+#################################
+# ################################
+# SET CONSTANT IMPORTS FROM FU
+# ################################
+# ################################
+
+# -
+
+def select_fu_indexes(fu, ctry:list=None, residual:bool=False):
+    """Selects relevant rows from complete FU vector"""
+    if ctry is not None:
+        # Consider the "Mix Other"
+        places = list(ctry) + ['Other']
+
+        # Copy the indexes
+        idx = pd.Series(fu.index)
+
+        # Production units per country
+        selection = np.logical_or.reduce( [idx.apply(lambda x:str(x).endswith(f'_{p}')).values
+                                            for p in places] )
+    
+    else: # Select for all countries
+        selection = np.full((fu.shape[0],), True) # Vector of TRUE
+    
+    # Deal with residual
+    if not residual:
+        selection = np.logical_and(selection,
+                                   ~(idx.apply(lambda x:str(x).startswith('Residual'))).values)
+    
+    return fu.loc[selection,:]
+
+# +
+
+#################################
+# ################################
+# EXTRACT MAPPING
+# ################################
+# ################################
+
+# -
+
+def extract_mapping(ctry, mapping_path=None, cst_import=False, residual=False, target='CH', is_verbose=False):
     """
     Function to build the impact matrix from mapping stored in files.
     Parameter:
@@ -38,16 +125,7 @@ def extract_impacts(ctry, mapping_path=None, cst_import=False, residual=False, t
     elif '__iter__' not in dir(ctry):
         raise TypeError("Parameter ctry should be a list, tuple or str")
     
-    ### Lists for some formating
-    old = ["AT","CH","DE","IT","FR","CZ"] # countries writen differently in the mapping file
-    # Wished soure impacts (same order than production data)
-    expected = pd.Index(["Other_fossil","Fossil_Gas","Fossil_Peat","Biomass",
-                            "Hydro_Run-of-river_and_poundage","Solar","Waste","Wind_Onshore",
-                            "Other_renewable","Fossil_Oil_shale","Hydro_Water_Reservoir",
-                            "Fossil_Brown_coal/Lignite","Nuclear","Fossil_Oil","Hydro_Pumped_Storage",
-                            "Wind_Offshore","Fossil_Hard_coal","Geothermal",
-                            "Fossil_Coal-derived_gas","Marine"])
-    ### Verify mapping file
+    ### Verify mapping file OR FU file
     if mapping_path is None:
         mapping_path = get_default_file(name='Mapping_default.xlsx')
     
@@ -59,17 +137,19 @@ def extract_impacts(ctry, mapping_path=None, cst_import=False, residual=False, t
     
     for c in ctry:
         if is_verbose: print(f"/ {c} ",end="")
-        imp = country_from_excel(mapping=mapping_path, place=c, is_old=(c in old))
-        if imp is not None:
-            impacts[c] = shape_country(imp, place=c, is_old=(c in old), imp_other=impacts['Other'],
-                                       cst_import=((cst_import)&(c!=target)), expected=expected)
+        if np.logical_and( cst_import, (c!=target) ): # Constant imports for other countries
+            impacts[c] = set_constant_impacts( country_from_excel(mapping=mapping_path, place=c),
+                                              constant=impacts['Other'].loc['Mix_Other'] )
+        else:
+            impacts[c] = country_from_excel(mapping=mapping_path, place=c)
             
     ### Add impact of residual
     if residual: # Mix from the residual part -> direct after "Mix_Other" (residual only in CH)
         if is_verbose: print("+ Residual ",end="")
         if 'CH' not in impacts:
             raise ValueError("Including residual only available for CH. Please include CH in the list of countries")
-        impacts['CH'] = residual_from_excel(impact_ch=impacts['CH'],mapping=mapping_path)
+        impacts['CH'] = pd.concat([impacts['CH'],
+                                   residual_from_excel(mapping=mapping_path, place='CH')])
         
     ### Gather impacts in one table
     if is_verbose: print(".")
@@ -92,10 +172,10 @@ def extract_impacts(ctry, mapping_path=None, cst_import=False, residual=False, t
 def other_from_excel(mapping):
     """Load the mapping for 'Other' from an excel file (mapping)."""
     ### Impact for production mix of 'other countries'
-    indicators = ["GWP","CED_renewable","CED_non-renewable","ES2013"]
     d = pd.read_excel(mapping,sheet_name="ENTSOE_avg",
-                         header=1, usecols=np.arange(2,7), index_col=[0]) # extract
-    return pd.DataFrame(d.loc['ENTSOE',:].values,index=indicators, columns=["Mix_Other"]).T # format
+                      header=1, usecols=np.arange(2,7),
+                      index_col=[0]) # extract
+    return d.loc[['ENTSOE'],:].rename(index={'ENTSOE':'Mix_Other'}) # format
 
 
 # +
@@ -108,73 +188,26 @@ def other_from_excel(mapping):
 
 # -
 
-def country_from_excel(mapping, place, is_old=True):
+def country_from_excel(mapping, place):
     """Load the mapping of a given country (place) from an excel file (mapping)."""
     try: # test if the country is available in the mapping file
-        if is_old: 
-            d = pd.read_excel(mapping,sheet_name=place, index_col=[0,1,2]) # import
-        else:
-            d = pd.read_excel(mapping,sheet_name=place) # import
+        d = pd.read_excel(mapping,sheet_name=place, index_col=[0]) # Read and get index col
+        columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
+        columns = columns[ columns.apply(lambda x: not str(x).endswith('KBOB')) ] # Strike out KBOB... Do your own mapping man!
+
+        # Get only important data
+        d = d.loc[:,columns.index].dropna(axis=0).rename(columns=columns.to_dict())
+        d = d.loc[d.index.notnull()].drop(index=['Energy sources ENTSO-E'], errors='ignore') # Select the correct indexes
+
+        # Replace "-" with zeros.
+        d = d.replace("-",0).astype('float32')
+
+        # Change indexes
+        return d.rename({i: (i.replace('(','').replace(')','').replace(" Fos",' fos')
+                             + f" {place}").replace(' ','_').replace('__','_')
+                         for i in d.index}, axis=0).rename_axis("")
     except Exception as e:
         raise ValueError(f"Mapping for {place} not available: {e} ")
-    
-    return d
-
-
-# +
-
-#################################
-# ################################
-# Shape country
-# ################################
-# ################################
-
-# -
-
-def shape_country(d, place, expected, is_old=True, imp_other=None, cst_import=False):
-    """
-    Bring some changes in the index and column namings and order for the impact matrix.
-    Parameter:
-        d: the impact matrix for one given country (pandas DataFrame)
-        place: the country (str)
-        expected: list of expected labels for the production means
-        is_old: if the country belongs to the ones with an old formating (bool, default True)
-        imp_other: the impact matrix for 'Other' countries (pandas DataFrame, default None)
-        cst_import: whether to consider all impacts as the impact of 'Other' (bool, default: False)
-    """
-    col_id = len(d.loc[:,:"Environmental impacts of ENTSO-E sources"].columns)-1 # columns to consider
-
-    # Select corresponding data & rename columns
-    imp_ctry = pd.DataFrame(d.iloc[:,col_id:col_id+4].dropna().values)
-    imp_ctry.drop(index=[0,1,2],inplace=True)
-    imp_ctry.columns = ["GWP","CED_renewable","CED_non-renewable","ES2013"]
-
-    # Prepare index labels
-    if is_old: # find right index labels
-        ind = list(d.index.get_level_values(0)[1:].dropna().drop_duplicates() + " " + place)
-    else:
-        ind = list(d.iloc[:,[0,col_id]].dropna().iloc[:,0] + " " + place)
-
-    for i in range(len(ind)): # Precise the country and change writing details
-        ind[i] = ind[i].replace(")","").replace("(","").split(" ")
-        if "" in ind[i]:
-            ind[i].remove("")
-        ind[i] = "_".join(ind[i]).replace("_Fossil","_fossil")
-
-    if is_old: # remove some lines if needed
-        ind = ind[:ind.index("Solar_{}".format(place))+1]
-        imp_ctry.index = ind[1:] # write the indexes in the table
-
-    else:
-        imp_ctry.index = ind # write the indexes in the table
-    imp_ctry.replace("-",0,inplace=True) # replace missing datas for computer understanding
-
-    if cst_import: # put every value to constant like "Other"
-        if imp_other is None: raise KeyError("Must pass a parameter imp_other to account for exchanges if cst_import is True")
-        for k in imp_ctry.columns:
-            imp_ctry.loc[:,k] = imp_other.loc[:,k].iloc[0]
-
-    return imp_ctry.reindex(expected+"_"+place,fill_value=0) # Set data in the right order + fill missing lines
 
 
 # +
@@ -187,28 +220,45 @@ def shape_country(d, place, expected, is_old=True, imp_other=None, cst_import=Fa
 
 # -
 
-def residual_from_excel(impact_ch, mapping):
+def residual_from_excel(mapping, place):
     """
     Load impact data of the production residual and add it to the impact matrix.
     Parameter:
-        impact_ch: impact matrix of production means of Swizerland (pandas DataFrame)
         mapping: path to file with the mapping (str)
+        place: country tag of the country (str)
     Return:
         pandas DataFrame with the impact_ch, where the impact of residual production is added.
     """
-    ### Addition of the residual data
-    imp = impact_ch.copy()
     try: # test if the "country" is available in the mapping file
-        d = pd.read_excel(mapping,sheet_name="Residue",index_col=0) # import
-        # select
-        d = pd.DataFrame(d.loc[["Residue_Hydro","Residue_Other"],
-                               "Environmental impacts of ENTSO-E sources":].values,
-                         columns=impact_ch.columns,
-                         index=["Residual_Hydro_CH","Residual_Other_CH"])
-        
-        imp = pd.concat([d, imp],axis=0)
+        d = pd.read_excel(mapping,sheet_name="Residue",index_col=0)
+        columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
+
+        # Select the righ column
+        d = d.loc[:,columns.index].rename(columns=columns.to_dict()).rename_axis('')
+
+        # Select the right indexes
+        idx = pd.Series(d.index).apply(lambda x:str(x).startswith('Resid')).values
+        d = d.loc[idx].astype('float32')
+
+        # Rename indexes with the place & formatting
+        return d.rename(index={i: (i.replace('Residue','Residual').replace(" ","_")
+                                   +f"_{place}")
+                               for i in d.index})
         
     except Exception as e:
         raise ValueError(f" Residual not available: {e}")
-    
-    return imp
+
+
+# +
+
+#################################
+# ################################
+# Set constant impacts
+# ################################
+# ################################
+
+# -
+
+def set_constant_impacts(impacts, constant):
+    """Set the impacts to a constant value"""
+    return impacts.apply(lambda x: constant,axis=1)

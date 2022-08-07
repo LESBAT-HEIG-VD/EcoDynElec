@@ -11,7 +11,7 @@ from dynamical.parameter import Parameter
 
 from dynamical.load_data.download_raw import download
 import dynamical.load_data.auxiliary as aux
-from dynamical.load_data.impacts import extract_impacts
+from dynamical.load_data.impacts import extract_mapping, extract_FU
 from dynamical.load_data.generation_exchanges import import_data
 
 from dynamical.tracking import track_mix
@@ -95,10 +95,17 @@ def execute(p=None, excel=None, is_verbose=False):
         prod_gap = aux.load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
     else: prod_gap=None
 
-    # Load impact matrix
-    impact_matrix = extract_impacts(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
-                                    residual=np.logical_or(p.residual_global, p.residual_local),
-                                    target=p.target, is_verbose=is_verbose)
+    # Load impact matrix (FU vector by default)
+    if p.path.mapping is None:
+        impact_matrix = extract_FU(path_fu=p.path.fu_vector, ctry=p.ctry, target=p.target,
+                                   cst_imports=p.cst_imports,
+                                   residual=np.logical_or(p.residual_global, p.residual_local))
+        
+    elif p.path.fu_vector is None: # Only if path mapping (Excel Mapping file) and NOT path fu.
+        impact_matrix = extract_mapping(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
+                                            residual=np.logical_or(p.residual_global, p.residual_local),
+                                            target=p.target, is_verbose=is_verbose)
+    
     
 
     # Load generation and exchange data from entso-e    
@@ -192,11 +199,20 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
     ######
     if p is None: # Load
         if excel is None:
-            excel = get_default_file('ExcelFile_default.xlsx')
+            excel = aux.get_default_file(r'ExcelFile_default.xlsx')
         p = Parameter().from_excel(excel=excel)
     
     if np.logical_and(p.residual_global,p.residual_local):
         raise ValueError("Residual can not be both global and local.")
+    
+    ###########################
+    ###### DOWNLOAD FROM SERVER
+    ######
+    if p.server.useServer:
+        if None in [p.path.raw_generation, p.path.raw_exchanges]: # If one path was not given
+            raise KeyError("Can not download files: missing path raw_generation and/or raw_exchange to save files.")
+        if is_verbose: print("Download Entso-E data from server...")
+        download(p, is_verbose=is_verbose) # Save files in a local dirrectory
     
     ###########################
     ###### LOAD DATASETS

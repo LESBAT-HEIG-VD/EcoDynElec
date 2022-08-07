@@ -158,6 +158,7 @@ class Filepath():
         self.savegen = None
         self.saveimp = None
         
+        self.fu_vector = None
         self.mapping = None
         self.neighbours = None
         self.gap = None
@@ -166,7 +167,7 @@ class Filepath():
         
     def __repr__(self):
         attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
-                      "savegen","saveimp","mapping","neighbours","gap","swissGrid",
+                      "savegen","saveimp","fu_vector","mapping","neighbours","gap","swissGrid",
                       "networkLosses"]
         text = ""
         for a in attributes:
@@ -194,6 +195,7 @@ class Filepath():
         self.savegen = param_excel.loc['saving generation'].iloc[0]
         self.saveimp = param_excel.loc['saving exchanges'].iloc[0]
         
+        self.fu_vector = param_excel.loc['FU vector'].iloc[0]
         self.mapping = param_excel.loc['mapping file'].iloc[0]
         self.neighbours = param_excel.loc['neighboring file'].iloc[0]
         self.gap = param_excel.loc['gap file'].iloc[0]

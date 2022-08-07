@@ -39,7 +39,7 @@ def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
                                                        freq=freq)
     
     
-    for i in ["GWP","CED_renewable","CED_non-renewable","ES2013"]:
+    for i in impacts_matrix.columns:
         if is_verbose: print("\t{}...".format(i))
         collect_impacts[i] = compute_detailed_impacts(mix_data=mix_data, impact_data=impacts_matrix.loc[:,i],
                                                       indicator=i, freq=freq)
