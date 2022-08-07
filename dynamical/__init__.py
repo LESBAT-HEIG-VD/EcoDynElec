@@ -1,5 +1,5 @@
 ### Initialization file for the module computing the impacts of the electric grid.
-__all__ = ['parameter','load_data','checking','easy_use','impacts','parameters','residual','saving','tracking']
+__all__ = ['load_data','checking','easy_use','impacts','parameter','residual','saving','tracking']
 from dynamical import *
 
 # import os
