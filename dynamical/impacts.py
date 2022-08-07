@@ -65,7 +65,27 @@ def adapt_impacts(impact_data, production_units):
         if "Residual_Other_CH" in impact.index:
             impact = impact.drop(index="Residual_Other_CH") # remove from the impacts if not existing in mix
     
-    return impact
+    return equalize_impact_vector(impact, production_units)
+
+
+#
+###############################################################################
+# #############################
+# # Equalize impact matrix
+# #############################
+# #############################
+
+def equalize_impact_vector(impact_data, production_units):
+    """Make sure the impact vector is aligned with the suggested production values.
+    Fill with zeros impacts for the missing capacities."""
+    ### Identify missing
+    units_from_mix = [u for u in production_units
+                      if ((not u.startswith('Mix_'))|(u.endswith('_Other')))]
+    
+    ### Create new indexes
+    new_impacts = pd.DataFrame( None, index=units_from_mix, columns=impact_data.columns, dtype='float32' )
+    new_impacts.loc[impact_data.index, :] = impact_data # Fill already known
+    return new_impacts.fillna(0) # Put zeros to units without impact for homogeneity
 
 
 #
