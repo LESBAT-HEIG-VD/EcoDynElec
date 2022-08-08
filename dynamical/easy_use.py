@@ -160,8 +160,9 @@ def execute(p=None, excel=None, is_verbose=False):
     #######
     if p.path.savedir is not None:
         if is_verbose: print("Save data...")
-        saving.save_impact_vector(impact_matrix, savedir=p.path.savedir, cst_import=p.cst_imports,
-                                 residual=np.logical_or(p.residual_global,p.residual_local))
+        if p.path.mapping is not None: # Impact vector saved only if use of Mapping xlsx
+            saving.save_impact_vector(impact_matrix, savedir=p.path.savedir, cst_import=p.cst_imports,
+                                     residual=np.logical_or(p.residual_global,p.residual_local))
         saving.save_dataset(data=raw_prodExch, savedir=p.path.savedir, name="ProdExchange", freq=p.freq)
         saving.save_dataset(data=mix, savedir=p.path.savedir, name=f"Mix", target=p.target, freq=p.freq)
         for k in imp:
