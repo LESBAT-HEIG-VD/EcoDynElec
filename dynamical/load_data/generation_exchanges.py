@@ -24,8 +24,7 @@ from dynamical.load_data.raw_entsoe import extract
 
 def import_data(ctry, start=None, end=None, freq="H", target="CH",
                 involved_countries=None, prod_gap=None, sg_data=None,
-                path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None,
-                savedir=None, savegen=None, saveimp=None,
+                path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None, savedir=None,
                 residual_global=False, correct_imp=True,
                 clean_generation=True, n_hours=2, days_around=7, is_verbose=True):
     
@@ -69,7 +68,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     
     ### GENERATION DATA
     Gen = import_generation(path_gen=path_gen, path_raw=path_gen_raw, ctry=ctry,
-                            start=start, end=end, savedir=savedir, savegen=savegen,
+                            start=start, end=end, savedir=savedir,
                             is_verbose=is_verbose) # import generation data
     Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
                             clean_generation=clean_generation, n_hours=n_hours, days_around=days_around, prod_gap=prod_gap,
@@ -77,7 +76,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     
     ### EXCHANGE DATA
     Cross = import_exchanges(neighbourhood=involved_countries, ctry=ctry,
-                             start=start, end=end, savedir=savedir, saveimp=saveimp,
+                             start=start, end=end, savedir=savedir,
                              path_imp=path_imp, path_raw=path_imp_raw, freq=freq, is_verbose=is_verbose) # Imprt data
     
     # Correct the cross-border flows at Swiss border.
@@ -104,7 +103,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
 # -
 
 def import_generation(ctry, start, end, path_gen=None, path_raw=None,
-                      savedir=None, savegen=None, saveimp=None, is_verbose=False):
+                      savedir=None, is_verbose=False):
     """
     Function to import generation data from Entso-e information source.
     
@@ -118,11 +117,15 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
         savegen: directory path to save generation files (str, if path_raw not None, default: None)
         is_verbose: to display information (bool, default: False)
     """
-    path = None
-    if path_gen is None: path = path_raw
-    else: path = path_gen # default path is the preprocessed files
-    if path is None:
+    path, savegen = None, None
+    if ((path_raw is None)&(path_gen is None)):
         raise KeyError("No path is given for Generation data.")
+    elif ((path_raw is None)&(path_gen is not None)): # Got a file prepared
+        path = path_gen # Then use prepared file
+    elif ((path_raw is not None)&(path_gen is None)): # Need raw file
+        path = path_raw # Then use raw file
+    else: # Both are not None
+        path, savegen = path_raw, path_gen # Then use raw and save in path_gen.
     
     #######################
     ###### Generation data
@@ -528,7 +531,7 @@ def resample_generation(Gen, freq, add_on=False, is_verbose=False):
 # -
 
 def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=None,
-                     savedir=None, saveimp=None, freq='H', is_verbose=False):
+                     savedir=None, freq='H', is_verbose=False):
     """
     Function to import the cross-border flows.
     Finds the useful files to load, load the data, group relevant information and adjust time step.
@@ -542,11 +545,15 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
         freq: time step (str, default: H)
         is_verbose: display information (bool, default: False)
     """
-    path = None
-    if path_imp is None: path = path_raw
-    else: path = path_imp # default path is the preprocessed files
-    if path is None:
-        raise KeyError("No path is given for Exchange data.")
+    path, saveimp = None, None
+    if ((path_raw is None)&(path_imp is None)):
+        raise KeyError("No path is given for Generation data.")
+    elif ((path_raw is None)&(path_imp is not None)): # Got a file prepared
+        path = path_imp # Then use prepared file
+    elif ((path_raw is not None)&(path_imp is None)): # Need raw file
+        path = path_raw # Then use raw file
+    else: # Both are not None
+        path, saveimp = path_raw, path_imp # Then use raw and save in path_imp.
     
     if is_verbose: print("Get and reduce importation data...")
         

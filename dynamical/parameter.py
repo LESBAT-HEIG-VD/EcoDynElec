@@ -134,11 +134,11 @@ class Filepath():
     Attributes:
         - rootdir: root directory of the experiment (highest common folder).
                 Useful mainly within the class
-        - generation: directory containing Entso generation files
-        - exchanges: directory containing Entso cross-border flow files
+        - generation: directory containing Entso generation files OR where to save it (if from raw)
+        - exchanges: directory containing Entso cross-border flow files OR where to save it (if from raw)
+        - raw_generation: directory containing raw Entso generation files
+        - raw_exchanges: directory containing raw Entso cross-border flow files
         - savedir: directory where to save the results. Default: None (no saving)
-        - savgen: directory where to save generation from raw files. Default: None (no saving)
-        - saveimp: directory to save exchange from raw files. Default: None (no saving)
         - mapping: file with the mapping (impact per kWh produced for each production unit)
         - neighbours: file gathering the list of neighbours of each european country
         - gap: file with estimations of the nature of the residual
@@ -155,8 +155,6 @@ class Filepath():
         self.raw_generation = None
         self.raw_exchanges = None
         self.savedir = None
-        self.savegen = None
-        self.saveimp = None
         
         self.fu_vector = None
         self.mapping = None
@@ -167,7 +165,7 @@ class Filepath():
         
     def __repr__(self):
         attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
-                      "savegen","saveimp","fu_vector","mapping","neighbours","gap","swissGrid",
+                      "fu_vector","mapping","neighbours","gap","swissGrid",
                       "networkLosses"]
         text = ""
         for a in attributes:
@@ -192,8 +190,6 @@ class Filepath():
         self.raw_generation = param_excel.loc['raw generation directory'].iloc[0]
         self.raw_exchanges = param_excel.loc['raw exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
-        self.savegen = param_excel.loc['saving generation'].iloc[0]
-        self.saveimp = param_excel.loc['saving exchanges'].iloc[0]
         
         self.fu_vector = param_excel.loc['FU vector'].iloc[0]
         self.mapping = param_excel.loc['mapping file'].iloc[0]
