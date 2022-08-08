@@ -84,7 +84,7 @@ def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resoluti
 
         # Transform MW every 15min --> MWh every 15 min
         country_detailed /= 4
-
+        
         # Save files
         if savedir is not None:
             country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
@@ -116,7 +116,7 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
                     'ActualGenerationOutput': 'float32', 'ActualConsumption': 'float32'}
     useful = ['DateTime',destination,'ResolutionCode',origin,data] # columns to keep
 
-    files = [path_dir + f for f in os.listdir(path_dir)] # gather file pathways
+    files = [path_dir + f for f in os.listdir(path_dir) if os.path.isfile(path_dir+f)] # gather file pathways
 
     t0 = time()
     container = []

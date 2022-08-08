@@ -118,8 +118,6 @@ def execute(p=None, excel=None, is_verbose=False):
                                clean_generation=p.data_cleaning, is_verbose=is_verbose)
 
 
-
-
     ########################
     ###### COMPUTE TRACKING
     ######
