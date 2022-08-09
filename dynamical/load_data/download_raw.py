@@ -194,7 +194,7 @@ def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.
     
 
 def _remove_olds(path, local_list):
-    remove_list = [path+f for f in os.listdir(path) if ((f not in local_list)&(os.path.isfile(f)))]
+    remove_list = [path+f for f in os.listdir(path) if ((f not in local_list)&(os.path.isfile(path+f)))]
     for f in remove_list:
         os.remove(f) # Delete the file
     #EOF
