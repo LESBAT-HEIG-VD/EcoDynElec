@@ -133,7 +133,7 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
 
     if is_verbose: print("Load generation data...")
     # Selecton of right files according to the choice of countres
-    if path_gen is not None:
+    if path==path_gen:
         files = {}
         for c in ctry: # Gather prepared files per country
             try:
@@ -143,13 +143,13 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None,
                 
         Gen = {} # Dict for the generation of each country
         
-    elif path_raw is not None: # Just fill the Gen directly for row files
+    elif path==path_raw: # Just fill the Gen directly for row files
         Gen = extract(ctry=ctry, dir_gen=path, savedir_gen=savegen,
                       save_resolution=savedir, is_verbose=is_verbose) # if from raw files
 
     for c in ctry:# Preprocess all files / data per country
         # Extract the generation data file
-        if path_gen is not None: # Load preprocessed files
+        if path==path_gen: # Load preprocessed files
             Gen[c] = pd.read_csv(path+files[c],index_col=0) # Extraction of preprocessed files
         
         # Check and modify labels if needed
@@ -558,7 +558,7 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
     if is_verbose: print("Get and reduce importation data...")
         
     ### Files to consider
-    if path_imp is not None:
+    if path==path_imp:
         files = {}
         for c in ctry:
             try:
@@ -568,13 +568,13 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
                 
         Cross = {} # Dict for the generation of each country
         
-    elif path_raw is not None: # Just fill the Gen directly for row files
+    elif path==path_raw: # Just fill the Gen directly for row files
         Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,
                       save_resolution=savedir, is_verbose=is_verbose) # if from raw files
 
     
     for i,c in enumerate(ctry):# File extraction
-        if path_imp is not None:
+        if path==path_imp:
             if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
             Cross[c] = pd.read_csv(path_imp+files[c],index_col=0) # Extraction
 
