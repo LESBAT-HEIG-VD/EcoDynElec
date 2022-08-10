@@ -113,7 +113,7 @@ def execute(p=None, excel=None, is_verbose=False):
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
                                path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
                                path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
-                               savedir=p.path.savedir,
+                               savedir=p.path.savedir, net_exchange=p.net_exchanges, 
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                clean_generation=p.data_cleaning, is_verbose=is_verbose)
 
@@ -123,7 +123,7 @@ def execute(p=None, excel=None, is_verbose=False):
     ######
     mix = track_mix(raw_data=raw_prodExch, freq=p.freq, network_losses=network_losses,
                     target=p.target, residual_global=p.residual_global,
-                    net_exchange=p.net_exchanges, is_verbose=is_verbose)
+                    is_verbose=is_verbose)
 
 
     ##########################
@@ -241,7 +241,7 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
                                path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
                                path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
-                               savedir=p.path.savedir,
+                               savedir=p.path.savedir, net_exchange=p.net_exchanges, 
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                is_verbose=is_verbose)
     
@@ -251,7 +251,7 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
     ######
     mix = track_mix(raw_data=raw_prodExch, freq=p.freq, network_losses=network_losses,
                     target=p.target, residual_global=p.residual_global,
-                    net_exchange=p.net_exchanges, return_matrix=True, is_verbose=is_verbose)
+                    return_matrix=True, is_verbose=is_verbose)
     
     if is_verbose: print("done.")
     return mix
