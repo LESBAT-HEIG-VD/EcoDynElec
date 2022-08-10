@@ -113,7 +113,19 @@ def _reach_server(server_info, files, savepaths, is_verbose=False):
     
 
 def _set_time(start,end):
-    all_months = pd.period_range(start, end, freq='M')
+    """Set the list of year-month to target the files to download.
+    If start is None: start of previous month or 2 months before end.
+    If end is None: now."""
+    
+    if None not in [start, end]: # Regular method
+        all_months = pd.period_range(start=start, end=end, freq='M', periods=None)
+    elif ((start is None) & (end is None)): # Both -> 2months before now
+        all_months = pd.period_range(start=start, end=datetime.utcnow(), freq='M', periods=2)
+    elif end is None: # Start but no end: until now
+        all_months = pd.period_range(start=start, end=datetime.utcnow(), freq='M', periods=None)
+    elif start is None: # End but no start -> 2 months before end
+        all_months = pd.period_range(start=start, end=end, freq='M', periods=2)
+        
     return all_months.year, all_months.month
 
 # +
