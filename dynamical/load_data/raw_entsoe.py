@@ -193,7 +193,7 @@ def get_time_line(unique_dates):
     time_line = pd.DatetimeIndex(np.sort(unique_dates))
 
     # Add last hour in 15min, if not already here
-    if ((time_line[-1].hour==23) & (time_line[-1].minute==0)):
+    if time_line[-1].minute==0:
         time_line = pd.DatetimeIndex(time_line.to_list() + [time_line[-1]+pd.Timedelta("45T")])
 
     return time_line
