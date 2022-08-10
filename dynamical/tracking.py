@@ -20,7 +20,7 @@ from dynamical.load_data.auxiliary import load_rawEntso
 
 
 def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
-              net_exchange=False, return_matrix=False, is_verbose=False):
+              return_matrix=False, is_verbose=False):
     """Master function for the electricity mix computation.
     Parameter:
         data_path: path to entso-e data (str), or data Frame. If None, load default data. Default: None
@@ -39,10 +39,6 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
     if is_verbose: print("Importing information...")
     df = load_rawEntso(mix_data=raw_data, freq=freq)
     ctry, ctry_mix, prod_means, all_sources = reorder_info(data=df)
-    
-    
-    if net_exchange:
-        df = create_net_exchange(df, ctry=ctry)
         
     if network_losses is not None:
         uP = get_grid_losses(df, losses=network_losses)
@@ -102,33 +98,6 @@ def reorder_info(data):
     all_sources += [k for k in data.columns if k[:3]!="Mix"] # Add AFTER the names of means of production
     
     return ctry, ctry_mix, prod_means, all_sources
-
-
-#
-###############################################################################
-# ###########################
-# # Create net exchanges
-# ###########################
-# ###########################
-#
-
-def create_net_exchange(data, ctry):
-    """
-    Adapt the cross-border flow to consider exchanges at each border and time step as net.
-    Net exchange means that electricity can only go from A to B or from B to A, but not in 
-    both directions at the same time.
-    """
-    d = data.copy()
-    # Correction of the cross-border (turn into net exchanges) over each time step
-    for i in range(len(ctry)):
-        for j in range(len(ctry)-1,i,-1):
-            
-            decide = (d[f"Mix_{ctry[i]}_{ctry[j]}"] >= d[f"Mix_{ctry[j]}_{ctry[i]}"]) # direction
-            diff = d[f"Mix_{ctry[i]}_{ctry[j]}"] - d[f"Mix_{ctry[j]}_{ctry[i]}"] # exchange difference
-            d.loc[:,f"Mix_{ctry[i]}_{ctry[j]}"] = decide*diff # if flow from i to j --> + value
-            d.loc[:,f"Mix_{ctry[j]}_{ctry[i]}"] = (decide-1)*diff # if from j to i <-- -value
-
-    return d
 
 
 #

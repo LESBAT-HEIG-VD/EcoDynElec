@@ -23,7 +23,7 @@ from dynamical.load_data.raw_entsoe import extract
 # -
 
 def import_data(ctry, start=None, end=None, freq="H", target="CH",
-                involved_countries=None, prod_gap=None, sg_data=None,
+                involved_countries=None, prod_gap=None, sg_data=None, net_exchange=False,
                 path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None, savedir=None,
                 residual_global=False, correct_imp=True,
                 clean_generation=True, n_hours=2, days_around=7, is_verbose=True):
@@ -42,6 +42,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                             (list, default: None)
         prod_gap: information about the nature of the residual (pandas DataFrame)
         sg_data: information from Swiss Grid (pandas DataFrame, default: None)
+        net_exchange: to simplify cross-border flows to net after resampling (bool, default False)
         path_gen: directory where preprocessed Entso-e generation files are stored (str)
         path_imp: directory containing the files for preprocessed cross-border flow data (str)
         path_gen_raw: directory where raw Entso-e generation files are stored (str)
@@ -79,10 +80,12 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                              start=start, end=end, savedir=savedir,
                              path_imp=path_imp, path_raw=path_imp_raw, freq=freq, is_verbose=is_verbose) # Imprt data
     
+    Cross = adjust_exchanges(Cross=Cross, net_exchange=net_exchange, freq=freq,
+                             sg_data=sg_data if correct_imp else None)
     # Correct the cross-border flows at Swiss border.
-    if correct_imp:
-        if is_verbose: print("Adapt Exchage Data of Swizerland...")
-        Cross = adjust_exchanges(Cross=Cross,sg_data=sg_data,freq=freq) # Adjust the exchange data
+    # if correct_imp:
+    #     if is_verbose: print("Adapt Exchage Data of Swizerland...")
+    #     Cross = adjust_exchanges(Cross=Cross,sg_data=sg_data,freq=freq) # Adjust the exchange data
     
     ### GATHER GENERATION AND EXCHANGE
     electric_mix = _join_generation_exchanges(Gen=Gen, Cross=Cross, is_verbose=is_verbose)
@@ -609,29 +612,104 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
 
 # -
 
-def adjust_exchanges(Cross, sg_data, freq='H'):
+def adjust_exchanges(Cross, net_exchange=False, sg_data=None, freq='H'):
     """
-    Function to replace the cross-border flow data of ENTSO-E by the cross-border flow data of SwissGrid
+    Bring adjustments to the exchange data: add SwissGrid data, fill data,
+    adjust frequency and set exchanges to net.
+    
+    Parameter:
+        Cross: the Cross-border flow data (dict of pandas DataFrame)
+        net_exchange: to consider net cross-border flows (bool, default False)
+        sg_data: information from Swiss Grid (pandas DataFrame)
+        freq: time step (str, default: H)
+    
+    Return:
+        dict of pandas DataFrame with adjusted cross-border flow data.
+    """
+    ### ADJUST WITH SWISSGRID DATA (AT SWISS BORDER ONLY)
+    if sg_data is not None: # Adjust with SG data
+        Cross = set_swissGrid(Cross, sg_data)
+        
+    ### FILL THE DATA
+    
+    
+    ### ADJUST THE FREQUENCY
+    
+    
+    ### DEAL WITH NET-RAW EXCHANGES
+    if net_exchange:
+        Cross = create_net_exchange(Cross)
+        
+    return Cross
+        
+
+
+#
+###############################################################################
+# ###########################
+# # Set SwissGrid at Swiss border
+# ###########################
+# ###########################
+#
+
+def set_swissGrid(Cross, sg_data):
+    """
+    Function to replace the cross-border flow data of ENTSO-E by the cross-border flow data of SwissGrid. Data passed must be in 15min.
     
     Parameter:
         Cross: the Cross-border flow data (dict of pandas DataFrame)
         sg_data: information from Swiss Grid (pandas DataFrame)
-        freq: time step (str, default: H)
     
     Return:
         dict of pandas DataFrame with cross-border flow data for all the countries of the studied area.
     """    
     #### Replace the data in the DataFrames
     places = ["AT","DE","FR","IT"] # Neighbours of Swizerland (as the function is only for Swizerland)
-    Exch = {}
-    for i in Cross.keys():
-        Exch[i] = Cross[i].copy()
     
     for c in places:
-        Exch["CH"][f"Mix_{c}_CH"] = sg_data[f"Mix_{c}_CH"] # Swiss imprts
-        Exch[c][f"Mix_CH_{c}"] = sg_data[f"Mix_CH_{c}"] # Swiss exports
+        if f"Mix_{c}_CH" in Cross['CH'].columns:
+            Cross["CH"].loc[:,f"Mix_{c}_CH"] = sg_data.loc[:,f"Mix_{c}_CH"] # Swiss imprts
+        if c in Cross.keys():
+            Cross[c].loc[:,f"Mix_CH_{c}"] = sg_data.loc[:,f"Mix_CH_{c}"] # Swiss exports
     
-    return Exch
+    return Cross
+
+
+#
+###############################################################################
+# ###########################
+# # Create net exchanges
+# ###########################
+# ###########################
+#
+
+def create_net_exchange(Cross):
+    """
+    Adapt the cross-border flow to consider exchanges at each border and time step as net.
+    Net exchange means that electricity can only go from A to B or from B to A, but not in 
+    both directions at the same time.
+    """
+    #d = data.copy()
+    ctry = list( Cross.keys() )
+    
+    # Correction of the cross-border (turn into net exchanges) over each time step
+    for i in range(len(ctry)):
+        for j in range(len(ctry)-1,i,-1):
+            
+            decide = (Cross[ctry[j]].loc[:,f"Mix_{ctry[i]}_{ctry[j]}"]
+                      >= Cross[ctry[i]].loc[:,f"Mix_{ctry[j]}_{ctry[i]}"]) # direction
+            diff = (Cross[ctry[j]].loc[:,f"Mix_{ctry[i]}_{ctry[j]}"]
+                    - Cross[ctry[i]].loc[:,f"Mix_{ctry[j]}_{ctry[i]}"]) # exchange difference
+            
+            Cross[ctry[j]].loc[:,f"Mix_{ctry[i]}_{ctry[j]}"] = decide*diff # if flow i to j --> +value
+            Cross[ctry[i]].loc[:,f"Mix_{ctry[j]}_{ctry[i]}"] = (decide-1)*diff # if j to i <-- -value
+            
+            # decide = (d[f"Mix_{ctry[i]}_{ctry[j]}"] >= d[f"Mix_{ctry[j]}_{ctry[i]}"]) # direction
+            # diff = d[f"Mix_{ctry[i]}_{ctry[j]}"] - d[f"Mix_{ctry[j]}_{ctry[i]}"] # exchange difference
+            # d.loc[:,f"Mix_{ctry[i]}_{ctry[j]}"] = decide*diff # if flow from i to j --> + value
+            # d.loc[:,f"Mix_{ctry[j]}_{ctry[i]}"] = (decide-1)*diff # if from j to i <-- -value
+
+    return Cross
 
 
 # +
