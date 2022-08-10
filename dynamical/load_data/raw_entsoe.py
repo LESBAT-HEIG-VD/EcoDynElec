@@ -80,14 +80,14 @@ def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resoluti
                                         dtype='float32').resample('15min').asfreq(None) # init. with None
         country_detailed.loc[:,country_prod.columns] = country_prod # fill with data
         del country_prod # free memory space
-        country_detailed = country_detailed.interpolate().fillna(0) # TODO: REMOVE INTERPOLATION AND KEEP NANS. # NAN: interpolate (& ffill), then 0 for remaining
+        country_detailed = country_detailed#.interpolate().fillna(0) # TODO: REMOVE INTERPOLATION AND KEEP NANS. # NAN: interpolate (& ffill), then 0 for remaining
 
         # Transform MW every 15min --> MWh every 15 min
-        country_detailed /= 4 ##### TODO: REMOVE WHEN TRUE FIX
+        #country_detailed /= 4 ##### TODO: REMOVE WHEN TRUE FIX
         
         # Save files
         if savedir is not None:
-            country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv") ##### TODO: SET TO MW WHEN TRUE FIX
+            country_detailed.to_csv(f"{savedir}{c}_{case}_MW.csv") ##### TODO: SET TO MW WHEN TRUE FIX INSTEAD OF MWh
         Data[c] = country_detailed # Store information
         del country_detailed # free memory space
     if is_verbose: print(f"Extract raw {case}: {round(time()-t0,2)} sec.             ")
