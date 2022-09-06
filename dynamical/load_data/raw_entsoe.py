@@ -3,6 +3,8 @@ import numpy as np
 from time import time
 import os
 
+from dynamical.load_data.autocomplete import autocomplete
+
 # +
 
 #################
@@ -13,19 +15,34 @@ import os
 # -
 
 
-def extract(ctry=None, dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp=None,
-            save_resolution=None, is_verbose=False):
-    """Easy command to execute all at once"""
+def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, correct_imp:bool=True,
+            savedir_gen:str=None, savedir_imp:str=None, save_resolution:str=None,
+            n_hours:int=2, days_around:int=7, limit:float=.4, is_verbose=False):
+    """Easy command to execute all at once
+    Parameters:
+    -----------
+        ctry:
+        dir_gen, dir_imp: str or dataframe
+        correct_gen, correct_imp: bool
+        savedir_gen, savedir_imp: str
+        save_resolution: str
+        n_hours: int
+        days_around: int
+        limit: float
+        is_verbose: bool
+    """
     t0 = time()
     if os.path.isdir(r"{}".format(dir_gen)):
         if is_verbose: print("\tGeneration data.")
         Gen = create_per_country(path_dir=dir_gen, case='generation', ctry=ctry, savedir=savedir_gen,
-                           savedir_resolution=save_resolution,is_verbose=is_verbose)
+                                 savedir_resolution=save_resolution, is_verbose=is_verbose,
+                                 n_hours=n_hours, days_around=days_around, limit=limit, correct_data=correct_gen)
             
     if os.path.isdir(r"{}".format(dir_imp)):
         if is_verbose: print("\tCross-border flow data.")
         Imp = create_per_country(path_dir=dir_imp, case='import', ctry=ctry, savedir=savedir_imp,
-                           savedir_resolution=save_resolution, is_verbose=is_verbose)
+                                 savedir_resolution=save_resolution, is_verbose=is_verbose,
+                                 n_hours=n_hours, days_around=days_around, limit=limit, correct_data=correct_imp)
     
     if is_verbose: print("\tExtraction time: {:.2f} sec.".format(time()-t0))
     
@@ -46,7 +63,8 @@ def extract(ctry=None, dir_gen=None, dir_imp=None, savedir_gen=None, savedir_imp
 # -
 
 
-def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resolution=None, is_verbose=False):
+def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None, savedir_resolution:str=None,
+                       n_hours:int=2, days_around:int=7, limit:float=.4, correct_data:bool=True, is_verbose=False):
     # Obtain parameter set for the specific case
     destination,origin,data,area = get_parameters(case)
     
@@ -54,43 +72,39 @@ def create_per_country(path_dir, case, ctry=None, savedir=None, savedir_resoluti
     df = load_files(path_dir, destination,origin,data,area,is_verbose=is_verbose)
     
     # Get auxilary information
-    resolution = get_best_resolution(df, destination, case, savedir=savedir_resolution,
-                                     is_verbose=is_verbose) # Resolutions
     prod_units = get_origin_unit(df,origin) # list of prod units or origin countries
     time_line = get_time_line(unique_dates=df.DateTime.unique()) # time line of the data
     
     # Format and save files for every country
     Data = {} # Data storage object
     t0 = time()
-    for i,c in enumerate(resolution.index): # for all countries
-        if ctry is not None:
-            if c not in ctry: continue; # skip if c not in ctry list.
-        else: raise ValueError("No country to consider")
-        if is_verbose: print(f"Extracting {case} for {c} ({i+1}/{resolution.shape[0]})...", end="\r")
+    for i,c in enumerate(ctry): # for all countries
+        if is_verbose: print(f"Extracting {case} for {c} ({i+1}/{len(ctry)})...", end="\r")
         # Get data from the country and sort by date
         country_data = df[df.loc[:,destination]==c].drop_duplicates().sort_values(by="DateTime")
 
         # Select only the Generation data, then resample in 15min and interpolate (regardless of ResolutionCode)
-        country_prod = country_data.pivot(index='DateTime',columns=origin, values=data)
-        country_prod = country_prod#.fillna(0).resample('15min').asfreq(None).interpolate()
+        Data[c] = country_data.pivot(index='DateTime',columns=origin, values=data)
         del country_data # free memory space
+    
+    ### AUTOCOMPLETE THE DATA
+    Data = autocomplete(Data, kind=case, n_hours=n_hours, days_around=days_around, limit=limit,
+                           ignore=(not correct_data), is_verbose=is_verbose)
 
+    ### ADD ALL COLUMNS AND FILL REST WITH ZERO
+    for i,c in enumerate(ctry):
         # Add all columns
         country_detailed = pd.DataFrame(None,columns=prod_units,index=time_line,
-                                        dtype='float32').resample('15min').asfreq(None) # init. with None
-        country_detailed.loc[:,country_prod.columns] = country_prod # fill with data
-        del country_prod # free memory space
-        country_detailed = country_detailed#.interpolate().fillna(0) # TODO: REMOVE INTERPOLATION AND KEEP NANS. # NAN: interpolate (& ffill), then 0 for remaining
-
-        # Transform MW every 15min --> MWh every 15 min
-        #country_detailed /= 4 ##### TODO: REMOVE WHEN TRUE FIX
+                                        dtype='float32').resample('15min').asfreq() # init. with NaNs
+        country_detailed.loc[:,Data[c].columns] = Data[c] # fill with data
+            
         
         # Save files
         if savedir is not None:
-            country_detailed.to_csv(f"{savedir}{c}_{case}_MW.csv") ##### TODO: SET TO MW WHEN TRUE FIX INSTEAD OF MWh
-        Data[c] = country_detailed # Store information
+            country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
+        Data[c] = country_detailed.fillna(0) # Store information & replace NaN -> 0
         del country_detailed # free memory space
-    if is_verbose: print(f"Extract raw {case}: {round(time()-t0,2)} sec.             ")
+    if is_verbose: print(f"Extract raw {case}: {time()-t0:.2f} sec.             ")
     return Data
 
 
@@ -138,28 +152,6 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
     if is_verbose: print(f"Data loading: {round(time()-t0,2)} sec")
     if is_verbose: print(f"Memory usage table: {round(df.memory_usage().sum()/(1024**2),2)} MB")
     return df
-
-
-# +
-
-#################
-#################
-# ## Get best resolution
-##############
-
-# -
-
-
-def get_best_resolution(df, destination, case, savedir=None, is_verbose=False):
-    """Get the resolution map for all countries"""
-    t0 = time()
-    get_resolution = lambda x: x[2:4]+"min" # mini-function to extract resolution in minutes
-    resolution = pd.Series({c: df[df.loc[:,destination]==c].loc[:,'ResolutionCode'].apply(get_resolution).unique().min()
-                             for c in df.loc[:,destination].unique()},name="Resolution").sort_index() # gather all at once
-    if os.path.isdir(r"{}".format(savedir)):
-        resolution.to_csv(f"{savedir}Original_resolution_{case}.csv") # save file
-    if is_verbose: print(f"Get original resolutions: {round(time()-t0,2)} sec.")
-    return resolution
 
 
 # +

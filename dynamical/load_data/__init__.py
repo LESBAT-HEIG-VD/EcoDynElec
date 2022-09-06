@@ -1,6 +1,4 @@
-__all__ = ['auxiliary','download_raw','generation_exchanges','impacts','raw_entsoe']
+### Initialization file for the sub-module loading the data.
+### ORDER IN THE LIST DOES MATTER
+__all__ = ['autocomplete','auxiliary','download_raw','impacts','raw_entsoe','generation_exchanges']
 from dynamical.load_data import *
-# from . import auxiliary
-# from . import generation_exchanges
-# from . import impacts
-# from . import raw_entsoe
