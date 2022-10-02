@@ -34,6 +34,7 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
     Returns:
     --------
         dict of data with autocompleted information
+        pandas DataFrame with resolutions
     """
     
     if is_verbose: print(f'Autocomplete {kind}...'+" "*15)
@@ -43,11 +44,13 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
     
     ### RESHAPE THE DATA
     if kind.lower()=='generation':
-        new_data = {c: {field: to_original_series(data[c].loc[:,field], freq=resolution.loc[field,c])
-                        for field in data[c].columns} for c in data}
+        new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
+                                                               freq=resolution.loc[field,c])
+                                     for field in data[c].columns}) for c in data}
     elif kind.lower()=='import':
-        new_data = {c: {field: to_original_series(data[c].loc[:,field], freq=resolution.loc[field,c])
-                        for field in data[c].columns} for c in data}
+        new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
+                                                               freq=resolution.loc[field,c])
+                                     for field in data[c].columns}) for c in data}
     else:
         raise KeyError(f"Unknown kind '{kind}'. Must be 'generation' or 'import'.")
     
@@ -57,7 +60,7 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
     if ignore:
         datasize = {c: {k: new_data[c][k].shape[0] for k in new_data[c]} for c in new_data}
         if is_verbose: report_missing(all_gaps, datasize)
-        return data
+        return new_data, resolution # return 'new_data'
     
     ### IDENTIFY FIELDS TO SKIP
     to_skip = find_to_skip(new_data, limit)
@@ -83,7 +86,7 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
     
     ### FILL SHORT GAPS AND RETURN
     new_data = fill_occasional(new_data)
-    return new_data
+    return new_data, resolution
     
 
 ###############################
@@ -162,8 +165,8 @@ def to_original_series(obj, freq):
         raise TypeError(f"Only series are expected. {type(obj)} object was passed.")
     
     ### CONVERT DATA MW -> MWH BEFORE AUTO-COMPLETING (as the frequency is infered)
-    conv_factor = get_steps_per_hour(freq)
-    return obj.resample(freq).asfreq() / conv_factor # Resample with original frequency & energy
+    #conv_factor = get_steps_per_hour(freq)
+    return obj.resample(freq).asfreq()# / conv_factor # Resample with original frequency & energy
 
 
 ###############################

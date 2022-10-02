@@ -7,6 +7,7 @@ from time import time
 from dynamical.checking import check_frequency
 from dynamical.residual import include_global_residual
 from dynamical.load_data.raw_entsoe import extract
+from dynamical.load_data.autocomplete import get_steps_per_hour
 
 
 # +
@@ -75,11 +76,11 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
                             prod_gap=prod_gap, is_verbose=is_verbose) # adjust the generation data
     
     ### EXCHANGE DATA
-    Cross = import_exchanges(neighbourhood=involved_countries, ctry=ctry, start=start, end=end, savedir=savedir,
-                             n_hours=n_hours, days_around=days_around, limit=limit, clean_imports=clean_data, 
+    Cross = import_exchanges(ctry=ctry, start=start, end=end, savedir=savedir,
+                             n_hours=n_hours, days_around=days_around, limit=limit, clean_imports=clean_data,
                              path_imp=path_imp, path_raw=path_imp_raw, freq=freq, is_verbose=is_verbose) # Imprt data
     
-    Cross = adjust_exchanges(Cross=Cross, net_exchange=net_exchange, freq=freq,
+    Cross = adjust_exchanges(Cross=Cross, neighbourhood=involved_countries, net_exchange=net_exchange, freq=freq,
                              sg_data=sg_data if correct_imp else None, is_verbose=is_verbose)
     
     ### GATHER GENERATION AND EXCHANGE
@@ -180,8 +181,8 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=No
 
 # -
 
-def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None,
-                      prod_gap=None, is_verbose=False):
+def adjust_generation(Gen, freq='H', residual_global=False,
+                      sg_data=None, prod_gap=None, is_verbose=False):
     """Function that leads organizes the data adjustment.
     It sorts finds and sorts missing values, fills it, resample the data and
     add a residual as global production
@@ -203,7 +204,10 @@ def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None,
         dict of pandas DataFrames: modified Gen dict.
     """
     ### Resample data to the right frequence
-    Gen = resample_generation(Gen=Gen, freq=freq, add_on=residual_global, is_verbose=is_verbose)
+    if is_verbose: print(f"\t4/{4+int(residual_global)} - Resample exchanges to {freq} steps...")
+    Gen = resample_data(Gen, freq=freq)
+    # print("===========\nGENERATION\n===========")
+    # print(Gen)
     
     ### Includes residual production
     if residual_global:
@@ -223,28 +227,28 @@ def adjust_generation(Gen, freq='H', residual_global=False, sg_data=None,
 
 # -
 
-def resample_generation(Gen, freq, add_on=False, is_verbose=False):
-    """
-    Function that resamples the generation data. It can only downsample (lower the resolution) by summing.
+# def resample_generation(Gen, freq, add_on=False, is_verbose=False):
+#     """
+#     Function that resamples the generation data. It can only downsample (lower the resolution) by summing.
     
-    Parameter:
-        Gen: dict of DataFrames containing the generation data.
-        freq: the time step (resolution)
-        add_on: a display flourish (bool, default: False)
-        is_verbose: to display information (bool, default: False)
+#     Parameter:
+#         Gen: dict of DataFrames containing the generation data.
+#         freq: the time step (resolution)
+#         add_on: a display flourish (bool, default: False)
+#         is_verbose: to display information (bool, default: False)
     
-    Return:
-        dict of pandas DataFrame wiht resampled productions
-    """
-    #######################
-    ###### Resample Gen.
-    #######################
-    if ((check_frequency(freq))&(freq!='15min')):
-        if is_verbose: print(f"\t4/{4+int(add_on)} - Resample Generation data to {freq} steps...")
-        for f in Gen.keys(): # For all countries
-            Gen[f] = Gen[f].resample(freq).sum() # Sum as we talk about energy.
+#     Return:
+#         dict of pandas DataFrame wiht resampled productions
+#     """
+#     #######################
+#     ###### Resample Gen.
+#     #######################
+#     if ((check_frequency(freq))&(freq!='15min')):
+#         if is_verbose: print(f"\t4/{4+int(add_on)} - Resample Generation data to {freq} steps...")
+#         for f in Gen.keys(): # For all countries
+#             Gen[f] = Gen[f].resample(freq).sum() # Sum as we talk about energy.
             
-    return Gen
+#     return Gen
 
 
 # +
@@ -257,7 +261,7 @@ def resample_generation(Gen, freq, add_on=False, is_verbose=False):
 
 # -
 
-def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=None, savedir=None, freq='H',
+def import_exchanges(ctry, start, end, path_imp=None, path_raw=None, savedir=None, freq='H',
                      n_hours:int=2, days_around:int=7, limit:float=.4, clean_imports:bool=True,
                      is_verbose=False):
     """
@@ -298,8 +302,8 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
         
     elif path==path_raw: # Just fill the Gen directly for row files
         Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,save_resolution=savedir,
-                      n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_imports,
-                      is_verbose=is_verbose) # if from raw files
+                        n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_imports,
+                        is_verbose=is_verbose) # if from raw files
 
     
     for i,c in enumerate(ctry):# File extraction
@@ -307,16 +311,9 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
             if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
             Cross[c] = pd.read_csv(path_imp+files[c],index_col=0) # Extraction
 
-        # Transform index in time data and convert it from UTC to CET, then keeps only period of interest
+        # Transform index in time data, then keeps only period of interest
         Cross[c].index = pd.to_datetime(Cross[c].index,yearfirst=True) # Considered period only
         Cross[c] = Cross[c].loc[start:end] # select right period
-        
-        # Format the import data by selecting and gathering columns
-        Cross[c] = Cross[c].loc[:,neighbourhood] # Keep only usefull countries
-        other = [c for c in neighbourhood if c not in ctry] # Label as 'other' all non-main selected countries
-        Cross[c]["Other"] = Cross[c][other].sum(axis=1) # Sum of "other countries"
-        Cross[c].drop(columns=[k for k in neighbourhood if k not in ctry],inplace=True) # Delete details of "other countries"
-        Cross[c].columns = [f"Mix_{s}_{c}" for s in Cross[c].columns] # Rename columns
             
     return Cross
 
@@ -331,7 +328,7 @@ def import_exchanges(neighbourhood, ctry, start, end, path_imp=None, path_raw=No
 
 # -
 
-def adjust_exchanges(Cross, net_exchange=False, sg_data=None, freq='H', is_verbose=False):
+def adjust_exchanges(Cross, neighbourhood, net_exchange=False, freq='H', sg_data=None, is_verbose=False):
     """
     Bring adjustments to the exchange data: add SwissGrid data, fill data,
     adjust frequency and set exchanges to net.
@@ -350,10 +347,17 @@ def adjust_exchanges(Cross, net_exchange=False, sg_data=None, freq='H', is_verbo
         Cross = set_swissGrid(Cross, sg_data)
     
     ### ADJUST THE FREQUENCY
-    if ((is_verbose)&(freq!='15min')): print(f"Resample Exchanged energy to frequence {freq}...")
-    if ((check_frequency(freq))&(freq!='15min')):
-        for c in Cross.keys(): # For all countries
-            Cross[c] = Cross[c].resample(freq).sum() # Sum as we talk about energy.
+    if is_verbose: print(f"Resample exchanges to {freq} steps...")
+    Cross = resample_data(Cross, freq=freq)
+        
+    ### CREATE THE 'OTHER' AND REMOVE UNUSED
+    for c in Cross:
+        other = [k for k in neighbourhood if k not in Cross.keys()] # Label as 'other' all non-main selected countries
+        Cross[c]['Other'] = Cross[c].loc[:,other].sum(axis=1).copy() # Add the aggregated 'Other'
+        
+        involved = [k for k in neighbourhood if k in Cross.keys()] + ['Other'] # All neighbours involved in computation
+        Cross[c] = Cross[c].loc[:,involved] # Select only relevant information
+        Cross[c] = Cross[c].rename(columns=lambda s:f"Mix_{s}_{c}") # Rename columns
     
     
     ### DEAL WITH NET-RAW EXCHANGES
@@ -447,3 +451,40 @@ def _join_generation_exchanges(Gen, Cross, is_verbose=False):
         Union[f] = pd.concat([Gen[f],Cross[f]],axis=1) # gathering of the data
     
     return pd.concat([Union[f] for f in Union.keys()],axis=1) # Join all the tables together
+
+
+# +
+
+#####################################
+# ####################################
+# Resample Data
+# ####################################
+# ####################################
+
+# -
+
+def resample_data(Data, freq):
+    """
+    Function that turns data from MW to MWh and adapts its frequency.
+    The data is assumed to be in MW, in a table with 15min indexes.
+    
+    Parameter:
+        Data: dict of DataFrames containing the generation data.
+        freq: the frequency (length of time step)
+    
+    Return:
+        dict of pandas DataFrame wiht resampled and converted energy
+    """
+    ### VERIFY THE FREQUENCY
+    check_frequency(freq)
+    
+    for f in Data: # For all keys
+        conv_factor = get_steps_per_hour(freq) # Factor to convert MW to MWh
+        # Resample Power and turn into energy
+        Data[f] = (Data[f]
+                   .resample(freq)
+                   .apply(lambda x:x.mean())
+                   .interpolate()
+                   .fillna(0)) / conv_factor
+            
+    return Data

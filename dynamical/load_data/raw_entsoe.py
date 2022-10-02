@@ -88,9 +88,11 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
         del country_data # free memory space
     
     ### AUTOCOMPLETE THE DATA
-    Data = autocomplete(Data, kind=case, n_hours=n_hours, days_around=days_around, limit=limit,
+    Data, resolution = autocomplete(Data, kind=case, n_hours=n_hours, days_around=days_around, limit=limit,
                            ignore=(not correct_data), is_verbose=is_verbose)
-
+    if savedir_resolution is not None:
+        resolution.to_csv(f'{savedir_resolution}resolution_{case}.csv', index=True)
+    
     ### ADD ALL COLUMNS AND FILL REST WITH ZERO
     for i,c in enumerate(ctry):
         # Add all columns
@@ -101,8 +103,8 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
         
         # Save files
         if savedir is not None:
-            country_detailed.to_csv(f"{savedir}{c}_{case}_MWh.csv")
-        Data[c] = country_detailed.fillna(0) # Store information & replace NaN -> 0
+            country_detailed.to_csv(f"{savedir}{c}_{case}_MW.csv")
+        Data[c] = country_detailed.copy() # Store information in variables (with non-missing NaNs)
         del country_detailed # free memory space
     if is_verbose: print(f"Extract raw {case}: {time()-t0:.2f} sec.             ")
     return Data
