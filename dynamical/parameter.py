@@ -35,6 +35,7 @@ class Parameter():
                     + start and end remain datetimes even if strings are passed
                     + ctry remain a sorted list even if an unsorted list is passed
     """
+    _is_frozen = False # Class attribute to prevent new attributes
     
     def __init__(self, excel=None):
         self.path = Filepath()
@@ -59,6 +60,8 @@ class Parameter():
         if excel is not None: # Initialize with an excel file
             self.from_excel(excel)
         
+        self._is_frozen = True # Freeze the list of attributes
+        
     def __repr__(self):
         text = {}
         attributes = ["ctry","target","start","end","freq","timezone","cst_imports","net_exchanges",
@@ -68,6 +71,18 @@ class Parameter():
         
         return ( "\n".join( [f"{a} --> {text[a]}" for a in text] )
                 + f"\n\n{self.path} \n{self.server}" )
+        
+    def __setattr__(self, name, value):
+        if np.logical_and(self._is_frozen, not hasattr(self, name)):
+            raise AttributeError(f"'parameter' object has no attribute '{name}'")
+        elif name in ['start','end']:
+            super().__setattr__(name, pd.to_datetime(value, yearfirst=True)) # set as time
+        elif name == 'ctry':
+            super().__setattr__(name, sorted(value)) # always keep sorted
+        elif ((name in ['freq','frequency']) & (value in ['Y','M'])): # Start of Month or Year only.
+            super().__setattr__(name, value+"S")
+        else:
+            super().__setattr__(name, value) # otherwise just set value
     
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
@@ -85,16 +100,6 @@ class Parameter():
             return None
         else:
             return bool(value)
-        
-    def __setattr__(self, name, value):
-        if name in ['start','end']:
-            super().__setattr__(name, pd.to_datetime(value, yearfirst=True)) # set as time
-        elif name == 'ctry':
-            super().__setattr__(name, sorted(value)) # always keep sorted
-        elif ((name in ['freq','frequency']) & (value in ['Y','M'])): # Start of Month or Year only.
-            super().__setattr__(name, value+"S")
-        else:
-            super().__setattr__(name, value) # otherwise just set value
     
     def from_excel(self, excel):
         param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None, dtype='O')
@@ -148,6 +153,8 @@ class Filepath():
     Methods:
         - from_excel: load the attributes from a excel sheet.
     """
+    _is_frozen = False # Class attribute to prevent new attributes
+    
     def __init__(self):
         
         self.generation = None
@@ -163,6 +170,8 @@ class Filepath():
         self.swissGrid = None
         self.networkLosses = None
         
+        self._is_frozen = True # Freeze the list of attributes
+        
     def __repr__(self):
         attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
                       "fu_vector","mapping","neighbours","gap","swissGrid",
@@ -173,12 +182,16 @@ class Filepath():
         return text
     
     def __setattr__(self, name, value):
-        if pd.isna(value):
+        if np.logical_and(self._is_frozen, not hasattr(self, name)):
+            raise AttributeError(f"'parameter.path' object has no attribute '{name}'")
+        elif pd.isna(value):
             super().__setattr__(name, None) # set an empty info
         elif os.path.isdir(r"{}".format(value)):
             super().__setattr__(name, os.path.abspath(r"{}".format(value))+"/")
         elif os.path.isfile(r"{}".format(value)):
             super().__setattr__(name, os.path.abspath(r"{}".format(value)))
+        elif np.logical_and(not self._is_frozen, name=='_is_frozen'):
+            super().__setattr__(name, value)
         else:
             raise ValueError(f'Unidentified file or directory: {os.path.abspath(value)}')
     
@@ -213,6 +226,8 @@ class Server():
     
     Methods:
     """
+    _is_frozen = False # Class attribute to prevent new attributes
+    
     def __init__(self):
         # Root of file names on server
         self._nameGenerationFile = "AggregatedGenerationPerType_16.1.B_C.csv"
@@ -232,6 +247,8 @@ class Server():
         self.username = None
         self.password = None # Preferable to ask for it. May be interesting to store if we can encrypt.
         
+        self._is_frozen = True # Freeze the list of attributes
+        
         
     def __repr__(self):
         attributes = ['useServer','host','port','username','password','removeUnused',
@@ -244,7 +261,9 @@ class Server():
         return text
     
     def __setattr__(self, name, value):
-        if pd.isna(value):
+        if np.logical_and(self._is_frozen, not hasattr(self, name)):
+            raise AttributeError(f"'parameter.server' object has no attribute '{name}'")
+        elif pd.isna(value):
             if name in ['useServer','removeUnused']:
                 super().__setattr__(name, False) # set False
             else: super().__setattr__(name, None) # set an empty info
