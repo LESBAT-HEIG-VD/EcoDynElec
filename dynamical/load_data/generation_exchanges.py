@@ -342,14 +342,14 @@ def adjust_exchanges(Cross, neighbourhood, net_exchange=False, freq='H', sg_data
     Return:
         dict of pandas DataFrame with adjusted cross-border flow data.
     """
+    ### ADJUST THE FREQUENCY AND CONVERT TO MWh
+    if is_verbose: print(f"Resample exchanges to {freq} steps...")
+    Cross = resample_data(Cross, freq=freq)
+        
     ### ADJUST WITH SWISSGRID DATA (AT SWISS BORDER ONLY)
     if sg_data is not None: # Adjust with SG data
         Cross = set_swissGrid(Cross, sg_data)
     
-    ### ADJUST THE FREQUENCY
-    if is_verbose: print(f"Resample exchanges to {freq} steps...")
-    Cross = resample_data(Cross, freq=freq)
-        
     ### CREATE THE 'OTHER' AND REMOVE UNUSED
     for c in Cross:
         other = [k for k in neighbourhood if k not in Cross.keys()] # Label as 'other' all non-main selected countries
