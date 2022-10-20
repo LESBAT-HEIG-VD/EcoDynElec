@@ -1,0 +1,5 @@
+-r ../requirements.txt
+dynamical
+Sphynx
+sphynx_rtd_theme
+ipython
