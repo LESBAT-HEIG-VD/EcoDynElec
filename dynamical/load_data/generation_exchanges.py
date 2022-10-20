@@ -4,7 +4,7 @@ import os
 from time import time
 
 #################### Local functions
-from dynamical.checking import check_frequency
+from dynamical.checking import check_frequency, check_regularity_frequency
 from dynamical.residual import include_global_residual
 from dynamical.load_data.raw_entsoe import extract
 from dynamical.load_data.autocomplete import get_steps_per_hour
@@ -478,13 +478,32 @@ def resample_data(Data, freq):
     ### VERIFY THE FREQUENCY
     check_frequency(freq)
     
-    for f in Data: # For all keys
-        conv_factor = get_steps_per_hour(freq) # Factor to convert MW to MWh
-        # Resample Power and turn into energy
-        Data[f] = (Data[f]
-                   .resample(freq)
-                   .apply(lambda x:x.mean())
-                   .interpolate()
-                   .fillna(0)) / conv_factor
+    if check_regularity_frequency(freq): # If frequency is regular for pandas
+        ### Normal resampling and MW -> MWh conversion
+        for f in Data: # For all keys
+            conv_factor = get_steps_per_hour(freq) # Factor to convert MW to MWh
+            # Resample Power and turn into energy
+            Data[f] = (Data[f]
+                       .resample(freq)
+                       .apply(lambda x:x.mean())
+                       .interpolate()
+                       .fillna(0)) / conv_factor
+            
+    else: # Frequency is month or year
+        ### Use Hours to convert MW -> MWh, then resample to correct frequency
+        for f in Data: # For all keys
+            conv_factor = get_steps_per_hour('H') # Factor to convert MW to MWh
+            # Resample Power and turn into energy
+            Data[f] = (((Data[f]
+                         .resample(freq)
+                         .apply(lambda x:x.mean()) # Average as power still
+                         .interpolate()
+                         .fillna(0)
+                        )
+                        / conv_factor # Turn MW -> MWh
+                       )
+                       .resample(freq)
+                       .sum() # Sum as energy now
+                      )
             
     return Data

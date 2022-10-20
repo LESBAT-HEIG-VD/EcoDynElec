@@ -28,6 +28,25 @@ def check_frequency(freq):
 #
 #
 #
+#
+#
+# ############################
+# ############################
+# # Check regular frequency
+# ############################
+# ############################
+
+def check_regularity_frequency(freq):
+    """Verifies if the requested frequency is regular for pandas"""
+    acceptable = ['15T','15min','30T','30min','H','d','D','w','W']
+    return freq in acceptable
+
+
+#
+#
+#
+#
+#
 # ############################
 # ############################
 # # Check residual availability

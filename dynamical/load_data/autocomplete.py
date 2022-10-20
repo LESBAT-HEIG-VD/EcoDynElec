@@ -110,14 +110,14 @@ def infer_one(obj):
         
     
 
-def get_steps_per_hour(freq):
+def get_steps_per_hour(freq, dtype=int):
     """Retrieve resolution for a specific country and field."""
     ### Make sure it starts with a number
     if not np.any([freq.startswith(k) for k in '0123456789']): # If starts with a letter
         frequency = f"1{freq}"
     else: frequency = freq
     
-    return np.int8( pd.Timedelta('1H') / pd.Timedelta(frequency) ) # Return nb of steps per hour
+    return dtype( pd.Timedelta('1H') / pd.Timedelta(frequency) ) # Return nb of steps per hour
 
 def set_lengths(data:dict):
     """
