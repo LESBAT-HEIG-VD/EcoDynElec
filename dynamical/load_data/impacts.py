@@ -267,3 +267,22 @@ def residual_from_excel(mapping, place):
 def set_constant_impacts(impacts, constant):
     """Set the impacts to a constant value"""
     return impacts.apply(lambda x: constant,axis=1)
+
+
+# +
+
+#################################
+# ################################
+# Units from Mapping
+# ################################
+# ################################
+
+# -
+
+def set_constant_impacts(impacts, constant):
+    """Read the units of impacts from the mapping"""
+    ### Impact for production mix of 'other countries'
+    d = pd.read_excel(mapping,sheet_name="ENTSOE_avg",
+                      header=1, usecols=np.arange(2,7),
+                      index_col=[0]) # extract
+    return d.iloc[1].apply(lambda x:str(x).replace(' ','')).rename('Units')
