@@ -192,22 +192,27 @@ def country_from_excel(mapping, place):
     """Load the mapping of a given country (place) from an excel file (mapping)."""
     try: # test if the country is available in the mapping file
         d = pd.read_excel(mapping,sheet_name=place, index_col=[0]) # Read and get index col
-        columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
-        columns = columns[ columns.apply(lambda x: not str(x).endswith('KBOB')) ] # Strike out KBOB... Do your own mapping man!
-
-        # Get only important data
-        d = d.loc[:,columns.index].dropna(axis=0).rename(columns=columns.to_dict())
-        d = d.loc[d.index.notnull()].drop(index=['Energy sources ENTSO-E'], errors='ignore') # Select the correct indexes
-
-        # Replace "-" with zeros.
-        d = d.replace("-",0).astype('float32')
-
-        # Change indexes
-        return d.rename({i: (i.replace('(','').replace(')','').replace(" Fos",' fos')
-                             + f" {place}").replace(' ','_').replace('__','_')
-                         for i in d.index}, axis=0).rename_axis("")
     except Exception as e:
         raise ValueError(f"Mapping for {place} not available: {e} ")
+    
+    key = [k for k in d.columns if str(k).lower().find('impact')!=-1][-1] # Select last 'impact' column as key
+    columns = d.loc[:,key:].iloc[0]
+    #columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
+    columns = columns[ columns.apply(lambda x: not str(x).endswith('KBOB')) ] # Strike out KBOB... Do your own mapping man!
+
+    # Get only important data
+    d = d.loc[:,columns.index].dropna(axis=0).rename(columns=columns.to_dict())
+    to_drop = [k for k in d.index if str(k).lower().find('sources entso-e')!=-1]
+    d = d.loc[d.index.notnull()].drop(index=to_drop, errors='ignore') # Select the correct indexes
+    #d = d.loc[d.index.notnull()].drop(index=['Energy sources ENTSO-E'], errors='ignore') # Select the correct indexes
+
+    # Replace "-" with zeros.
+    d = d.replace("-",0).astype('float32')
+
+    # Change indexes
+    return d.rename({i: (i.replace('(','').replace(')','').replace(" Fos",' fos')
+                         + f" {place}").replace(' ','_').replace('__','_')
+                     for i in d.index}, axis=0).rename_axis("")
 
 
 # +
@@ -231,22 +236,22 @@ def residual_from_excel(mapping, place):
     """
     try: # test if the "country" is available in the mapping file
         d = pd.read_excel(mapping,sheet_name="Residue",index_col=0)
-        columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
-
-        # Select the righ column
-        d = d.loc[:,columns.index].rename(columns=columns.to_dict()).rename_axis('')
-
-        # Select the right indexes
-        idx = pd.Series(d.index).apply(lambda x:str(x).startswith('Resid')).values
-        d = d.loc[idx].astype('float32')
-
-        # Rename indexes with the place & formatting
-        return d.rename(index={i: (i.replace('Residue','Residual').replace(" ","_")
-                                   +f"_{place}")
-                               for i in d.index})
-        
     except Exception as e:
         raise ValueError(f" Residual not available: {e}")
+        
+    columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
+
+    # Select the righ column
+    d = d.loc[:,columns.index].rename(columns=columns.to_dict()).rename_axis('')
+
+    # Select the right indexes
+    idx = pd.Series(d.index).apply(lambda x:str(x).startswith('Resid')).values
+    d = d.loc[idx].astype('float32')
+
+    # Rename indexes with the place & formatting
+    return d.rename(index={i: (i.replace('Residue','Residual').replace(" ","_")
+                               +f"_{place}")
+                           for i in d.index})
 
 
 # +
