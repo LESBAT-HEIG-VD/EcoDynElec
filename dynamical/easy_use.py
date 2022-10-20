@@ -139,7 +139,7 @@ def execute(p=None, excel=None, is_verbose=False):
     ############################
     ###### COMPUTE ELEC IMPACTS
     ######
-    imp = compute_impacts(mix_data=mix, impact_data=impact_matrix, freq=p.freq, is_verbose=is_verbose)
+    imp = compute_impacts(mix_data=mix, impact_data=impact_matrix, is_verbose=is_verbose)
     
     
     ###############################

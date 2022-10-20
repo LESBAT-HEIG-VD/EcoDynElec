@@ -3,9 +3,6 @@ import pandas as pd
 import os
 from time import time
 
-############# Local functions
-from dynamical.checking import check_frequency
-
 
 #
 #
@@ -18,16 +15,14 @@ from dynamical.checking import check_frequency
 """
 
 
-def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
+def compute_impacts(mix_data, impact_data, is_verbose=False):
     """Computes the impacts based on electric mix and production means impacts.
     Parameter:
         mix_data: information about the electric mix in the target country (pandas DataFrame)
         impact_data: impact matrix for all production units (pandas DataFrame)
-        freq: time step of the study (str, default: H)
         is_verbose: to display information (bool, default: False)
     Return:
         dict of pandas DataFrame containing the impacts."""
-    check_frequency(freq)
     
     t3 = time()
     
@@ -35,14 +30,13 @@ def compute_impacts(mix_data, impact_data, freq='H', is_verbose=False):
     
     if is_verbose: print("Compute the electricity impacts...\n\tGlobal...")
     collect_impacts = {}
-    collect_impacts['Global'] = compute_global_impacts(mix_data=mix_data, impact_data=impacts_matrix,
-                                                       freq=freq)
+    collect_impacts['Global'] = compute_global_impacts(mix_data=mix_data, impact_data=impacts_matrix,)
     
     
     for i in impacts_matrix.columns:
         if is_verbose: print("\t{}...".format(i))
         collect_impacts[i] = compute_detailed_impacts(mix_data=mix_data, impact_data=impacts_matrix.loc[:,i],
-                                                      indicator=i, freq=freq)
+                                                      indicator=i)
     
     if is_verbose: print("Impact computation: {} sec.".format(round(time()-t3,1))) # time report
 
@@ -95,7 +89,7 @@ def equalize_impact_vector(impact_data, production_units):
 # #############################
 # #############################
 
-def compute_global_impacts(mix_data, impact_data, freq='H'):
+def compute_global_impacts(mix_data, impact_data):
     """Computes the overall impacts of electricity for each indicator"""
     ###############################################
     # Computation of global impact
@@ -120,7 +114,7 @@ def compute_global_impacts(mix_data, impact_data, freq='H'):
 # #############################
 # #############################
 
-def compute_detailed_impacts(mix_data, impact_data, indicator, freq='H'):
+def compute_detailed_impacts(mix_data, impact_data, indicator):
     """Computes the impacts of electricity per production unit for a given indicator"""
     #####################################################
     # Computation of detailed impacts per production unit
