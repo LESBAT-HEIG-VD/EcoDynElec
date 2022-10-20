@@ -88,7 +88,7 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
         del country_data # free memory space
     
     ### AUTOCOMPLETE THE DATA
-    Data, resolution = autocomplete(Data, kind=case, n_hours=n_hours, days_around=days_around, limit=limit,
+    Data, resolution = autocomplete(Data, n_hours=n_hours, days_around=days_around, limit=limit,
                            ignore=(not correct_data), is_verbose=is_verbose)
     if savedir_resolution is not None:
         resolution.to_csv(f'{savedir_resolution}resolution_{case}.csv', index=True)
@@ -106,7 +106,7 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
             country_detailed.to_csv(f"{savedir}{c}_{case}_MW.csv")
         Data[c] = country_detailed.copy() # Store information in variables (with non-missing NaNs)
         del country_detailed # free memory space
-    if is_verbose: print(f"Extract raw {case}: {time()-t0:.2f} sec.             ")
+    if is_verbose: print(f"Extraction raw {case}: {time()-t0:.2f} sec.             ")
     return Data
 
 

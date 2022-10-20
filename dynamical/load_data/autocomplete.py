@@ -15,7 +15,7 @@ import pandas as pd
 ###############################
 ### PILOTE FUNCTION
 ###
-def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:int=7, limit:float=.4,
+def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
                  ignore:bool=False, is_verbose:bool=False):
     """
     Main function to auto-complete the data. Works with generation and import.
@@ -23,9 +23,6 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
     -----------
         data: dict
             the dict of data to auto-complete.
-        kind: str, optional
-            'generation' or 'import' for the kind of
-            information to deal with. Default 'generation'
         n_hours:
         days_around:
         limit:
@@ -37,22 +34,15 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
         pandas DataFrame with resolutions
     """
     
-    if is_verbose: print(f'Autocomplete {kind}...'+" "*15)
+    if is_verbose: print(f'Autocomplete...'+" "*15)
     
     ### ESTIMATE RESOLUTION
-    resolution = infer_resolution(data, kind=kind)
+    resolution = infer_resolution(data)
     
     ### RESHAPE THE DATA
-    if kind.lower()=='generation':
-        new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
-                                                               freq=resolution.loc[field,c])
-                                     for field in data[c].columns}) for c in data}
-    elif kind.lower()=='import':
-        new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
-                                                               freq=resolution.loc[field,c])
-                                     for field in data[c].columns}) for c in data}
-    else:
-        raise KeyError(f"Unknown kind '{kind}'. Must be 'generation' or 'import'.")
+    new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
+                                                           freq=resolution.loc[field,c])
+                                 for field in data[c].columns}) for c in data}
     
     ### IDENTIFY DATA GAPS
     all_gaps = find_missing(new_data)
@@ -93,32 +83,30 @@ def autocomplete(data:dict, kind:str='generation', n_hours:int=2, days_around:in
 ###############################
 ### HELPER FUNCTIONS
 ###
-def infer_resolution(data:dict, kind:str):
+def infer_resolution(data:dict):
     """Infers the resolution of all fields for all countries"""
-    if kind=='generation':
-        return pd.DataFrame({c: {k: pd.infer_freq( data[c].loc[:,k].dropna().index )
-                                 for k in data[c].columns} # All still dataframes
-                             for c in data}).fillna(method='ffill').fillna(method='bfill')
-    elif kind=='import':
-        return pd.DataFrame({c: {k: infer_one_exchange( data[c].loc[:,k].dropna().index )
-                                 for k in data[c].columns} # All still dataframes
-                             for c in data})
+    resolution = pd.DataFrame({c: {k: infer_one( data[c].loc[:,k].dropna(axis=0).index )
+                                   for k in data[c].columns} # All still dataframes
+                               for c in data})
+    if not all(resolution.index.str.len()==2): # Generation
+        return resolution.fillna(method='ffill').fillna(method='bfill')
+    else: return resolution
 
-def infer_one_exchange(obj):
-    """Infer for one single time Series for import"""
-    freq = pd.infer_freq(obj)
-    if freq is not None:
-        return freq
+def infer_one(obj):
+    """Infer frequency for one single time Series"""
+    freq = pd.infer_freq(obj) # Use built-in pandas
+    if freq is not None: # but function is not robust
+        return freq # at all...
     
-    limit = 10 # Test on the 10 firsts
-    while limit>1:
-        ### Read frequency from start
-        freq = pd.infer_freq(obj[:limit])
-        ### Reset condition
-        limit -= 1
-        if freq is not None: return freq
-    else:
-        return "15T" # Worst condition if nothing is found.
+    ### Back-up plan is to infer manually (smallest delta)
+    components = {'15T':lambda x: getattr(x,'minutes')==15,
+                  '30T':lambda x: getattr(x,'minutes')==30,
+                  'H':lambda x: getattr(x,'hours')==1,
+                  'D':lambda x: getattr(x,'days')==1,} # Possible frequencies
+    tdelta = pd.Timedelta( np.diff(obj).min() ) # Shortest time delta between indexes
+    # Identify the corresponding frequency (day, hour, 30min, 15min)
+    freqs = pd.Series({k:components[k](tdelta.components) for k in components})
+    return freqs.idxmax() # Get the index (frequency) of max (1st True or 15T)
         
     
 
