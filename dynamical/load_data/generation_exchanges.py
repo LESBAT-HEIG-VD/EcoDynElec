@@ -205,7 +205,7 @@ def adjust_generation(Gen, freq='H', residual_global=False,
     """
     ### Resample data to the right frequence
     if is_verbose: print(f"\t4/{4+int(residual_global)} - Resample exchanges to {freq} steps...")
-    Gen = resample_data(Gen, freq=freq)
+    Gen = resample_data(Gen, freq=freq, case='gen')
     # print("===========\nGENERATION\n===========")
     # print(Gen)
     
@@ -344,7 +344,7 @@ def adjust_exchanges(Cross, neighbourhood, net_exchange=False, freq='H', sg_data
     """
     ### ADJUST THE FREQUENCY AND CONVERT TO MWh
     if is_verbose: print(f"Resample exchanges to {freq} steps...")
-    Cross = resample_data(Cross, freq=freq)
+    Cross = resample_data(Cross, freq=freq, case='imp')
         
     ### ADJUST WITH SWISSGRID DATA (AT SWISS BORDER ONLY)
     if sg_data is not None: # Adjust with SG data
@@ -463,7 +463,7 @@ def _join_generation_exchanges(Gen, Cross, is_verbose=False):
 
 # -
 
-def resample_data(Data, freq):
+def resample_data(Data, freq, case):
     """
     Function that turns data from MW to MWh and adapts its frequency.
     The data is assumed to be in MW, in a table with 15min indexes.
@@ -477,15 +477,14 @@ def resample_data(Data, freq):
     """
     ### VERIFY THE FREQUENCY
     check_frequency(freq)
-    
     if check_regularity_frequency(freq): # If frequency is regular for pandas
         ### Normal resampling and MW -> MWh conversion
         for f in Data: # For all keys
-            conv_factor = get_steps_per_hour(freq) # Factor to convert MW to MWh
+            conv_factor = get_steps_per_hour(freq, dtype=float) # Factor to convert MW to MWh
             # Resample Power and turn into energy
             Data[f] = (Data[f]
                        .resample(freq)
-                       .apply(lambda x:x.mean())
+                       .mean()#apply(lambda x:x.mean()) # Mean works also to downscale
                        .interpolate()
                        .fillna(0)) / conv_factor
             
@@ -496,7 +495,7 @@ def resample_data(Data, freq):
             # Resample Power and turn into energy
             Data[f] = (((Data[f]
                          .resample(freq)
-                         .apply(lambda x:x.mean()) # Average as power still
+                         .mean()#apply(lambda x:x.mean()) # Average as power still
                          .interpolate()
                          .fillna(0)
                         )

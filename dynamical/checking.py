@@ -17,7 +17,7 @@ import pandas as pd
 
 def check_frequency(freq):
     """Verifies if the requested frequency is supported"""
-    allowed = ["Y","YS","M","MS","W","w","D","d","H","30min","15min"]
+    allowed = ["Y","YS","M","MS","W","w","D","d","H","30min","30T","15min","15T"]
     if freq not in allowed:
         raise KeyError(f'the specified timestep must be in {allowed}')
     return True

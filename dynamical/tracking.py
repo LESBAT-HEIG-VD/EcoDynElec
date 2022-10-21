@@ -172,10 +172,10 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
     
     if is_verbose:
         check_frequency(freq)
-        step = {'15min':96, '30min':48, 'H':24, 'd':7, 'D':7,
-                'W':1,'w':1,'M':1, 'MS':1, 'Y':1, 'YS':1}[freq]
-        step_name = {'15min':"day", '30min':"day", 'H':"day", 'd':"week", 'D':"week",
-                     'W':'week', 'w':'week','M':"month", 'MS':"month", 'Y':"year", 'YS':"year"}[freq]
+        step = {'15min':96, '15T':96, '30min':48, '30T':48, 'H':24,
+                'd':7, 'D':7, 'W':1,'w':1,'M':1, 'MS':1, 'Y':1, 'YS':1}[freq]
+        step_name = {'15min':"day", '15T':"day", '30min':"day", '30T':"day", 'H':"day", 'd':"week",
+                     'D':"week", 'W':'week', 'w':'week','M':"month", 'MS':"month", 'Y':"year", 'YS':"year"}[freq]
         total = np.ceil(data.shape[0]/step).astype('int32') # total nb of steps to display
     else:
         step = data.shape[0]
