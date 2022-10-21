@@ -76,7 +76,6 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
                                 deltas=deltas, is_verbose=is_verbose)
     
     ### FILL GAPS TO SKIP WITH ZEROS
-    print("Fill Excessive gaps")
     new_data = fill_all_excess(new_data, period_indexes=excess_gaps)
     
     ### SET DATA BACK TO THEIR ORIGINAL FORMAT
@@ -85,7 +84,6 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
                 for c in new_data}
     
     ### FILL SHORT GAPS AND RETURN
-    print('Fill short gaps')
     new_data = fill_occasional(new_data)
     return new_data, resolution
     
