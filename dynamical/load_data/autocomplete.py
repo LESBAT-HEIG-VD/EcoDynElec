@@ -15,7 +15,7 @@ import pandas as pd
 ###############################
 ### PILOTE FUNCTION
 ###
-def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
+def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
                  ignore:bool=False, is_verbose:bool=False):
     """
     Main function to auto-complete the data. Works with generation and import.
@@ -25,7 +25,7 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
             the dict of data to auto-complete.
         n_hours:
         days_around:
-        limit:
+        limit: max relative size of gap to allow an autocomplete
         ignore:
         is_verbose:
     Returns:
@@ -40,9 +40,10 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
     resolution = infer_resolution(data)
     
     ### RESHAPE THE DATA
-    new_data = {c: pd.DataFrame({field: to_original_series(data[c].loc[:,field],
-                                                           freq=resolution.loc[field,c])
-                                 for field in data[c].columns}) for c in data}
+    new_data = {c: {field: to_original_series(data[c].loc[:,field],
+                                              freq=resolution.loc[field,c])
+                    for field in data[c].columns}
+                for c in data}
     
     ### IDENTIFY DATA GAPS
     all_gaps = find_missing(new_data)
@@ -50,24 +51,33 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
     if ignore:
         datasize = {c: {k: new_data[c][k].shape[0] for k in new_data[c]} for c in new_data}
         if is_verbose: report_missing(all_gaps, datasize)
+    
+        ### SET DATA BACK TO THEIR ORIGINAL FORMAT
+        new_data = {c: pd.DataFrame({field: new_data[c][field]
+                                     for field in new_data[c]})
+                    for c in new_data}
+        
         return new_data, resolution # return 'new_data'
     
-    ### IDENTIFY FIELDS TO SKIP
-    to_skip = find_to_skip(new_data, limit)
-    
     ### REDUCE SELECTION TO LONG GAPS
-    thresholds = set_thresholds(new_data, resolution, n_hours=n_hours)
+    long_thresholds = set_thresholds(new_data, resolution, n_hours=n_hours)
     lengths = set_lengths(new_data) # Compute lengths
-    long_gaps = sort_gaps(all_gaps, thresholds, lengths) # Sort gaps
+    excess_thresholds = {c :{k: int(limit*lengths[c][k])
+                             for k in lengths[c]}
+                         for c in lengths}
+    long_gaps = sort_gaps(all_gaps, lower=long_thresholds,
+                          upper=excess_thresholds, lengths=lengths) # Sort gaps for long
+    excess_gaps = sort_gaps(all_gaps, lower=excess_thresholds,
+                            lengths=lengths) # Sort gaps for excess
     
     ### FILL LONG GAPS
     deltas = set_deltas(new_data, resolution, days_around=days_around)
     new_data = fill_all_periods(new_data, period_indexes=long_gaps,
-                                deltas=deltas, to_skip=to_skip,
-                                is_verbose=is_verbose)
+                                deltas=deltas, is_verbose=is_verbose)
     
-    ### FILL FIELDS TO SKIP WITH ZEROS
-    new_data = fill_all_skipped(new_data, to_skip)
+    ### FILL GAPS TO SKIP WITH ZEROS
+    print("Fill Excessive gaps")
+    new_data = fill_all_excess(new_data, period_indexes=excess_gaps)
     
     ### SET DATA BACK TO THEIR ORIGINAL FORMAT
     new_data = {c: pd.DataFrame({field: new_data[c][field]
@@ -75,6 +85,7 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.4,
                 for c in new_data}
     
     ### FILL SHORT GAPS AND RETURN
+    print('Fill short gaps')
     new_data = fill_occasional(new_data)
     return new_data, resolution
     
@@ -153,53 +164,14 @@ def to_original_series(obj, freq):
         raise TypeError(f"Only series are expected. {type(obj)} object was passed.")
     
     ### CONVERT DATA MW -> MWH BEFORE AUTO-COMPLETING (as the frequency is infered)
-    #conv_factor = get_steps_per_hour(freq)
-    return obj.resample(freq).asfreq()# / conv_factor # Resample with original frequency & energy
+    return obj.resample(freq).asfreq() # Resample with original frequency 
 
 
 ###############################
 ###############################
 ### IDENTIFICATION OF GAPS
 ###
-def find_to_skip(data, limit:float):
-    """
-    Finds fields with too many misses to being autocompleted.
-    Parameters:
-    -----------
-        data: dict of pandas DataFrames
-            the data to process
-    Returns:
-    --------
-        dict (keys are countries) of dicts (keys are former columns)
-        of matrices. Final matrix has one identified gap per row and
-        three columns (length of gap, first..., and last index of gap)
-    """
-    return {c: {k: ignore_series( series=data[c][k], limit=limit ) # Find missing values
-                for k in data[c]} # Iterate for every sub-category
-            for c in data} # Iterate for every country
-
-def ignore_series( series:dict, limit:float ):
-    """
-    Flags if a single series has too many missing data.
-    Parameters:
-    -----------
-        series: pandas Series
-            the data to process
-        limit: float
-            the maximum ratio of missing data
-            for allowing autocomplete.
-    Returns:
-    --------
-        Boolean. True if number of missing values is
-        too high.
-    """
-    ### Identify if data point is NaN or not
-    vecNan = np.isnan(series.to_numpy())
     
-    ### Verify to avoid filling if too many missing
-    return (vecNan.sum() / vecNan.shape[0])>limit
-    
-
 def find_missing(data:dict):
     """
     Identifies the missing values for the entire set of data.
@@ -260,28 +232,35 @@ def find_missing_one(series):
 ### SORTING OF GAPS
 ###
 
-def sort_gaps(gaps:dict, thresholds:dict, lengths:dict):
+def sort_gaps(gaps:dict, lower:dict, lengths:dict, upper:dict=None):
     """
     Identify long gaps (above threshold).
     Needs the length of data for specific processes
     """
+    if upper is None:
+        upper = {c: {k: None for k in gaps[c]} for c in gaps}
+        
     return {c: {k: select_long_gaps(gaps[c][k], name=k,
-                                    threshold=thresholds[c][k],
+                                    lower=lower[c][k],
+                                    upper=upper[c][k],
                                     length=lengths[c][k])
                 for k in gaps[c]}
             for c in gaps}
 
-def select_long_gaps(gaps, name, threshold, length):
+def select_long_gaps(gaps, name, lower, upper, length):
     """
     Identify long gaps for one subcategory of one country
     with one unique threshold. Can make exception with
     some cases, e.g. solar at the extremes of dataset.
     """
     ### Select all longer than threshold
-    long_gaps = gaps[gaps[:,0]>threshold] 
+    if upper is not None:
+        long_gaps = gaps[np.logical_and(upper>gaps[:,0], gaps[:,0]>lower)] 
+    else:
+        long_gaps = gaps[gaps[:,0]>lower] 
     
     ### Handle specific gaps
-    if gaps.shape[0]>0:
+    if ((gaps.shape[0]>0)&(upper is None)):
         long_gaps = add_specific_gaps(gaps, name, length, long_gaps)
     
     return long_gaps
@@ -306,12 +285,11 @@ def add_specific_gaps(all_gaps, name, length, long_gaps):
 ###############################
 ### COMPLETE GAPS
 ###
-def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, to_skip:dict, is_verbose:bool=False):
+def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbose:bool=False):
     
     for i,c in enumerate(data): # For all countries
         ### Fill the periods
         for j,k in enumerate(data[c]): # For all elements of each country
-            if to_skip[c][k]: continue;
             if is_verbose: print(f"\t{c} ({i+1:02d}/{len(data):02d}); field {j+1:02d}/{len(data[c]):02d})"+" "*10, end='\r')
             data[c][k] = fill_one_series(data[c][k], period_indexes[c][k], delta=deltas[c][k]) # Fill the data
     
@@ -333,11 +311,16 @@ def fill_one_period(avg_day, to_fill):
         filled.loc[filled.index.strftime('%H:%M')==t] = avg_day.loc[t]
     return filled
 
-def fill_all_skipped(data:dict, skipped:dict):
+def fill_all_excess(data:dict, period_indexes:dict):
     """Fills with zeros the fields that were skipped"""
-    return {c: {k: (data[c][k].fillna(0) if skipped[c][k]
-                    else data[c][k]) for k in data[c]}
-            for c in data}
+    
+    for i,c in enumerate(data): # For all countries
+        ### Fill the periods
+        for j,k in enumerate(data[c]): # For all elements of each country
+            for gap in period_indexes[c][k]:
+                data[c][k].iloc[gap[1]:gap[2]] = data[c][k].iloc[gap[1]:gap[2]].fillna(0) # Write 0 where gaps
+    
+    return data
 
 def fill_occasional(data:dict):
     """Fills short gaps of data with linear interpolation."""
