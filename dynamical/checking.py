@@ -1,5 +1,7 @@
+import sys
 import numpy as np
 import pandas as pd
+from warnings import warn
 
 
 #
@@ -40,6 +42,39 @@ def check_regularity_frequency(freq):
     """Verifies if the requested frequency is regular for pandas"""
     acceptable = ['15T','15min','30T','30min','H','d','D','w','W']
     return freq in acceptable
+
+
+#
+#
+#
+#
+#
+#
+#
+# ############################
+# ############################
+# # Check mapping availability
+# ############################
+# ############################
+
+def check_mapping(mapping, mix, strategy='error'):
+    ### Production Units with non-null production
+    locate = np.logical_and(~mix.columns.str.startswith('Mix_'), mix.sum()!=0)
+    with_prod = mix.columns[locate]
+
+    ### Active production units with no mapping
+    in_mapping = with_prod.str.contains("|".join(mapping.index))
+    
+    if not all(in_mapping):
+        units = list(with_prod[~in_mapping])
+        if strategy.lower() in ['raise','error']:
+            raise ValueError(f"The following units do produce and have no mapping: {units}")
+        else:
+            warning_msg = f"The following units do produce and have no mapping: {units}."
+            warning_msg += f" Impact values will be inferred following the strategy `{strategy}`."
+            warn(warning_msg); sys.stderr.flush()
+    
+    return True
 
 
 #

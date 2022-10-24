@@ -17,6 +17,7 @@ from dynamical.load_data.generation_exchanges import import_data
 from dynamical.tracking import track_mix
 from dynamical.residual import include_local_residual
 from dynamical.impacts import compute_impacts
+from dynamical.checking import check_mapping
 
 from dynamical import saving
 
@@ -33,7 +34,7 @@ from dynamical import saving
 # +
 
 
-def execute(p=None, excel=None, is_verbose=False):
+def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     """
     Easy all-in-one execution of the algorighm, containing
     - the import of auxiliary data
@@ -116,6 +117,10 @@ def execute(p=None, excel=None, is_verbose=False):
                                savedir=p.path.savedir, net_exchange=p.net_exchanges, 
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                clean_data=p.data_cleaning, is_verbose=is_verbose)
+    
+    
+    # Verify the adequacy between production and impacts
+    check_mapping(mapping=impact_matrix, mix=raw_prodExch, strategy=missing_mapping)
 
 
     ########################
@@ -139,7 +144,8 @@ def execute(p=None, excel=None, is_verbose=False):
     ############################
     ###### COMPUTE ELEC IMPACTS
     ######
-    imp = compute_impacts(mix_data=mix, impact_data=impact_matrix, is_verbose=is_verbose)
+    imp = compute_impacts(mix_data=mix, impact_data=impact_matrix,
+                          strategy=missing_mapping, is_verbose=is_verbose)
     
     
     ###############################

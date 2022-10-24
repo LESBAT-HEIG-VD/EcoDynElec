@@ -279,7 +279,7 @@ def set_constant_impacts(impacts, constant):
 
 # -
 
-def set_constant_impacts(impacts, constant):
+def get_impact_units(mapping):
     """Read the units of impacts from the mapping"""
     ### Impact for production mix of 'other countries'
     d = pd.read_excel(mapping,sheet_name="ENTSOE_avg",

@@ -205,9 +205,7 @@ def adjust_generation(Gen, freq='H', residual_global=False,
     """
     ### Resample data to the right frequence
     if is_verbose: print(f"\t4/{4+int(residual_global)} - Resample exchanges to {freq} steps...")
-    Gen = resample_data(Gen, freq=freq, case='gen')
-    # print("===========\nGENERATION\n===========")
-    # print(Gen)
+    Gen = resample_data(Gen, freq=freq)
     
     ### Includes residual production
     if residual_global:
@@ -344,7 +342,7 @@ def adjust_exchanges(Cross, neighbourhood, net_exchange=False, freq='H', sg_data
     """
     ### ADJUST THE FREQUENCY AND CONVERT TO MWh
     if is_verbose: print(f"Resample exchanges to {freq} steps...")
-    Cross = resample_data(Cross, freq=freq, case='imp')
+    Cross = resample_data(Cross, freq=freq)
         
     ### ADJUST WITH SWISSGRID DATA (AT SWISS BORDER ONLY)
     if sg_data is not None: # Adjust with SG data
@@ -463,7 +461,7 @@ def _join_generation_exchanges(Gen, Cross, is_verbose=False):
 
 # -
 
-def resample_data(Data, freq, case):
+def resample_data(Data, freq):
     """
     Function that turns data from MW to MWh and adapts its frequency.
     The data is assumed to be in MW, in a table with 15min indexes.
@@ -484,7 +482,7 @@ def resample_data(Data, freq, case):
             # Resample Power and turn into energy
             Data[f] = (Data[f]
                        .resample(freq)
-                       .mean()#apply(lambda x:x.mean()) # Mean works also to downscale
+                       .mean() # Mean works also to downscale
                        .interpolate()
                        .fillna(0)) / conv_factor
             
@@ -495,7 +493,7 @@ def resample_data(Data, freq, case):
             # Resample Power and turn into energy
             Data[f] = (((Data[f]
                          .resample(freq)
-                         .mean()#apply(lambda x:x.mean()) # Average as power still
+                         .mean() # Average as power still
                          .interpolate()
                          .fillna(0)
                         )
