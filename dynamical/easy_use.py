@@ -35,24 +35,45 @@ from dynamical import saving
 
 
 def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
+    """Executes the whole computation process, i.e. (1) downloads required data;
+    (2) load auxiliary data; (3) load and correct Entso-E data; (4) compute the 
+    electricity tracking; (5) computes the environmental impacts; (6) save and return.
+    
+    :param p: a set of parameters to govern the computation, defaults to None
+    :type p: class:`dynamical.Parameter`, optional
+    ...
+    :param excel: path to an xlsx file containing parameters, default to None
+    :type excel: str, optional
+    ...
+    :param missing_mapping: strategy for handling producing units with not mapping.
+        'error' (default) raises an error, 'worst' takes the highest impact value in
+        the available set, 'unit' takes the highest impact value available from a 
+        similar unit type, defaults to 'error'
+    :type missing_mapping: str, optional
+    ...
+    :param is_verbose: to display information, defaults to False
+    :type is_verbose: bool, optional
+    ...
+    ...
+    :return: a collection of tables containing the dynamic impacts of 1kWh of electricity
+    :rtype: dict of `pandas.DataFrame`
     """
-    Easy all-in-one execution of the algorighm, containing
-    - the import of auxiliary data
-    - the import and correction of Entso-E data (import from files)
-    - the electricity tracking
-    - the computation of the different impacts (GWP, CED, ES2013)
-    - a data shift to the right time zone (initially all is in utc)
-    - save the data into files
     
-    Parameter:
-        p: the parameter object (from class Parameter). Default: None
-        excel: str to the excel file with parameters. Default: None
-        is_verbose: bool to display information. Default: False
-    
-    Return:
-        dict of pandas DataFrame with the impacts of 1kWh of electricity.
-    
-    """
+    # """
+    # Easy all-in-one execution of the algorighm, containing
+    # - the import of auxiliary data
+    # - the import and correction of Entso-E data (import from files)
+    # - the electricity tracking
+    # - the computation of the different impacts (GWP, CED, ES2013)
+    # - a data shift to the right time zone (initially all is in utc)
+    # - save the data into files
+    # Parameter:
+    #     p: the parameter object (from class Parameter). Default: None
+    #     excel: str to the excel file with parameters. Default: None
+    #     is_verbose: bool to display information. Default: False
+    # Return:
+    #     dict of pandas DataFrame with the impacts of 1kWh of electricity.
+    # """
     ###########################
     ###### PARAMETERS
     ######
