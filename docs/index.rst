@@ -1,18 +1,21 @@
-*****************************************
-Dynamical Documentation
-*****************************************
------------------------------------------------------------------------------
-dynamical: Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
------------------------------------------------------------------------------
+.. dynamical documentation master file, created by
+   sphinx-quickstart on Mon Oct 31 16:34:14 2022.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-dynamical software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
+Welcome to dynamical's documentation!
+=====================================
 
-.. image:: images/workflow.png
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
-`dynamical` is a free software under APACHE 2.0 licence. It was developped in a collaboration between the EMPA <https://www.empa.ch/>, HEIG-VD <https://heig-vd.ch/>, the SUPSI <https://www.supsi.ch/home.html>.
+dynamical
 
-Installation
-============
-For now the software can only be installed from the gitlab repository <https://gitlab.com/fledee/ecodyn/>
 
-.. image:: images/dynamical.png
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
