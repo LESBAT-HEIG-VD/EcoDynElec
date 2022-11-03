@@ -10,6 +10,7 @@ Welcome to dynamical's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+dynamical
 
 
 Indices and tables
