@@ -41,20 +41,15 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     
     :param p: a set of parameters to govern the computation, defaults to None
     :type p: class:`dynamical.Parameter`, optional
-    ...
     :param excel: path to an xlsx file containing parameters, default to None
     :type excel: str, optional
-    ...
     :param missing_mapping: strategy for handling producing units with not mapping.
         'error' (default) raises an error, 'worst' takes the highest impact value in
         the available set, 'unit' takes the highest impact value available from a 
         similar unit type, defaults to 'error'
     :type missing_mapping: str, optional
-    ...
     :param is_verbose: to display information, defaults to False
     :type is_verbose: bool, optional
-    ...
-    ...
     :return: a collection of tables containing the dynamic impacts of 1kWh of electricity
     :rtype: dict of `pandas.DataFrame`
     """
@@ -208,18 +203,27 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
 # ######################################
 # -
 def get_inverted_matrix(p=None, excel=None, is_verbose=False):
+    """Triggers the computation process until the electricity tracking to return the
+    electricity mix in all involved coutries. No data saving is involved.
+    
+    :param p: a set of parameters to govern the computation, defaults to None
+    :type p: class:`dynamical.Parameter`, optional
+    :param excel: path to an xlsx file containing parameters, default to None
+    :type excel: str, optional
+    :param is_verbose: to display information, defaults to False
+    :type is_verbose: bool, optional
+    :return: a collection of tables containing the decomposition of 1kWh of electricity
+    :rtype: dict of `pandas.DataFrame`
     """
-    Execute the whole process until matrix inversion, but does not extract target.
-    
-    Parameter:
-        p: the parameter object (from class Parameter). Default: None
-        excel: str to the excel file with parameters. Default: None
-        is_verbose: bool to display information. Default: False
-    
-    Return:
-        list of pandas DataFrame with the impacts of 1kWh of electricity.
-    
-    """
+    # """
+    # Execute the whole process until matrix inversion, but does not extract target.
+    # Parameter:
+    #     p: the parameter object (from class Parameter). Default: None
+    #     excel: str to the excel file with parameters. Default: None
+    #     is_verbose: bool to display information. Default: False
+    # Return:
+    #     list of pandas DataFrame with the impacts of 1kWh of electricity.
+    # """
     ###########################
     ###### PARAMETERS
     ######
@@ -294,11 +298,19 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
 # -
 
 def localize_from_utc(data, timezone='CET'):
-    """Converts the index of a dataset in utc to another time zone
-    Parameter:
-        data: pandas DataFrame with TimeIndex as index (time supposed to be in UTC)
-        timezone: the timezone to convert in. (str, default: CET)
-                See pandas time zones for more information.
-    Return:
-        pandas DataFrame"""
+    """Converts the index of a dataframe from UTC to another time zone.
+    
+    :param data: table with TimeIndex, assumed to be UTC
+    :type data: `pandas.DataFrame`
+    :param timezone: the time zone to convert to, defaults to 'CET'
+    :return: a table with shifted TimeIndex to the right time zone
+    :rtype: `pandas.DataFrame`
+    """
+    # """Converts the index of a dataset in utc to another time zone
+    # Parameter:
+    #     data: pandas DataFrame with TimeIndex as index (time supposed to be in UTC)
+    #     timezone: the timezone to convert in. (str, default: CET)
+    #             See pandas time zones for more information.
+    # Return:
+    #     pandas DataFrame"""
     return data.tz_localize(tz='utc').tz_convert(tz=timezone).tz_localize(None)
