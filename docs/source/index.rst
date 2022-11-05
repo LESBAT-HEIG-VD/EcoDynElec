@@ -9,7 +9,8 @@ Welcome to dynamical's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Modules:
-   dynamical
+   
+    easy_use
 
 
 
