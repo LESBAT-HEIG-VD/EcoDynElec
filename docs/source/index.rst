@@ -8,9 +8,9 @@ Welcome to dynamical's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Modules:
+   dynamical
 
-dynamical
 
 
 Indices and tables
