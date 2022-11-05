@@ -31,13 +31,14 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'sphinx.ext.todo']
+#exclude_patterns = ["_build"]
 
 # Napoleon setting
 napoleon_google_docstrings = False
 napoleon_use_param = False
 napoleon_use_ivar = True
 napoleon_numpy_docstring = True
-
+# numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

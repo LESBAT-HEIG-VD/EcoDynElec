@@ -10,7 +10,7 @@ Welcome to dynamical's documentation!
    :maxdepth: 2
    :caption: Modules:
    
-    easy_use
+   dynamical
 
 
 
