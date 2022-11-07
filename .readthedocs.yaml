@@ -11,7 +11,7 @@ sphinx:
     fail_on_warning: true
 
 formats:
-    -pdf
+    - pdf
 
 python:
     # Install our Python packages before building the doc
