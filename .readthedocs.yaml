@@ -10,6 +10,9 @@ sphinx:
     configuration: docs/conf.py
     fail_on_warning: true
 
+formats:
+    -pdf
+
 python:
     # Install our Python packages before building the doc
     version: 3.7

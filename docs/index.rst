@@ -17,7 +17,11 @@ For now the software can only be installed from the `gitlab repository <https://
     :maxdepth: 1
     :caption: Supplementary
 
-    supplementary/supplementary
+    supplementary/download
+    supplementary/mapping_usage
+    supplementary/parameters
+    supplementary/auxilary_files
+    supplementary/functional_unit
 
 .. toctree::
     :maxdepth: 1
