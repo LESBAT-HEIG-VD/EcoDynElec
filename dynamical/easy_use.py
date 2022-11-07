@@ -1,3 +1,12 @@
+"""The `easy_use` module is the main module of `dynamical`.
+It consists in a collection of high-level functions triggering
+processes intricating most of the functions of the package.
+
+This module contains:
+    - execute: whole process from downloading / loading the data to the computation of impacts
+    - get_inverted_matrix: process from downloading to track the electricity.
+    - localize_from_utc: shifts the time-zone from results.
+"""
 import numpy as np
 import pandas as pd
 import os
@@ -39,36 +48,26 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     (2) load auxiliary data; (3) load and correct Entso-E data; (4) compute the 
     electricity tracking; (5) computes the environmental impacts; (6) save and return.
     
-    :param p: a set of parameters to govern the computation, defaults to None
-    :type p: class:`dynamical.Parameter`, optional
-    :param excel: path to an xlsx file containing parameters, default to None
-    :type excel: str, optional
-    :param missing_mapping: strategy for handling producing units with not mapping.
-        'error' (default) raises an error, 'worst' takes the highest impact value in
-        the available set, 'unit' takes the highest impact value available from a 
-        similar unit type, defaults to 'error'
-    :type missing_mapping: str, optional
-    :param is_verbose: to display information, defaults to False
-    :type is_verbose: bool, optional
-    :return: a collection of tables containing the dynamic impacts of 1kWh of electricity
-    :rtype: dict of `pandas.DataFrame`
+    Parameters
+    ----------
+        p: dynamical.Parameter, default to None
+            a set of parameters to govern the computation, defaults to None
+        excel: str, default to None
+            path to an xlsx file containing parameters, default to None
+        missing_mapping: str, default to 'error'
+            strategy for handling producing units with not mapping.
+            'error' (default) raises an error, 'worst' takes the highest impact value in
+            the available set, 'unit' takes the highest impact value available from a 
+            similar unit type, defaults to 'error'
+        is_verbose: bool, default to False
+            to display information, defaults to False
+
+    Returns
+    -------
+    dict
+        a collection of tables containing the dynamic impacts of 1kWh of electricity
     """
-    
-    # """
-    # Easy all-in-one execution of the algorighm, containing
-    # - the import of auxiliary data
-    # - the import and correction of Entso-E data (import from files)
-    # - the electricity tracking
-    # - the computation of the different impacts (GWP, CED, ES2013)
-    # - a data shift to the right time zone (initially all is in utc)
-    # - save the data into files
-    # Parameter:
-    #     p: the parameter object (from class Parameter). Default: None
-    #     excel: str to the excel file with parameters. Default: None
-    #     is_verbose: bool to display information. Default: False
-    # Return:
-    #     dict of pandas DataFrame with the impacts of 1kWh of electricity.
-    # """
+
     ###########################
     ###### PARAMETERS
     ######

@@ -18,7 +18,18 @@ from warnings import warn
 # ############################
 
 def check_frequency(freq):
-    """Verifies if the requested frequency is supported"""
+    """Verifies if the requested frequency is supported
+
+    Parameters
+    ----------
+        freq: str
+            the frequency to test
+
+    Raises
+    ------
+    KeyError
+        Error if the frequency is no allowed.
+    """
     allowed = ["Y","YS","M","MS","W","w","D","d","H","30min","30T","15min","15T"]
     if freq not in allowed:
         raise KeyError(f'the specified timestep must be in {allowed}')
@@ -39,7 +50,18 @@ def check_frequency(freq):
 # ############################
 
 def check_regularity_frequency(freq):
-    """Verifies if the requested frequency is regular for pandas"""
+    """Verifies if the requested frequency is regular for pandas.
+    The set of accepted frequencies is smaller in pandas, up to weeks.
+
+    Parameters
+    ----------
+        freq: str
+            the frequency to test
+    
+    Returns
+    -------
+    bool
+        True if the frequency is valid for `Pandas`, false otherwise."""
     acceptable = ['15T','15min','30T','30min','H','d','D','w','W']
     return freq in acceptable
 
@@ -58,6 +80,25 @@ def check_regularity_frequency(freq):
 # ############################
 
 def check_mapping(mapping, mix, strategy='error'):
+    """Verifies if a producing unit has no associated impacts.
+    Depending on the strategy, an error or a warning is raised.
+
+    Parameters
+    ----------
+        mapping: pandas.DataFrame
+            the table of impacts
+        mix: pandas.DataFrame
+            the table containing electricity mix. Valid before
+            and after electricity tracking.
+        strategy: str, default to 'error'
+            the way to treat missing impacts for producing units.
+            
+    Raises
+    ------
+    ValueError
+        if the strategy is 'raise' or 'error', a missing value raises
+        a `ValueError`.
+    """
     ### Production Units with non-null production
     locate = np.logical_and(~mix.columns.str.startswith('Mix_'), mix.sum()!=0)
     with_prod = mix.columns[locate]
@@ -90,11 +131,24 @@ def check_mapping(mapping, mix, strategy='error'):
 
 def check_residual_avaliability(prod, residual, freq='H'):
     """Verifies if the residual information are available for the whole duration.
-    Parameter:
-        prod: the production data where to add the residual
-        residual: the residual data to check the availability of.
-    Return:
+
+    Parameters
+    ----------
+        prod: pandas.DataFrame
+            the production data where to add the residual
+        residual: pandas.DataFrame
+            the residual data to check the availability of.
+        freq: str, default to 'H'
+            the frequency to consider
+
+    Returns
+    -------
+    bool
         True, if no exception is raised.
+
+    Raises
+    ------
+    IndexError
     """
     available=True
     text=""

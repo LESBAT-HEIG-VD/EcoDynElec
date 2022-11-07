@@ -1,3 +1,5 @@
+"""Module reaching ENTSO-E server and downloading data"""
+
 import pandas as pd
 import numpy as np
 from time import time
@@ -18,6 +20,22 @@ from getpass import getpass
 
 
 def download(p, is_verbose=False):
+    """Downloads data from ENTSO-E servers and save it.
+
+    Parameters
+    ----------
+        p: dynamical.Parameter
+            collection of parameters for the execution of dynamical.
+            The relevant information is the start and end date, as well
+            as server information and path information to save raw_generation
+            and raw_exchange.
+        is_verbose: bool, default to False
+            to display information during the download
+
+    Returns
+    -------
+    None
+    """
     t0 = time()
     ### Get the start and end dates
     dates = _set_time(p.start, p.end)
@@ -55,6 +73,9 @@ def download(p, is_verbose=False):
 
     
 def _reach_server(server_info, files, savepaths, is_verbose=False):
+    """Function establishing the connection with the server using credentials
+    , collecting files and saving them. Nothing is returned.
+    """
     
     ### Create the connection
     if is_verbose: print("Connection...", end='\r')
@@ -115,7 +136,8 @@ def _reach_server(server_info, files, savepaths, is_verbose=False):
 def _set_time(start,end):
     """Set the list of year-month to target the files to download.
     If start is None: start of previous month or 2 months before end.
-    If end is None: now."""
+    If end is None: now.
+    """
     
     if None not in [start, end]: # Regular method
         all_months = pd.period_range(start=start, end=end, freq='M', periods=None)
@@ -139,6 +161,9 @@ def _set_time(start,end):
 
 
 def _get_file_list(years, months, path, rootName):
+    """Create the list of files to download from the server,
+    with exact names.
+    """
     return [f"{path}{y}_{m:02d}_{rootName}"
             for y,m in zip(years, months)]
 
@@ -153,14 +178,13 @@ def _get_file_list(years, months, path, rootName):
     
 
 def _manage_password():
-    """Verifies if something is available:
-    1. As argument
-    2. In a local file
-    3. Ask the user
-    4. Ask if we want to save... (see rsa package)
-    DON'T FORGET ENTSO-E REQUESTS TO CHANGE THE
-    PASSWORD SOMETINES... IT MUST BE POSSIBLE EASILY"""
-    return getpass("Password: ") #raise NotImplementedError()
+    """Asks the user to give a password.
+
+    ENTSO-E requires the password to be changed once in a while,
+    it might just have expired. If the correct password is not valid
+    anymore, visit https://transparency.entsoe.eu/ to login and reset.
+    """
+    return getpass("Password: ")
 
 # +
 
@@ -173,8 +197,31 @@ def _manage_password():
     
     
 def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.1):
-    """Investigates whether to download a file or not
-    (if already exists and not newer)"""
+    """Investigates whether to download a file or not.
+
+    Parameters
+    ----------
+        sftp
+            the connexion to server
+        remote: str
+            name of the remote file
+        local: str
+            local version of the file name, if it were to exist
+        thershold_minutes: int, default to 15
+            time in minutes. Maximum time between last download and
+            last remote unpdate to not download the file.
+        threshold_size: float, default to 0.1
+            maximum ratio of size difference between local and remote file
+            to not download, if the last download is newer than `threshold_minutes`.
+
+    Returns
+    -------
+    bool
+        True if
+            - the file does not exist in the local target directory OR
+            - the remote file is newer than `threshold_minutes` after download of the local file
+            - the local file is smaller in size than `threshold_size` of the remote file's size.
+    """
     ### IF NO LOCAL FILE ALREADY, DOWNLOAD.
     if not os.path.isfile(local):
         return True
@@ -206,6 +253,7 @@ def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.
     
 
 def _remove_olds(path, local_list):
+    """Clears unused files in local directory"""
     remove_list = [path+f for f in os.listdir(path) if ((f not in local_list)&(os.path.isfile(path+f)))]
     for f in remove_list:
         os.remove(f) # Delete the file
@@ -222,4 +270,5 @@ def _remove_olds(path, local_list):
 
     
 def _progressBar(transferred, toBeTransferred, info):
+    """Display a progress bar during the download"""
     print(f"[{info}] Transferred: {transferred/1024**2:.1f} MB\tOut of: {toBeTransferred/1024**2:.1f}"+" "*10, end="\r")

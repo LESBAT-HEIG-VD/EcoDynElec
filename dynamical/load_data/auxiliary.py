@@ -1,4 +1,8 @@
-# -*- coding: utf-8 -*-
+"""
+Module containing a collection of functions to load side-datasets
+that may be required during the execution of `dynamical` proceses.
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -22,13 +26,22 @@ def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     """
     Function to load production and cross-border flows information from Swiss Grid. Data used many times
     along the algorithm.
-    Parameter:
-        path_sg: path to the file with Swiss Grid information (str)
-        start: starting date (datetime or str, default None)
-        end: ending date (datetime or str, default None)
-        freq: time step (str, default H)
-    Return:
-        pandas DataFrame with SwissGrid information in MWh and at the good time step.
+
+    Parameters
+    ----------
+        path_sg: str
+            path to the file with Swiss Grid information
+        start: str, default None
+            starting date, as datetime or str
+        end: str, default None
+            ending date, as datetime or str
+        freq: str, default to 'H'
+            frequency to resample the SwissGrid data to
+
+    Returns
+    -------
+    pandas.DataFrame
+        table of SwissGrid information in MWh
     """
     ### Default path
     if path_sg is None:
@@ -180,14 +193,24 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     """
     Function that defines the relative composition of the swiss residual production. The function is very
     file format specific.
-    Parameter:
-        path_gap: path to the file containing residual content information (str)
-        start: starting date (datetime or str, default None)
-        end: ending date (datetime or str, default None)
-        freq: time step (str, default H)
-        header: row in the file to use as header (int, default 59)
-    Return:
-        pandas DataFrame with relative residual production composition for each time step.
+
+    Parameters
+    ----------
+        path_gap: str
+            path to the file containing residual content information
+        start: default to None
+            starting date, as datetime or str
+        end: default to None
+            ending date, as datetime or str
+        freq: str, default to "H"
+            frequency to resample the data to
+        header: int, default to 59
+            row in the file to use as header
+
+    Returns
+    -------
+    pandas.DataFrame
+        table with relative residual production composition for each time step.
     """
     ### Default path
     if path_gap is None:

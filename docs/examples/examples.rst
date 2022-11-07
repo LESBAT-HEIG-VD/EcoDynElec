@@ -1,0 +1,28 @@
+Examples
+========
+
+This file should show some examples of the use of the package.
+
+Installation
+************
+To install, you've better time going with downloading from the GitLab repository directly.
+
+.. code-block::
+    :caption: Installation from the repository
+        
+        git clone gitlab@gitlab.com:fledee/ecodyn.git
+
+
+
+Usage
+*****
+The most straightforward example is to use the `easy_use` module.
+
+.. code-block::
+    :caption: Straightforward use
+
+        from dynamical.easy_use import execute
+        impacts = execute(excel="paht/to/excel_parameters.xlsx")
+
+
+The whole process will be triggered from there if all relevant information is provided in the excel parameter file.

@@ -1,3 +1,7 @@
+"""
+Module handling the computation of impacts from an electricity mix.
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -7,22 +11,25 @@ from time import time
 #
 #
 #
-"""
 #############################
 # Compute impacts
 #############################
 #############################
-"""
 
 
 def compute_impacts(mix_data, impact_data, strategy='error', is_verbose=False):
     """Computes the impacts based on electric mix and production means impacts.
-    Parameter:
+    
+    Parameters
+    ----------
         mix_data: information about the electric mix in the target country (pandas DataFrame)
         impact_data: impact matrix for all production units (pandas DataFrame)
         is_verbose: to display information (bool, default: False)
-    Return:
-        dict of pandas DataFrame containing the impacts."""
+
+    Returns
+    -------
+        dict of pandas DataFrame containing the impacts.
+    """
     
     t3 = time()
     
@@ -71,7 +78,25 @@ def adapt_impacts(impact_data, mix, strategy='error'):
 
 def equalize_impact_vector(impact_data, mix, strategy='error'):
     """Make sure the impact vector is aligned with the suggested production values.
-    Fill with zeros impacts for the missing capacities."""
+
+    Parameters
+    ----------
+        impact_data: pandas.DataFrame
+            the table of impacts per production unit
+        mix: pandas.DataFrame
+            the electric mix data, or production mix of all involved countries
+        strategy: str, default to 'error'
+            the strategy to follow when encountering producing units with no
+            assocuated impact values. `'error'` will raise an exception (default).
+            `'worst'` will fill with the most impactful coefficient in the matrix.
+            `'unit'` will fill with the most impactful coefficient of a same-typed unit
+            from another country, and equals to `'worst'` if no similar unit is found.
+
+    Returns
+    -------
+    pandas.DataFrame
+        a new imact matrix with no missing value.
+    """
     ### Identify missing
     units_from_mix = [((not u.startswith('Mix_'))|(u.endswith('_Other')))
                       for u in mix.columns]
@@ -112,11 +137,13 @@ def equalize_impact_vector(impact_data, mix, strategy='error'):
 # #############################
 
 def strategy_worst(units, mapping):
+    """Apply the strategy `worst` to complete missing impact values"""
     section = mapping.loc[units,:].copy() # Copy the whole empty part
     section.loc[units,:] = mapping.max().values # Set the worst impacts
     return section
 
 def strategy_unit(units, mapping):
+    """Apply the strategy `unit` to complete missing impact values"""
     ### WORST CASE PER UNIT TYPE, then worst case if no similar units in mapping
     worst_units = pd.DataFrame({unit: mapping.loc[ (mapping.index.str
                                                     .startswith(unit)) ].max()
@@ -138,7 +165,20 @@ def strategy_unit(units, mapping):
 # #############################
 
 def compute_global_impacts(mix_data, impact_data):
-    """Computes the overall impacts of electricity for each indicator"""
+    """Computes the overall impacts of electricity for each indicator
+
+    Parameters
+    ----------
+        mix_data: pandas.DataFrame
+            the electric mix data
+        impact_data: pandas.DataFrame
+            the table of impacts per production unit
+
+    Returns
+    -------
+    pandas.DataFrame
+        the impacts for every impact indicator for each time step.
+    """
     ###############################################
     # Computation of global impact
     ###############################################
@@ -163,7 +203,23 @@ def compute_global_impacts(mix_data, impact_data):
 # #############################
 
 def compute_detailed_impacts(mix_data, impact_data, indicator):
-    """Computes the impacts of electricity per production unit for a given indicator"""
+    """Computes the impacts of electricity per production unit for a given indicator.
+
+    Parameters
+    ----------
+        mix_data: pandas.DataFrame
+            the electric mix data
+        impact_data: pandas.Series
+            the vector of impacts per production unit for
+            the impact indicator.
+        indicator: str
+            name of the impact indicator
+
+    Returns
+    -------
+    pandas.DataFrame
+        the impacts per production unit at each time step.
+    """
     #####################################################
     # Computation of detailed impacts per production unit
     #####################################################

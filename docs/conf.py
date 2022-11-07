@@ -12,7 +12,8 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../dynamical/'))
+sys.path.insert(0, os.path.abspath('../'))
 
 
 # -- Project information -----------------------------------------------------
@@ -31,7 +32,7 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'sphinx.ext.todo']
-#exclude_patterns = ["_build"]
+exclude_patterns = ["_build","_drafts/*.rst"]
 
 # Napoleon setting
 napoleon_google_docstrings = False

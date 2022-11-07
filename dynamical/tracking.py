@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+"""The `tracking` module handles the tracking of electricity
+to determine the decomposition of the electric mix.
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -10,29 +13,42 @@ from dynamical.load_data.auxiliary import load_rawEntso
 
 
 #
-"""
 ###########################
 # TRACK MIX
 ###########################
 ###########################
 
-"""
-
 
 def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
               return_matrix=False, is_verbose=False):
-    """Master function for the electricity mix computation.
-    Parameter:
-        data_path: path to entso-e data (str), or data Frame. If None, load default data. Default: None
-        freq: time step (str). Default: 'H'
-        network_loss_path: path to data giving network losses (str) If None, load default data. Default: None
-        target: the studied country (str). Default: 'CH'
-        residual_global: if swiss residual data was included at transmission level
-        net_exchange: to consider net cross-border flows (bool). Default: False (total bi-directional flows)
-        return_matrix: return inverted technology matrix, not applying FU vector.
-        is_verbose: show text during computation.
-    Return
-        pandas DataFrame containing the electricity mix of the studied country."""
+    """Performs the electricity tracking. Master function for the electricity mix computation.
+
+    Parameters
+    ----------
+        raw_data:
+            path to ENTSO-E data (str), or `pandas.DataFrame` with production and exchange data.
+            If None, load default data. Default set to None
+        freq: str, default to "H"
+            frequency of time steps
+        network_losses: pandas.Series, default to None
+            vector of estimate for grid losses at every time step.
+        target: str, default to None
+            the target / studied country (str)
+        residual_global: bool, default to False
+            whether to include a local production residual as production unit during the electricity
+            tracking computation.
+        return_matrix: bool, default to False
+            to solely return the mix in a target country (if False) or the inverted technology matrices
+            at each time step (if True)
+        is_verbose: bool, default to False
+            show text during computation.
+
+    Returns
+    -------
+    pandas.DataFrame or list
+        table with the electricity mix of the studied country,
+        or list with the tracking for all countries at each time step.
+    """
     
     t0 = time() # time measurment
     
@@ -71,14 +87,24 @@ def reorder_info(data):
     """
     Function to rename and reorder the columns in the production and exchanges table. It returns 4 useful
     lists for the electricity tracking.
-    Parameter:
-        data: the production and exchange table (pandas DataFrame)
-    Return:
+    
+    Parameters
+    ----------
+        data: pandas.DataFrame
+            the production and exchange table
+
+    Returns
+    -------
+    list
         ctry: sorted list of involved countries
+    list
         ctry_mix: list of countries where eletricity can come from, including 'Other' (list)
+    list
         prod_means: list of production means, without mixes (list)
+    list
         all_sources: list of production means and mixes, with precision of the country of origin (list)
     """
+
     # Reorganize columns in the dataset
     ctry = sorted(list(np.unique([k.split("_")[-1] for k in data.columns])))# List of considered countries
     ctry_mix = list(np.unique([k.split("_")[1] for k in data.columns if k[:3]=="Mix"])) # List of importing countries (right order)
@@ -128,8 +154,9 @@ def get_grid_losses(data, losses=None):
 #
 
 def set_FU_vector(all_sources, target='CH'):
-    """Defines the Functional Unit vector: full of zeros, except at the indexes corresponding to the target
-    country, where a 1 is written."""
+    """Defines the Functional Unit vector: full of zeros, except at the indexes
+    corresponding to the target country, where a 1 is written.
+    """
     # Defines the FU vector
     u = np.zeros( len(all_sources) ) # basic Fonctional Unit Vector (FU vector) --> do never change. Is multiplied by uP (for losses) during process
     u[all_sources.index(f"Mix_{target}")] = 1 # Location of target country in the FU vector
@@ -149,21 +176,36 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
     """Function leading the electricity tracking: by building the technology matrix, computing the
     inversion and selecting of the information for the target country.
     
-    Parameter:
-        data: Table with the production and exchange data of all involved countries (pandas DataFrame)
-        all_sources: an ordered list with the mix names and production mean names, without origin (list)
-        u: functional unit vector, full of zeros and with ones for the targeted countries (list)
-        uP: vector that indicates the amount of energy before losses to obtain 1kWh of consumable elec (list)
-        ctry: sorted list of involved countries (list)
-        ctry_mix: list of countries where eletricity can come from, including 'Other' (list)
-        prod_means: list of production means, without mixes (list)
-        residual: if residual are considered (bool, default: False)
-        freq: the time step (str, default: H)
-        return_matrix: return inverted technology matrix, not applying FU vector.
-        is_verbose: to display information (bool, default: False)
+    Parameters
+    ----------
+        data: pandas.DataFrame
+            Table with the production and exchange data of all involved countries
+        all_sources: array-like
+            an ordered list with the mix names and production mean names, without origin
+        u: array-like
+            functional unit vector, full of zeros and with ones for the targeted countries
+        uP: array-like
+            vector that indicates the amount of energy before losses to obtain 1kWh of consumable elec
+        ctry: array-like
+            sorted list of involved countries
+        ctry_mix: array-like
+            list of countries where eletricity can come from, including 'Other'
+        prod_means: array-like
+            list of production means, without mixes
+        residual: bool, default to False
+            if residual are considered
+        freq: str, default to 'H'
+            frequency of a time step
+        return_matrix: bool, default to False
+            to solely return the mix in a target country (if False) or the inverted technology matrices
+            at each time step (if True)
+        is_verbose: bool, default to False
+            show text during computation.
     
-    Return:
-        pandas DataFrame with the electricity mix in the target country.
+    Returns
+    -------
+    pandas.DataFrame
+        table with the electricity mix in the target country.
     """
     if not return_matrix:
         mixE = pd.DataFrame(data=None,index=data.index,columns=all_sources, dtype='float32') # Output DataFrame
@@ -239,13 +281,22 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
 
 def build_technology_matrix(data, ctry, ctry_mix, prod_means):
     """Function building the technology matrix based on the production and exchange data.
-    Parameter:
-        data: the production and exchange data (pandas DataFrame)
-        ctry: sorted list of involved countries (list)
-        ctry_mix: list of countries where eletricity can come from, including 'Other' (list)
-        prod_means: list of production means, without mixes (list)
-    Return:
-        numpy array representing the technology matrix A
+
+    Parameters
+    ----------
+        data: pandas.DataFrame
+            the production and exchange data
+        ctry: array-like
+            sorted list of involved countries
+        ctry_mix: array-like
+            list of countries where eletricity can come from, including 'Other'
+        prod_means: array-like
+            list of production means, without mixes
+
+    Returns
+    -------
+    numpy.ndarray
+       technology matrix A
     """
     # Gathering production by country in a matrix
     energy = pd.DataFrame(data=data.values.reshape(( len(ctry) , len(prod_means) )),
@@ -290,7 +341,8 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means):
 def clean_technology_matrix(A):
     """Reduce the size of the technology matrix. As the matrix A is a square matrix, for all indexes i
     where the i-th row AND the i-th column are both full of zeros, both row and column i are dropped.
-    All other indexes j are written in the list 'presence', and the row and column j is kept in A."""
+    All other indexes j are written in the list 'presence', and the row and column j is kept in A.
+    """
     ###############################################
     # drop the empty columns and line for inversion
     ###############################################
@@ -314,12 +366,20 @@ def clean_technology_matrix(A):
 
 def invert_technology_matrix(A, presence, L):
     """Track the electric mix: it consists in computing (Id - A)⁻¹
-    Parameter:
-        A: technology matrix (numpy array)
-        presence: list of indexes to replace the computation results in their context
-        L: the size of the results (and original A, before it was cleaned)
-    Return:
-        numpy array of shape (L, L)
+
+    Parameters
+    ----------
+        A: numpy.array
+            technology matrix at one time step
+        presence: list-like
+            list of indexes to replace the computation results in their context
+        L: int
+            the size of the results (and original A, before it was cleaned)
+
+    Returns
+    -------
+    numpy.array
+        matrix (Id - A)⁻¹ of shape (L, L)
     """
     ##########################################################
     # Inversion & reintegrtion of the empty lines and columns

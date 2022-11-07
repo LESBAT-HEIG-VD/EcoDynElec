@@ -1,5 +1,5 @@
 """
-Collection of functions to performa data autocomplete
+Collection of functions to perform a data autocomplete
 """
 
 ###############################
@@ -19,18 +19,32 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
                  ignore:bool=False, is_verbose:bool=False):
     """
     Main function to auto-complete the data. Works with generation and import.
-    Parameters:
-    -----------
+
+    Parameters
+    ----------
         data: dict
             the dict of data to auto-complete.
-        n_hours:
-        days_around:
-        limit: max relative size of gap to allow an autocomplete
-        ignore:
-        is_verbose:
-    Returns:
-    --------
+        n_hours: int, default to 2
+            max number of hours missing in a row to consider a
+            short gap and use linear interpolation.
+        days_around: int, default to 7
+            number of days before and after a long gap to be used
+            when creating an average day to complete the gap.
+        limit: float, default to 0.3
+            max relative size of gap to allow an autocomplete. If a
+            gap is longer than this fraction of the data, it will be
+            filled with zeros.
+        ignore: bool, default is False
+            the missing data is flagged but not auto-completed. Displays
+            a report if `is_verbose` is set to True.
+        is_verbose: bool, default is False
+            to display information during the process.
+
+    Returns
+    -------
+    dict
         dict of data with autocompleted information
+    pandas.DataFrame
         pandas DataFrame with resolutions
     """
     
@@ -120,7 +134,22 @@ def infer_one(obj):
     
 
 def get_steps_per_hour(freq, dtype=int):
-    """Retrieve resolution for a specific country and field."""
+    """Retrieve resolution for a specific country and field.
+    
+    Parameters
+    ----------
+        freq: str
+            the base frequency of the time series
+        dtype: data-type, default to `int`
+            the type of return. Default behavior returns an integer,
+            i.e. zero when the frequency is lower than an hour. It may
+            be convenient to sometimes return a fraction instead, using float.
+
+    Returns
+    -------
+    dtype
+        the number of time steps per hour to expect in a time series.
+    """
     ### Make sure it starts with a number
     if not np.any([freq.startswith(k) for k in '0123456789']): # If starts with a letter
         frequency = f"1{freq}"
@@ -173,11 +202,13 @@ def to_original_series(obj, freq):
 def find_missing(data:dict):
     """
     Identifies the missing values for the entire set of data.
-    Parameters:
+
+    Parameters
     -----------
         data: dict of pandas DataFrames
+
             the data to process
-    Returns:
+    Returns
     --------
         dict (keys are countries) of dicts (keys are former columns)
         of matrices. Final matrix has one identified gap per row and
@@ -191,11 +222,13 @@ def find_missing(data:dict):
 def find_missing_one(series):
     """
     Identifies all missing values for one single series.
-    Parameters:
+
+    Parameters
     -----------
         series: pandas Series
             the data to process
-    Returns:
+
+    Returns
     --------
         Matrix (n x 3). Final matrix has one identified gap
         per row (n rows) and three columns (length of gap,
@@ -284,6 +317,20 @@ def add_specific_gaps(all_gaps, name, length, long_gaps):
 ### COMPLETE GAPS
 ###
 def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbose:bool=False):
+    """Fills all long gaps.
+
+    Parameters
+    ----------
+        data: dict
+            collection of data, with structure being `{country: { unit: pandas.Series } }`
+        period_indexes: numpy.ndarray
+            matrix indicating the location and length of long gaps
+        deltas: dict
+            collection of number of time steps to create the average days around gaps.
+            Structure is `{country: {unit: {gap_id: int} } }`.
+        is_verbose: bool, default to False
+            to display information.
+    """
     
     for i,c in enumerate(data): # For all countries
         ### Fill the periods
@@ -295,6 +342,7 @@ def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbo
     return data
     
 def fill_one_series(data, period_indexes, delta):
+    """Fills all long gaps for one single series in one country"""
     filled = data.copy()
     for gap in period_indexes:
         ### Create Average Day
@@ -304,6 +352,7 @@ def fill_one_series(data, period_indexes, delta):
     return filled
 
 def fill_one_period(avg_day, to_fill):
+    """Fills one single long gap using one average day."""
     filled = pd.Series(None, index=to_fill.index, name=to_fill.name, dtype='float32')
     for t in avg_day.index:
         filled.loc[filled.index.strftime('%H:%M')==t] = avg_day.loc[t]

@@ -1,3 +1,7 @@
+"""
+Module collection functions to load the information about impact per generation unit type.
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -19,7 +23,7 @@ from dynamical.load_data.auxiliary import get_default_file
 # -
 
 def extract_FU(path_fu, ctry:list=None, target:str='CH', residual:bool=False, cst_imports:bool=False):
-    """Function to extract and modify the FU vector"""
+    """Function to extract and modify the FU vector from a .csv file"""
     ### Get default file if None
     if path_fu is None:
         path_fu = get_default_file(name='Functional_Unit_Vector.csv')
@@ -108,14 +112,22 @@ def select_fu_indexes(fu, ctry:list=None, residual:bool=False):
 def extract_mapping(ctry, mapping_path=None, cst_import=False, residual=False, target='CH', is_verbose=False):
     """
     Function to build the impact matrix from mapping stored in files.
-    Parameter:
-        ctry: list of countries to load the impacts of (list)
-        mapping_path: excel file where to find the mapping data (str, default: None)
-        cst_import: whether to consider all impacts of non-traget countres 
-                    as the impact of 'Other' (bool, default: False)
-        residual: whether to consider production residual for the target country (bool, default: False)
-        target: the target country (str, default: CH)
-        is_verbose: to display information (bool, default: False)
+
+    Parameters
+    ----------
+        ctry: list
+            list of countries to load the impacts of
+        mapping_path: str, default to None
+            .xlsx file where to find the mapping data
+        cst_import: bool, default to False
+            whether to consider all impacts of non-traget countres as
+            the impact of 'Other'
+        residual: bool, default to False
+            whether to consider production residual for the target country
+        target: str, default to 'CH'
+            the target country
+        is_verbose: bool, default to False
+            to display information
     """
     ### Check the country list
     if is_verbose: print("Extraction of impact vector...")
@@ -228,11 +240,19 @@ def country_from_excel(mapping, place):
 def residual_from_excel(mapping, place):
     """
     Load impact data of the production residual and add it to the impact matrix.
-    Parameter:
-        mapping: path to file with the mapping (str)
-        place: country tag of the country (str)
-    Return:
-        pandas DataFrame with the impact_ch, where the impact of residual production is added.
+
+    Parameters
+    ----------
+        mapping: str
+            path to file with the mapping
+        place: str
+            country tag of the country
+
+    Returns
+    -------
+    pandas.DataFrame
+        table with the matrix of impacts per unit type, with
+        the impact of residual production is added.
     """
     try: # test if the "country" is available in the mapping file
         d = pd.read_excel(mapping,sheet_name="Residue",index_col=0)

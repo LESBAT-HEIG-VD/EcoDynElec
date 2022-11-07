@@ -1,3 +1,12 @@
+"""The module `parameter` contains the parameter classes allowing
+the management of parameters useful for in `easy_use` module and
+to extract parameters from a spreadsheet.
+
+The module contains the following classes:
+    - Parameter: main parameter class
+    - Filepath: handles the paths to files and diverse required data
+    - Server: handles the connection to ENTSO-E server
+"""
 # +
 import numpy as np
 import pandas as pd
@@ -13,31 +22,58 @@ import os
 class Parameter():
     """Parameter object adapted to the execution of the algorithm.
     
-    Attributes:
-        - path: FilePath object containing information about path to different documents.
-        - ctry: the (sorted) list of countries to include
-        - target: the target country where to compute the mix and impact.
-        - start: starting date (utc)
-        - end: ending date (utc)
-        - freq: the time step (15min, 30min, H, d, W, M or Y)
-        - timezone: the timezone to convert in, in the end
-        - cst_imports: boolean to consider a constant impact for the imports
-        - sg_imports: boolean to replace Entso exchanges by SwissGrid exchanges
-        - net_exchanges: boolean to consider net exchanges at each border (no bidirectional)
-        - residual_local: to include a residual (for CH) as if it was all consumed in the country.
-        - residual_global: to include a residual (for CH) that can be exchanged.
-        - data_cleaning:to enable automatic data cleaning / filling
+    Attributes
+    ----------
+        path: str
+            FilePath object containing information about path to different documents.
+        ctry: list
+            the (sorted) list of countries to include
+        target: str
+            the target country where to compute the mix and impact.
+        start: datetime
+            starting date (utc)
+        end: datetime
+            ending date (utc)
+        freq: str
+            the time step (15min, 30min, H, d, W, M or Y)
+        timezone: str
+            the timezone to convert data to at the end of computation
+        cst_imports: bool
+            boolean to consider a constant impact for the imports
+        sg_imports: bool
+            boolean to replace Entso exchanges by SwissGrid exchanges
+        net_exchanges: bool
+            boolean to consider net exchanges at each border (i.e. no bidirectional transfer
+            within one time step)
+        residual_local: bool
+            to include a residual (for CH) as if it was all consumed in the country.
+        residual_global: bool
+            to include a residual (for CH) that can be exchanged.
+        data_cleaning: bool
+            to enable automatic data cleaning / filling
     
-    Methods:
-        - from_excel: to load parameters from a excel sheet
-        - __setattr__: to allow simple changes of parameter values.
-                    + easy use: parameter_object.attribute = new_value
-                    + start and end remain datetimes even if strings are passed
-                    + ctry remain a sorted list even if an unsorted list is passed
+    Methods
+    -------
+        from_excel(excel):
+            reads the values from an xlsx spreadsheet. Method is also included in
+            initialization, thus no need to apply if the object is declared with
+            `Parameter(excel="paht/to/file.xlsx")`.
+        __setattr__:
+            ensures that new values for attribures are formated correctly
+        __repr__:
+            allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
     
     def __init__(self, excel=None):
+        """Gather all necessary information to parametrize the execution of diverse
+        functions of the module `dynamical.easy_use`.
+
+        Parameters
+        ----------
+            excel: str, default is None
+                path to .xlsx spreadsheet containing parameter information
+        """
         self.path = Filepath()
         self.server = Server()
         
@@ -102,6 +138,13 @@ class Parameter():
             return bool(value)
     
     def from_excel(self, excel):
+        """Extract parameters information from a .xlsx spreadsheet.
+
+        Parameters
+        ----------
+            excel: str
+                path to a .xlsx spreadsheet
+        """
         param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None, dtype='O')
         
 
@@ -134,29 +177,53 @@ class Parameter():
 # -
 
 class Filepath():
-    """Filepath object adapted to the execution of the algorithm and the Parameter class.
+    """Collection of `dynamical` parameters specifically related to data to be loaded from local machine.
     
-    Attributes:
-        - rootdir: root directory of the experiment (highest common folder).
-                Useful mainly within the class
-        - generation: directory containing Entso generation files OR where to save it (if from raw)
-        - exchanges: directory containing Entso cross-border flow files OR where to save it (if from raw)
-        - raw_generation: directory containing raw Entso generation files
-        - raw_exchanges: directory containing raw Entso cross-border flow files
-        - savedir: directory where to save the results. Default: None (no saving)
-        - mapping: file with the mapping (impact per kWh produced for each production unit)
-        - neighbours: file gathering the list of neighbours of each european country
-        - gap: file with estimations of the nature of the residual
-        - swissGrid: file with production and cross-border flows from Swiss Grid
-        - networkLosses: file with estimation of the power grid losses.
-    
-    Methods:
-        - from_excel: load the attributes from a excel sheet.
+    Attributes
+    ----------
+        rootdir: str
+            root directory of the experiment (highest common folder). Useful mainly within the class.
+        generation: str
+            directory containing Entso generation files OR where to save it (if from raw)
+        exchanges: str
+            directory containing Entso cross-border flow files OR where to save it (if from raw)
+        raw_generation: str
+            directory containing raw Entso generation files
+        raw_exchanges: str
+            directory containing raw Entso cross-border flow files
+        savedir: str
+            directory where to save the results. Default: None (no saving)
+        mapping: str
+            file with the mapping (impact per kWh produced for each production unit)
+        neighbours: str
+            file gathering the list of neighbours of each european country
+        gap: str
+            file with estimations of the nature of the residual
+        swissGrid: str
+            file with production and cross-border flows from Swiss Grid
+        networkLosses: str
+            file with estimation of the power grid losses.
+
+    Methods
+    -------
+        from_excel(excel):
+            reads the values from an xlsx spreadsheet.
+        __setattr__:
+            ensures that new values for attribures are formated correctly
+        __repr__:
+            allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
     
     def __init__(self):
-        
+        """Gather parameters about local data files for the execution of diverse
+        functions of the module `dynamical.easy_use`.
+
+        Parameters
+        ----------
+            excel: str, default is None
+                path to .xlsx spreadsheet containing parameter information
+        """
         self.generation = None
         self.exchanges = None
         self.raw_generation = None
@@ -196,6 +263,13 @@ class Filepath():
             raise ValueError(f'Unidentified file or directory: {os.path.abspath(value)}')
     
     def from_excel(self, excel):
+        """Extract parameters information from a .xlsx spreadsheet.
+
+        Parameters
+        ----------
+            excel: str
+                path to a .xlsx spreadsheet
+        """
         param_excel = pd.read_excel(excel, sheet_name="Filepath", index_col=0, header=None)
         
         self.generation = param_excel.loc['generation directory'].iloc[0]
@@ -222,13 +296,54 @@ class Filepath():
 class Server():
     """Server object allowing to parametrize the automatic downloading of data files.
     
-    Attributes:
-    
-    Methods:
+    Attributes
+    ----------
+        useServer: bool, default to False
+            to download from server or to skip this time consuming step.
+        removeUnused: bool, default to False
+            to clear the target directory from non-related files.
+        host: str, default to "sftp-transparency.entsoe.eu"
+            specify the host database for the connection
+        port: int, deafult to 22
+            specify the port to use
+        username: str, default to None
+            the username for the account to connect with
+        password: str, default to None
+            the password of the account. No encryption on the `dynamical` end. The credentials 
+            (`username` and `password`) are asked during the execution if missing from this
+            class. Best practice for occasional use of the download functionality is to enter
+            your credentials only during the main execution and not via this class or in spreadsheet.
+        _nameGenerationFile: str, default to "AggregatedGenerationPerType_16.1.B_C.csv"
+            general naming of files to download for unit generation on the ENTSO-E server. This
+            excludes the first part of the files names, which involve the year and month.
+        _nameExchangesFile: str, default to "PhysicalFlows_12.1.G.csv"
+            general naming of files to download for phisical cross-border flows on the ENTSO-E server.
+            This excludes the first part of the files names, which involve the year and month.
+        _remoteGenerationDir: str, default to "/TP_export/AggregatedGenerationPerType_16.1.B_C/"
+            path to files of interest for unit generation on the ENTSO-E server.
+        _remoteExchangesDir: str, default to "/TP_export/PhysicalFlows_12.1.G/"
+            path to files of interest for phisical cross-border flows on the ENTSO-E server.
+
+    Methods
+    -------
+        from_excel(excel):
+            reads the values from an xlsx spreadsheet.
+        __setattr__:
+            ensures that new values for attribures are formated correctly
+        __repr__:
+            allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
     
     def __init__(self):
+        """Gather downloading parameters to configurate the execution of diverse
+        functions of the module `dynamical.easy_use`.
+
+        Parameters
+        ----------
+            excel: str, default is None
+                path to .xlsx spreadsheet containing parameter information
+        """
         # Root of file names on server
         self._nameGenerationFile = "AggregatedGenerationPerType_16.1.B_C.csv"
         self._nameExchangesFile = "PhysicalFlows_12.1.G.csv"
@@ -276,6 +391,13 @@ class Server():
         
     
     def from_excel(self, excel):
+        """Extract parameters information from a .xlsx spreadsheet.
+
+        Parameters
+        ----------
+            excel: str
+                path to a .xlsx spreadsheet
+        """
         param_excel = pd.read_excel(excel, sheet_name="Server", index_col=0, header=None)
         
         self.host = param_excel.loc['host'].iloc[0]

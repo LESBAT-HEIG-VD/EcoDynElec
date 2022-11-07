@@ -1,3 +1,6 @@
+"""The module `residual` handles the inclusion of additional local production
+not considered in ENTSO-E utility-level data.
+"""
 import numpy as np
 import pandas as pd
 import os
@@ -22,13 +25,19 @@ def import_residual(prod, sg_data, gap=None):
     """
     Function to insert the residue as a swiss production high voltage. Two residues are considered: hydro run off and the rest.
     
-    Parameter:
-        - prod: the production mix of Swizerland [pandas DataFrame] (Date should be as index)
-        - sg_data: information from SwissGrid (pandas DataFrame)
-        - gap: information about the nature of the residual (pandas DataFrame)
+    Parameters
+    ----------
+        prod: `pandas.DataFrame`
+            the production mix of Swizerland. Rquires indexes to be datetime.
+        sg_data: `pandas.DataFrame`
+            information from SwissGrid
+        gap: `pandas.DataFrame`, default to None
+            information about the nature of the residual
     
-    Return:
-        production mix with the Residue [pandas DataFrame]
+    Returns
+    -------
+    `pandas.DataFrame`
+        production mix with the Residue
     """
     ### Calculation of global resudual
     all_prod = prod.copy()
@@ -53,14 +62,23 @@ def import_residual(prod, sg_data, gap=None):
 
 def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_verbose=False):
     """Function to add the residual swiss production
-    Parameter:
-        Gen: Gen: information about all production and cross-border flows (dict of pandas DataFrames)
-        freq: the frequence (granularity)
-        sg_data: information from SwissGrid (pandas DataFrame)
-        prod_gap: information about the nature of the residual (pandas DataFrame)
-        is_verbose: to display information
-    Return:
-        dict of modified generation and cross-border flows
+
+    Parameters
+    ----------
+        Gen: dict
+            information about all production and cross-border flows
+        freq: str, default to 'H'
+            the frequency of time step
+        sg_data: pandas.DataFrame, default to None
+            information from SwissGrid
+        prod_gap: pandas.DataFrame, default to None
+            information about the nature of the residual
+        is_verbose: bool, default to None
+            to display information
+    Returns
+    -------
+    dict
+        dict tables containing the modified generation and cross-border flows
     """
     #######################
     ###### Add Residue data
@@ -106,15 +124,26 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
 
 def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=None, freq='H', target='CH'):
     """Funcion to include a local residual directly into the electric mix information.
-    Parameter:
-        mix_data: the electric mix table (pandas DataFrame)
-        sg_data: information from SwissGrid (pandas DataFrame)
-        local_prod: the production and exchanges in MWh of the target country (pandas DataFrame)
-        gap: information about the nature of the residual (pandas DataFrame)
-        freq: the time step
-        target: the target country
-    Return:
-        modified mix table
+
+    Parameters
+    ----------
+        mix_data: pandas.DataFrame
+            the electric mix table
+        sg_data: pandas.DataFrame
+            information from SwissGrid
+        local_prod: pandas.DataFrame
+            the production and exchanges in MWh of the target country
+        gap: pandas.DataFrame
+            information about the nature of the residual
+        freq: str, default to 'H'
+            the frequency of time step
+        target: str, default to 'CH'
+            the target country
+
+    Returns
+    -------
+    pandas.DataFrame
+        mix table enhanced with local residual information
     """
     # Check the availability
     check_residual_avaliability(prod=local_prod, residual=gap, freq=freq)
@@ -136,7 +165,23 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
 
 def define_local_gap(local_prod, sg_data, freq='H', gap=None):
     """Function to define the relative part of residual in the electricity in the target country.
-    Returns the relative residual information."""
+
+    Parameters
+    ----------
+        local_prod: pandas.DataFrame
+            production data for a single country
+        sg_data: pandas.DataFrame, default to None
+            information from SwissGrid
+        freq: str, default to 'H'
+            the frequency of time step
+        gap: pandas.DataFrame, default to None
+            information about the nature of the residual
+
+    Returns
+    -------
+    pandas.DataFrame
+        the relative residual information.
+    """
     production = [k for k in local_prod.columns if k[:3]!='Mix']
     local_mix = [k for k in local_prod.columns if k[:3]=='Mix']
     
@@ -160,7 +205,22 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None):
 # -
 
 def adjust_mix_local(mix_data, local_residual, target='CH'):
-    """Function to modify the mix and integrate a local residual. Returns the modified mix data."""
+    """Function to modify the mix and integrate a local residual.
+
+    Parameters
+    ----------
+        mix_data: pandas.DataFrame
+            the electric mix table
+        local_prod: pandas.DataFrame
+            the production and exchanges in MWh of a country
+        target: str, default to 'CH'
+            the target country
+
+    Returns
+    -------
+    pandas.DataFrame
+        the modified mix data including low-voltage production mix.
+    """
     new_mix = mix_data.copy()
 
     ### Adjust the productions directly into electricity mix matrix

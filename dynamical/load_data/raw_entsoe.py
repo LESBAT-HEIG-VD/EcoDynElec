@@ -1,3 +1,8 @@
+"""
+Module containing the functions loading the downloaded data
+from the ENTOS-E databases
+"""
+
 import pandas as pd
 import numpy as np
 from time import time
@@ -18,18 +23,44 @@ from dynamical.load_data.autocomplete import autocomplete
 def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, correct_imp:bool=True,
             savedir_gen:str=None, savedir_imp:str=None, save_resolution:str=None,
             n_hours:int=2, days_around:int=7, limit:float=.4, is_verbose=False):
-    """Easy command to execute all at once
-    Parameters:
+    """Extracts all the data at once. Master function of the module.
+
+    Parameters
     -----------
-        ctry:
-        dir_gen, dir_imp: str or dataframe
-        correct_gen, correct_imp: bool
-        savedir_gen, savedir_imp: str
-        save_resolution: str
-        n_hours: int
-        days_around: int
-        limit: float
-        is_verbose: bool
+        ctry: list, default to None
+            list of countries to involve in the computation
+        dir_gen: str, default is None
+            path to local directory with ENTSO-E generation data files
+        dir_imp: str, default is None
+            path to local directory with ENTSO-E exchange data files
+        correct_gen: bool, default to True
+            to auto-complete the generation data
+        correct_imp: bool, default to True
+            to auto-complete the exchange data
+        savedir_gen: str, default to None
+            directory to save the processed generation data.
+        savedir_imp: str, default to None
+            directory to save the processed exchange data.
+        save_resolution: str, default to None
+            directory to save information about frequency of each extracted time series
+        n_hours: int, default to 2
+            max number of hours of missing data in a row to consider a gap as short gap
+            and fill it with linear interpolation
+        days_around: int, default to 7
+            number of days before and after a long gap to build an average day to infer values.
+        limit: float, default to 0.4
+            max size of gap relative to the whole series to auto-complete. Gaps larger are
+            filled with zeros
+        is_verbose: bool, default to False
+            to display information
+
+    Returns
+    -------
+    dict
+        Generation data for each country, if `dir_gen` is not `None`
+    dict
+        Importation data for each country, if `dir_imp` is not `None`
+
     """
     t0 = time()
     if os.path.isdir(r"{}".format(dir_gen)):
@@ -65,6 +96,40 @@ def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, c
 
 def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None, savedir_resolution:str=None,
                        n_hours:int=2, days_around:int=7, limit:float=.4, correct_data:bool=True, is_verbose=False):
+    """Extracts all the data for every country.
+
+    Parameters
+    -----------
+        path_dir: str, default is None
+            path to local directory with ENTSO-E data files
+        case: str
+            'generation' or 'import' to select the type of data to expect.
+        ctry: list, default to None
+            list of countries to involve in the computation
+        savedir: str, default to None
+            directory to save the processed data.
+        save_resolution: str, default to None
+            directory to save information about frequency of each extracted time series
+        n_hours: int, default to 2
+            max number of hours of missing data in a row to consider a gap as short gap
+            and fill it with linear interpolation
+        days_around: int, default to 7
+            number of days before and after a long gap to build an average day to infer values.
+        limit: float, default to 0.4
+            max size of gap relative to the whole series to auto-complete. Gaps larger are
+            filled with zeros
+        correct_data: bool, default to True
+            to auto-complete the data
+        is_verbose: bool, default to False
+            to display information
+
+    Returns
+    -------
+    dict
+        Transformed data for each country.
+
+    """
+
     # Obtain parameter set for the specific case
     destination,origin,data,area = get_parameters(case)
     
@@ -121,6 +186,8 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
 
 
 def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
+    """Load the ENTSO-E data and concatenate the information
+    """
     if None in [destination,origin,data,area]:
         if case is None:
             raise KeyError("Missing information to load files: what 'case' is it ?")

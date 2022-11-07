@@ -1,3 +1,7 @@
+"""
+Module to load production and cross-border flows from ENTSO-E
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -32,37 +36,59 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     """
     Main function managing the import and pre-treatment of Entso-e production and cross-border flow data.
     
-    Patameter:
-        ctry: list of countries to include in the computing (list)
-        start: starting date (str or datetime)
-        end: ending date (str or datetime)
-        freq: time step (str, default: H)
-        target: target country (str, default: CH)
-        involved_countries: list of all countries involved, with the countries to include in the computing
-                            and their neighbours (to implement the exchanges with 'Other' countries)
-                            (list, default: None)
-        prod_gap: information about the nature of the residual (pandas DataFrame)
-        sg_data: information from Swiss Grid (pandas DataFrame, default: None)
-        net_exchange: to simplify cross-border flows to net after resampling (bool, default False)
-        path_gen: directory where preprocessed Entso-e generation files are stored (str)
-        path_imp: directory containing the files for preprocessed cross-border flow data (str)
-        path_gen_raw: directory where raw Entso-e generation files are stored (str)
-        path_imp_raw: directory containing the raw Entso-E files for cross-border flow data (str)
-        savedir: directory to save auxilary information for loaded data (str, default: None)
-        savegen: directory to save generation data from raw files (str, default: None)
-        saveimp: directory to save exchanges data from raw files (str, default: None)
-        residual_global: to consider the production residual as produced electricity that can be
-                        exchanged with neighbour countries (bool, default: False)
-        correct_imp: to replace cross-border flow of Entso-e for Swizerland with data from Swiss Grid
-                    (bool, default: False)
-        clean_generation: to enable automatic data cleaning / filling (bool, default: True)
-        n_hours: Max number of successive missing hours to be considered as occasional event
-                (int, default: 2)
-        days_around: number of days after and before a gap to consider to create a 'typical mean day'
-                (int, default: 7)
-        is_verbose: to display information (bool, default: False)
+    Parameters
+    ----------
+        ctry: list
+            list of countries to include in the computing (list)
+        start:
+            starting date, as str or datetime
+        end:
+            ending date, as str or datetime
+        freq: str, default to 'H'
+            frequency of time steps to consider
+        target: str, default to 'CH'
+            target country
+        involved_countries: list, default to None
+            list of all countries involved, with the countries to include in the computing
+            and their neighbours (to implement the exchanges with 'Other' countries)
+        prod_gap: pandas.DataFrame
+            information about the nature of the residual
+        sg_data: pandas.DataFrame, default to None
+            information from Swiss Grid
+        net_exchange: bool, default to False
+            to simplify cross-border flows to net after resampling
+        path_gen: str, default to None
+            directory where preprocessed Entso-e generation files are stored
+        path_imp: str, default to None
+            directory containing the files for preprocessed cross-border flow data
+        path_gen_raw: str, default to None
+            directory where raw Entso-e generation files are stored
+        path_imp_raw: str, default to None
+            directory containing the raw Entso-E files for cross-border flow data
+        savedir: str, default to None
+            directory to save auxilary information for loaded data
+        savegen: str, default to None
+            directory to save generation data from raw files
+        saveimp: str, default to None
+            directory to save exchanges data from raw files
+        residual_global: bool, default to False
+            to consider the production residual as produced electricity that can be exchanged with neighbour countries
+        correct_imp: bool, default to False
+            to replace cross-border flow of Entso-e for Swizerland with data from Swiss Grid
+        clean_data: bool, default to True
+            to enable automatic data cleaning / filling
+        n_hours: int, default to 2
+            max number of successive missing hours to be considered as occasional event
+        days_around: int, default to 7
+            number of days after and before a gap to consider to create a 'typical mean day'
+        limit: float, default to 0.4
+            max relative length of a gap to fill the data. Longer gaps are filled with zeros.
+        is_verbose: bool, default to False
+            to display information
     
-    Return:
+    Returns
+    -------
+    pandas.DataFrame
         pandas DataFrame with all productions and all exchanges from all included countries.
     """
     
@@ -107,15 +133,35 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=No
     """
     Function to import generation data from Entso-e information source.
     
-    Parameter:
-        path_gen: directory where preprocessed Entso-e generation files are stored (str) [prioritary path]
-        path_gen_raw: directory where raw Entso-e generation files are stored (str) [secondary path]
-        ctry: countries to incldue in the study (list)
-        start: starting date (str or datetime)
-        end: ending date (str or datetime)
-        savedir: directory path to save auxilary results (str, default: None)
-        savegen: directory path to save generation files (str, if path_raw not None, default: None)
-        is_verbose: to display information (bool, default: False)
+    Parameters
+    ----------
+        ctry: list
+            countries to incldue in the study (list)
+        start:
+            starting date, as str or datetime
+        end:
+            ending date, as str or datetime
+        path_gen: str, default to None
+            directory where preprocessed Entso-e generation files are stored (str) [prioritary path]
+        path_raw: str, default to None
+            directory where raw Entso-e generation files are stored (str) [secondary path]
+        savedir: str, default to None
+            directory path to save results (str, default: None)
+        n_hours: int, default to 2
+            max number of successive missing hours to be considered as occasional event
+        days_around: int, default to 7
+            number of days after and before a gap to consider to create a 'typical mean day'
+        limit: float, default to 0.4
+            max relative length of a gap to fill the data. Longer gaps are filled with zeros.
+        clean_generation: bool, default to True
+            to enable automatic data cleaning / filling
+        is_verbose: bool, default to False
+            to display information
+
+    Returns
+    -------
+    dict
+        processed generation data per country
     """
     path, savegen = None, None
     if ((path_raw is None)&(path_gen is None)):
@@ -187,21 +233,25 @@ def adjust_generation(Gen, freq='H', residual_global=False,
     It sorts finds and sorts missing values, fills it, resample the data and
     add a residual as global production
     
-    Parameter:
-        Gen: dict of dataFrames containing the generation for each country
-        freq: time step durtion (str, default: H)
-        residual_prod: whether to include the residual or not (bool, default: False)
-        sg_data: information from Swiss Grid (pandas DataFrame, default: None)
-        clean_generation: to enable automatic data cleaning / filling (bool, default: True)
-        n_hours: Max number of successive missing hours to be considered as occasional event
-                (int, default: 2)
-        days_around: number of days after and before a gap to consider to create a 'typical mean day'
-                (int, default: 7)
-        prod_gap: information about the nature of the residual (pandas DataFrame)
-        is_verbose: bool. Whether to display information or not.
+    Parameters
+    ----------
+        Gen: dict
+            dict of dataFrames containing the generation for each country
+        freq: str, default to 'H'
+            time step durtion
+        residual_global: bool, default to False
+            whether to include the residual or not
+        sg_data: pandas.DataFrame, default to None
+            information from Swiss Grid
+        prod_gap: pandas.DataFrame, default to None
+            information about the nature of the residual
+        is_verbose: bool, default to False
+            whether to display information or not.
         
-    Return
-        dict of pandas DataFrames: modified Gen dict.
+    Returns
+    -------
+    dict
+        dict of pandas DataFrames containing modified Gen dict.
     """
     ### Resample data to the right frequence
     if is_verbose: print(f"\t4/{4+int(residual_global)} - Resample exchanges to {freq} steps...")
@@ -213,40 +263,6 @@ def adjust_generation(Gen, freq='H', residual_global=False,
                                        is_verbose=is_verbose)
     
     return Gen
-
-
-# +
-
-#####################################
-# ####################################
-# Resample generation
-# ####################################
-# ####################################
-
-# -
-
-# def resample_generation(Gen, freq, add_on=False, is_verbose=False):
-#     """
-#     Function that resamples the generation data. It can only downsample (lower the resolution) by summing.
-    
-#     Parameter:
-#         Gen: dict of DataFrames containing the generation data.
-#         freq: the time step (resolution)
-#         add_on: a display flourish (bool, default: False)
-#         is_verbose: to display information (bool, default: False)
-    
-#     Return:
-#         dict of pandas DataFrame wiht resampled productions
-#     """
-#     #######################
-#     ###### Resample Gen.
-#     #######################
-#     if ((check_frequency(freq))&(freq!='15min')):
-#         if is_verbose: print(f"\t4/{4+int(add_on)} - Resample Generation data to {freq} steps...")
-#         for f in Gen.keys(): # For all countries
-#             Gen[f] = Gen[f].resample(freq).sum() # Sum as we talk about energy.
-            
-#     return Gen
 
 
 # +
@@ -266,14 +282,37 @@ def import_exchanges(ctry, start, end, path_imp=None, path_raw=None, savedir=Non
     Function to import the cross-border flows.
     Finds the useful files to load, load the data, group relevant information and adjust time step.
     
-    Parameter:
-        path_imp: directory containing the files for cross-border flow data (str)
-        neighbours: list of useful countries, including neighbour of involved countries (list)
-        ctry: list of countries to be represented in the simulation
-        start: starting date (str or datetime)
-        end: ending date (str or datetime)
-        freq: time step (str, default: H)
-        is_verbose: display information (bool, default: False)
+    Parameters
+    ----------
+        ctry: list
+            countries to incldue in the study (list)
+        start:
+            starting date, as str or datetime
+        end:
+            ending date, as str or datetime
+        path_imp: str, default to None
+            directory where preprocessed Entso-e exchange files are stored (str) [prioritary path]
+        path_raw: str, default to None
+            directory where raw Entso-e generation files are stored (str) [secondary path]
+        savedir: str, default to None
+            directory path to save results (str, default: None)
+        freq: str, default to 'H'
+            the frequency to consier
+        n_hours: int, default to 2
+            max number of successive missing hours to be considered as occasional event
+        days_around: int, default to 7
+            number of days after and before a gap to consider to create a 'typical mean day'
+        limit: float, default to 0.4
+            max relative length of a gap to fill the data. Longer gaps are filled with zeros.
+        clean_generation: bool, default to True
+            to enable automatic data cleaning / filling
+        is_verbose: bool, default to False
+            to display information
+
+    Returns
+    -------
+    dict
+        dict of pandas.DataFrame containing cross-border flows.
     """
     path, saveimp = None, None
     if ((path_raw is None)&(path_imp is None)):
@@ -331,13 +370,24 @@ def adjust_exchanges(Cross, neighbourhood, net_exchange=False, freq='H', sg_data
     Bring adjustments to the exchange data: add SwissGrid data, fill data,
     adjust frequency and set exchanges to net.
     
-    Parameter:
-        Cross: the Cross-border flow data (dict of pandas DataFrame)
-        net_exchange: to consider net cross-border flows (bool, default False)
-        sg_data: information from Swiss Grid (pandas DataFrame)
-        freq: time step (str, default: H)
+    Parameters
+    ----------
+        Cross: dict
+            the Cross-border flow data, as dict of pandas DataFrame
+        neighbourhood: list
+            list of involved countries, as main countries or neighbours
+        net_exchange: bool, default to False
+            to consider net cross-border flows
+        freq: str, default to 'H'
+            time step
+        sg_data: pandas.DataFrame, default to None
+            information from Swiss Grid
+        is_verbose: bool, default to False
+            to display information
     
-    Return:
+    Returns
+    -------
+    dict
         dict of pandas DataFrame with adjusted cross-border flow data.
     """
     ### ADJUST THE FREQUENCY AND CONVERT TO MWh
@@ -378,11 +428,16 @@ def set_swissGrid(Cross, sg_data):
     """
     Function to replace the cross-border flow data of ENTSO-E by the cross-border flow data of SwissGrid. Data passed must be in 15min.
     
-    Parameter:
-        Cross: the Cross-border flow data (dict of pandas DataFrame)
-        sg_data: information from Swiss Grid (pandas DataFrame)
+    Parameters
+    ----------
+        Cross: dict
+            the Cross-border flow data, as dict of pandas DataFrame
+        sg_data: pandas.DataFrame
+            information from Swiss Grid
     
-    Return:
+    Returns
+    -------
+    dict
         dict of pandas DataFrame with cross-border flow data for all the countries of the studied area.
     """    
     #### Replace the data in the DataFrames
@@ -466,11 +521,16 @@ def resample_data(Data, freq):
     Function that turns data from MW to MWh and adapts its frequency.
     The data is assumed to be in MW, in a table with 15min indexes.
     
-    Parameter:
-        Data: dict of DataFrames containing the generation data.
-        freq: the frequency (length of time step)
+    Parameters
+    ----------
+        Data: dict
+            dict of DataFrames containing the generation data.
+        freq: str
+            the frequency (length of time step)
     
-    Return:
+    Returns
+    -------
+    dict
         dict of pandas DataFrame wiht resampled and converted energy
     """
     ### VERIFY THE FREQUENCY
