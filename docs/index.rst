@@ -33,7 +33,10 @@ For now the software can only be installed from the `gitlab repository <https://
     :maxdepth: 1
     :caption: Examples
 
-    examples/examples
+    examples/1_Execute_from_Spreadsheet
+    examples/2_Handle_parameters
+    examples/3_Exploit_results
+    examples/4_Electricity_mix_map
 
 .. toctree::
     :maxdepth: 1
