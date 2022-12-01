@@ -8,7 +8,7 @@ import numpy as np
 from time import time
 import os
 
-from dynamical.load_data.autocomplete import autocomplete
+from dynamical.preprocessing.autocomplete import autocomplete
 
 # +
 

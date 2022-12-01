@@ -9,7 +9,7 @@ from time import time
 
 ############### Local functions
 from dynamical.checking import check_frequency
-from dynamical.load_data.auxiliary import load_rawEntso
+from dynamical.preprocessing.auxiliary import load_rawEntso
 
 
 #
