@@ -19,12 +19,12 @@ from getpass import getpass
 # -
 
 
-def download(p, is_verbose=False):
+def download(config, is_verbose=False):
     """Downloads data from ENTSO-E servers and save it.
 
     Parameters
     ----------
-        p: dynamical.Parameter
+        config: dynamical.Parameter
             collection of parameters for the execution of dynamical.
             The relevant information is the start and end date, as well
             as server information and path information to save raw_generation
@@ -38,25 +38,25 @@ def download(p, is_verbose=False):
     """
     t0 = time()
     ### Get the start and end dates
-    dates = _set_time(p.start, p.end)
+    dates = _set_time(config.start, config.end)
     
     ### Decide on the files to download
-    file_list = {k: _get_file_list(*dates, getattr(p.server, f'_remote{k}Dir'),
-                                          getattr(p.server, f'_name{k}File') )
+    file_list = {k: _get_file_list(*dates, getattr(configserver, f'_remote{k}Dir'),
+                                          getattr(configserver, f'_name{k}File') )
                  for k in ['Generation','Exchanges']}
     
     ### Point to the saving locations
-    save_list = {k: _get_file_list(*dates, getattr(p.path, f'raw_{k.lower()}'),
-                                          getattr(p.server, f'_name{k}File') )
+    save_list = {k: _get_file_list(*dates, getattr(configpath, f'raw_{k.lower()}'),
+                                          getattr(configserver, f'_name{k}File') )
                  for k in file_list}
     
     ### Clear directories
-    if p.server.removeUnused:
-        _remove_olds(p.path.raw_generation, save_list['Generation']) # Remove unused generation
-        _remove_olds(p.path.raw_exchanges, save_list['Exchanges']) # Remove unused exchanges
+    if configserver.removeUnused:
+        _remove_olds(configpath.raw_generation, save_list['Generation']) # Remove unused generation
+        _remove_olds(configpath.raw_exchanges, save_list['Exchanges']) # Remove unused exchanges
         
     ### Download files
-    _reach_server(p.server, files=file_list, savepaths=save_list, is_verbose=is_verbose)
+    _reach_server(configserver, files=file_list, savepaths=save_list, is_verbose=is_verbose)
     
     ### EOF
     if is_verbose: print(f"\tDownload from server: {time()-t0:.2f} sec" + " "*40)

@@ -91,7 +91,7 @@ def execute(config, missing_mapping='error', is_verbose=False):
         if None in [p.path.generation, p.path.exchanges]: # If one path was not given
             raise KeyError("Can not download files: missing path raw_generation and/or raw_exchange to save files.")
         if is_verbose: print("Download Entso-E data from server...")
-        download(p, is_verbose=is_verbose) # Save files in a local dirrectory
+        download(config=p, is_verbose=is_verbose) # Save files in a local dirrectory
         
     
     ###########################
