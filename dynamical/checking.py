@@ -113,7 +113,8 @@ def check_mapping(mapping, mix, strategy='error'):
         else:
             warning_msg = f"The following units do produce and have no mapping: {units}."
             warning_msg += f" Impact values will be inferred following the strategy `{strategy}`."
-            warn(warning_msg); sys.stderr.flush()
+            warn(warning_msg)
+            sys.stderr.flush()
     
     return True
 

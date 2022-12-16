@@ -29,7 +29,7 @@ from dynamical.preprocessing.autocomplete import get_steps_per_hour
 
 def import_data(ctry, start=None, end=None, freq="H", target="CH",
                 involved_countries=None, prod_gap=None, sg_data=None, net_exchange=False,
-                path_gen=None, path_gen_raw=None, path_imp=None, path_imp_raw=None, savedir=None,
+                path_gen=None, gen_preprocessed=None, path_imp=None, imp_preprocessed=None, savedir=None,
                 residual_global=False, correct_imp=True,
                 clean_data=True, n_hours=2, days_around=7, limit=.4, is_verbose=True):
     
@@ -58,13 +58,13 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
         net_exchange: bool, default to False
             to simplify cross-border flows to net after resampling
         path_gen: str, default to None
-            directory where preprocessed Entso-e generation files are stored
-        path_imp: str, default to None
-            directory containing the files for preprocessed cross-border flow data
-        path_gen_raw: str, default to None
             directory where raw Entso-e generation files are stored
-        path_imp_raw: str, default to None
-            directory containing the raw Entso-E files for cross-border flow data
+        path_imp: str, default to None
+            directory where raw Entso-e files for cross-border flow data are stored
+        gen_preprocessed: str, default to None
+            directory where preprocessed Entso-e generation files are stored
+        imp_preprocessed: str, default to None
+            directory containing the files for preprocessed cross-border flow data
         savedir: str, default to None
             directory to save auxilary information for loaded data
         savegen: str, default to None
@@ -95,7 +95,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     t0 = time()
     
     ### GENERATION DATA
-    Gen = import_generation(path_gen=path_gen, path_raw=path_gen_raw, ctry=ctry, start=start, end=end,
+    Gen = import_generation(path_gen=path_gen, path_prep=gen_preprocessed, ctry=ctry, start=start, end=end,
                             savedir=savedir, n_hours=n_hours, days_around=days_around, limit=limit,
                             clean_generation=clean_data, is_verbose=is_verbose) # import generation data
     Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
@@ -104,7 +104,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
     ### EXCHANGE DATA
     Cross = import_exchanges(ctry=ctry, start=start, end=end, savedir=savedir,
                              n_hours=n_hours, days_around=days_around, limit=limit, clean_imports=clean_data,
-                             path_imp=path_imp, path_raw=path_imp_raw, freq=freq, is_verbose=is_verbose) # Imprt data
+                             path_imp=path_imp, path_prep=imp_preprocessed, freq=freq, is_verbose=is_verbose) # Imprt data
     
     Cross = adjust_exchanges(Cross=Cross, neighbourhood=involved_countries, net_exchange=net_exchange, freq=freq,
                              sg_data=sg_data if correct_imp else None, is_verbose=is_verbose)
@@ -127,7 +127,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
 
 # -
 
-def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=None,
+def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=None,
                       n_hours:int=2, days_around:int=7, limit:float=.4, clean_generation:bool=True,
                       is_verbose=False):
     """
@@ -142,9 +142,10 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=No
         end:
             ending date, as str or datetime
         path_gen: str, default to None
-            directory where preprocessed Entso-e generation files are stored (str) [prioritary path]
-        path_raw: str, default to None
             directory where raw Entso-e generation files are stored (str) [secondary path]
+        path_prep: str, default to None
+            directory where preprocessed Entso-e generation files are stored (str) [prioritary path]
+            Where preprocessed files are saved if both `path_prep` and `path_gen` are passed and different.
         savedir: str, default to None
             directory path to save results (str, default: None)
         n_hours: int, default to 2
@@ -164,14 +165,14 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=No
         processed generation data per country
     """
     path, savegen = None, None
-    if ((path_raw is None)&(path_gen is None)):
+    if ((path_prep is None)&(path_gen is None)):
         raise KeyError("No path is given for Generation data.")
-    elif ((path_raw is None)&(path_gen is not None)): # Got a file prepared
-        path = path_gen # Then use prepared file
-    elif ((path_raw is not None)&(path_gen is None)): # Need raw file
-        path = path_raw # Then use raw file
+    elif ((path_prep is None)&(path_gen is not None)): # Need raw file
+        path = path_gen # Then use raw file
+    elif ((path_prep is not None)&(path_gen is None)): # Got a file prepared
+        path = path_prep # Then use prepared file
     else: # Both are not None
-        path, savegen = path_raw, path_gen # Then use raw and save in path_gen.
+        path, savegen = path_gen, path_prep # Then use raw and save in path_prep.
     
     #######################
     ###### Generation data
@@ -179,29 +180,28 @@ def import_generation(ctry, start, end, path_gen=None, path_raw=None, savedir=No
 
     if is_verbose: print("Load generation data...")
     # Selecton of right files according to the choice of countres
-    if path==path_gen:
+    if path==path_prep:
         files = {}
         for c in ctry: # Gather prepared files per country
             try:
-                files[c] = [f for f in os.listdir(path) if f.find(c)!=-1][0]
+                files[c] = [f for f in os.listdir(path) if ((f.startswith(c))&(f.endswith('MW.csv')))][0]
             except Exception as e:
-                raise KeyError(f"No generation data for {c}: {e}")
+                raise KeyError(f"No pre-processed generation data for {c}: {e}")
                 
         Gen = {} # Dict for the generation of each country
         
-    elif path==path_raw: # Just fill the Gen directly for row files
+    elif path==path_gen: # Just fill the Gen directly for row files
         Gen = extract(ctry=ctry, dir_gen=path, savedir_gen=savegen, save_resolution=savedir,
-                      n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_generation,
+                      n_hours=n_hours, days_around=days_around, limit=limit, correct_gen=clean_generation,
                       is_verbose=is_verbose) # if from raw files
 
     for c in ctry:# Preprocess all files / data per country
         # Extract the generation data file
-        if path==path_gen: # Load preprocessed files
+        if path==path_prep: # Load preprocessed files
             Gen[c] = pd.read_csv(path+files[c],index_col=0) # Extraction of preprocessed files
         
         # Check and modify labels if needed
-        add_space = pd.Index(np.array([k[-1] for k in Gen[c].columns])!=[' ']) # all cols not ending with ' '
-        Gen[c].columns = Gen[c].columns + add_space*" " # get an additional ' ' at the end
+        Gen[c].columns = Gen[c].columns.str.rstrip() + " " # (first remove if any, then) set additional ' ' at the end
             
         # Set indexes to time data
         Gen[c].index = pd.to_datetime(Gen[c].index,yearfirst=True) # Convert index into datetime
@@ -275,7 +275,7 @@ def adjust_generation(Gen, freq='H', residual_global=False,
 
 # -
 
-def import_exchanges(ctry, start, end, path_imp=None, path_raw=None, savedir=None, freq='H',
+def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=None, freq='H',
                      n_hours:int=2, days_around:int=7, limit:float=.4, clean_imports:bool=True,
                      is_verbose=False):
     """
@@ -291,9 +291,10 @@ def import_exchanges(ctry, start, end, path_imp=None, path_raw=None, savedir=Non
         end:
             ending date, as str or datetime
         path_imp: str, default to None
+            directory where raw Entso-e exchange files are stored (str) [secondary path]
+        path_prep: str, default to None
             directory where preprocessed Entso-e exchange files are stored (str) [prioritary path]
-        path_raw: str, default to None
-            directory where raw Entso-e generation files are stored (str) [secondary path]
+            Where preprocessed files are saved if both `path_prep` and `path_imp` are passed and different.
         savedir: str, default to None
             directory path to save results (str, default: None)
         freq: str, default to 'H'
@@ -315,36 +316,36 @@ def import_exchanges(ctry, start, end, path_imp=None, path_raw=None, savedir=Non
         dict of pandas.DataFrame containing cross-border flows.
     """
     path, saveimp = None, None
-    if ((path_raw is None)&(path_imp is None)):
+    if ((path_prep is None)&(path_imp is None)):
         raise KeyError("No path is given for Generation data.")
-    elif ((path_raw is None)&(path_imp is not None)): # Got a file prepared
-        path = path_imp # Then use prepared file
-    elif ((path_raw is not None)&(path_imp is None)): # Need raw file
-        path = path_raw # Then use raw file
+    elif ((path_prep is None)&(path_imp is not None)): # Need raw file
+        path = path_imp # Then use raw file
+    elif ((path_prep is not None)&(path_imp is None)): # Got a file prepared
+        path = path_prep # Then use prepared file
     else: # Both are not None
-        path, saveimp = path_raw, path_imp # Then use raw and save in path_imp.
+        path, saveimp = path_imp, path_prep # Then use raw and save in path_prep.
     
     if is_verbose: print("Get and reduce importation data...")
         
     ### Files to consider
-    if path==path_imp:
+    if path==path_prep:
         files = {}
         for c in ctry:
             try:
-                files[c] = [f for f in os.listdir(path_imp) if f.find(c)!=-1][0]
+                files[c] = [f for f in os.listdir(path_imp) if ((f.startswith(c))&(f.endswith('MW.csv')))][0]
             except Exception as e:
-                raise KeyError(f"No exchange data for {c}: {e}")
+                raise KeyError(f"No pre-processed exchange data for {c}: {e}")
                 
         Cross = {} # Dict for the generation of each country
         
-    elif path==path_raw: # Just fill the Gen directly for row files
+    elif path==path_imp: # Just fill the Gen directly for row files
         Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,save_resolution=savedir,
                         n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_imports,
                         is_verbose=is_verbose) # if from raw files
 
     
     for i,c in enumerate(ctry):# File extraction
-        if path==path_imp:
+        if path==path_prep:
             if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
             Cross[c] = pd.read_csv(path_imp+files[c],index_col=0) # Extraction
 

@@ -43,17 +43,16 @@ from dynamical import saving
 # +
 
 
-def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
+def execute(config, missing_mapping='error', is_verbose=False):
     """Executes the whole computation process, i.e. (1) downloads required data;
     (2) load auxiliary data; (3) load and correct Entso-E data; (4) compute the 
     electricity tracking; (5) computes the environmental impacts; (6) save and return.
     
     Parameters
     ----------
-        p: dynamical.Parameter, default to None
-            a set of parameters to govern the computation, defaults to None
-        excel: str, default to None
-            path to an xlsx file containing parameters, default to None
+        config: dynamical.Parameter or str
+            a set of confugration parameters to govern the computation,
+            either as Parameter object or str pointing at an xlsx file.
         missing_mapping: str, default to 'error'
             strategy for handling producing units with not mapping.
             'error' (default) raises an error, 'worst' takes the highest impact value in
@@ -69,12 +68,18 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     """
 
     ###########################
-    ###### PARAMETERS
+    ###### PARAMETER & VERIF
     ######
-    if p is None: # Load
-        if excel is None:
-            excel = aux.get_default_file(r'ExcelFile_default.xlsx')
-        p = Parameter().from_excel(excel=excel)
+    if isinstance(config, Parameter): # If a parameter object
+        p = config
+    elif isinstance(config, str):
+        if any([config.endswith(k) for k in ('.xlsx','.xls','.ods')]):
+            p = Parameter(excel=config)
+        else:
+            raise NotImplementedError(f"File extension for {config} is not supported.")
+    else:
+        raise ValueError('Missing a configuration to pass parameters.')
+        
     
     if np.logical_and(p.residual_global,p.residual_local):
         raise ValueError("Residual can not be both global and local.")
@@ -83,7 +88,7 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     ###### DOWNLOAD FROM SERVER
     ######
     if p.server.useServer:
-        if None in [p.path.raw_generation, p.path.raw_exchanges]: # If one path was not given
+        if None in [p.path.generation, p.path.exchanges]: # If one path was not given
             raise KeyError("Can not download files: missing path raw_generation and/or raw_exchange to save files.")
         if is_verbose: print("Download Entso-E data from server...")
         download(p, is_verbose=is_verbose) # Save files in a local dirrectory
@@ -127,8 +132,7 @@ def execute(p=None, excel=None, missing_mapping='error', is_verbose=False):
     # Load generation and exchange data from entso-e    
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
-                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               path_gen=p.path.generation, path_imp=p.path.exchanges,
                                savedir=p.path.savedir, net_exchange=p.net_exchanges, 
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                clean_data=p.data_cleaning, is_verbose=is_verbose)

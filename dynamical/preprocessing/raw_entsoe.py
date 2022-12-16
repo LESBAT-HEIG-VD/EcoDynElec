@@ -8,6 +8,9 @@ import numpy as np
 from time import time
 import os
 
+from functools import partial
+import concurrent
+
 from dynamical.preprocessing.autocomplete import autocomplete
 
 # +
@@ -185,6 +188,28 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
 # -
 
 
+def load_single_files(file_path, column_types, area, useful):
+    """Load the ENTSO-E data for a single file
+    """
+    # Extract the information
+    d = pd.read_csv(file_path, sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
+
+    # Only select country level & Useful columns
+    d = d.loc[d.loc[:,area]=="CTY", useful]
+    
+    return d
+
+
+# +
+
+#################
+#################
+# ## Load files
+##############
+
+# -
+
+
 def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
     """Load the ENTSO-E data and concatenate the information
     """
@@ -202,16 +227,21 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
     files = [path_dir + f for f in os.listdir(path_dir) if os.path.isfile(path_dir+f)] # gather file pathways
 
     t0 = time()
-    container = []
-    for i,f in enumerate(files): # For all files
-        if is_verbose: print(f"Extract file {i+1}/{len(files)}...", end="\r")
-        # Extract the information
-        d = pd.read_csv(f,sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
-
-        # Only select country level & Useful columns
-        d = d.loc[d.loc[:,area]=="CTY", useful]
-        container.append(d)
-        del d # free memory space
+    # Single processing
+    if len(files)<=2: # for 2 files or less: use a for-loop
+        container = []
+        for i,f in enumerate(files): # For all files
+            if is_verbose: print(f"Extract file {i+1}/{len(files)}...", end="\r")
+            container.append( load_single_files(f, column_types, area, useful) )
+            
+    # Multi-processing
+    else:
+        if is_verbose: print(f"Extract {len(files)} files...", end='\r')
+        subfunc = partial(load_single_files, column_types=column_types, area=area, useful=useful)
+        container = []
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            for d in pool.map(subfunc, files):
+                container.append(d)
 
     # Concatenates all files
     if is_verbose: print("Concatenate all files...",end="\r")

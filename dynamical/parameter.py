@@ -184,13 +184,9 @@ class Filepath():
         rootdir: str
             root directory of the experiment (highest common folder). Useful mainly within the class.
         generation: str
-            directory containing Entso generation files OR where to save it (if from raw)
+            directory containing generation files from ENTSO-E database
         exchanges: str
-            directory containing Entso cross-border flow files OR where to save it (if from raw)
-        raw_generation: str
-            directory containing raw Entso generation files
-        raw_exchanges: str
-            directory containing raw Entso cross-border flow files
+            directory containing cross-border flow  files from ENTSO-E database
         savedir: str
             directory where to save the results. Default: None (no saving)
         mapping: str
@@ -226,8 +222,6 @@ class Filepath():
         """
         self.generation = None
         self.exchanges = None
-        self.raw_generation = None
-        self.raw_exchanges = None
         self.savedir = None
         
         self.fu_vector = None
@@ -240,7 +234,7 @@ class Filepath():
         self._is_frozen = True # Freeze the list of attributes
         
     def __repr__(self):
-        attributes = ["generation","exchanges","raw_generation","raw_exchanges","savedir",
+        attributes = ["generation","exchanges","savedir",
                       "fu_vector","mapping","neighbours","gap","swissGrid",
                       "networkLosses"]
         text = ""
@@ -274,8 +268,6 @@ class Filepath():
         
         self.generation = param_excel.loc['generation directory'].iloc[0]
         self.exchanges = param_excel.loc['exchange directory'].iloc[0]
-        self.raw_generation = param_excel.loc['raw generation directory'].iloc[0]
-        self.raw_exchanges = param_excel.loc['raw exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
         
         self.fu_vector = param_excel.loc['FU vector'].iloc[0]
