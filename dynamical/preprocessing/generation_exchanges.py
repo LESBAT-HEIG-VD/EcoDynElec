@@ -191,7 +191,7 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
         Gen = {} # Dict for the generation of each country
         
     elif path==path_gen: # Just fill the Gen directly for row files
-        Gen = extract(ctry=ctry, dir_gen=path, savedir_gen=savegen, save_resolution=savedir,
+        Gen = extract(ctry=ctry, start=start, end=end, dir_gen=path, savedir_gen=savegen, save_resolution=savedir,
                       n_hours=n_hours, days_around=days_around, limit=limit, correct_gen=clean_generation,
                       is_verbose=is_verbose) # if from raw files
 
@@ -339,7 +339,7 @@ def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=No
         Cross = {} # Dict for the generation of each country
         
     elif path==path_imp: # Just fill the Gen directly for row files
-        Cross = extract(ctry=ctry, dir_imp=path, savedir_imp=saveimp,save_resolution=savedir,
+        Cross = extract(ctry=ctry, start=start, end=end, dir_imp=path, savedir_imp=saveimp,save_resolution=savedir,
                         n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_imports,
                         is_verbose=is_verbose) # if from raw files
 

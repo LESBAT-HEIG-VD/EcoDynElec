@@ -23,15 +23,19 @@ from dynamical.preprocessing.autocomplete import autocomplete
 # -
 
 
-def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, correct_imp:bool=True,
+def extract(ctry:list, start=None, end=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, correct_imp:bool=True,
             savedir_gen:str=None, savedir_imp:str=None, save_resolution:str=None,
             n_hours:int=2, days_around:int=7, limit:float=.4, is_verbose=False):
     """Extracts all the data at once. Master function of the module.
 
     Parameters
     -----------
-        ctry: list, default to None
+        ctry: list
             list of countries to involve in the computation
+        start:
+            starting date, as str or datetime
+        end:
+            ending date, as str or datetime
         dir_gen: str, default is None
             path to local directory with ENTSO-E generation data files
         dir_imp: str, default is None
@@ -68,13 +72,13 @@ def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, c
     t0 = time()
     if os.path.isdir(r"{}".format(dir_gen)):
         if is_verbose: print("\tGeneration data.")
-        Gen = create_per_country(path_dir=dir_gen, case='generation', ctry=ctry, savedir=savedir_gen,
+        Gen = create_per_country(path_dir=dir_gen, case='generation', start=start, end=end, ctry=ctry, savedir=savedir_gen,
                                  savedir_resolution=save_resolution, is_verbose=is_verbose,
                                  n_hours=n_hours, days_around=days_around, limit=limit, correct_data=correct_gen)
             
     if os.path.isdir(r"{}".format(dir_imp)):
         if is_verbose: print("\tCross-border flow data.")
-        Imp = create_per_country(path_dir=dir_imp, case='import', ctry=ctry, savedir=savedir_imp,
+        Imp = create_per_country(path_dir=dir_imp, case='import', start=start, end=end, ctry=ctry, savedir=savedir_imp,
                                  savedir_resolution=save_resolution, is_verbose=is_verbose,
                                  n_hours=n_hours, days_around=days_around, limit=limit, correct_data=correct_imp)
     
@@ -97,7 +101,7 @@ def extract(ctry:list=None, dir_gen=None, dir_imp=None, correct_gen:bool=True, c
 # -
 
 
-def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None, savedir_resolution:str=None,
+def create_per_country(path_dir:dict, case:str, start=None, end=None, ctry:list=None, savedir:str=None, savedir_resolution:str=None,
                        n_hours:int=2, days_around:int=7, limit:float=.4, correct_data:bool=True, is_verbose=False):
     """Extracts all the data for every country.
 
@@ -107,6 +111,10 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
             path to local directory with ENTSO-E data files
         case: str
             'generation' or 'import' to select the type of data to expect.
+        start:
+            starting date, as str or datetime
+        end:
+            ending date, as str or datetime
         ctry: list, default to None
             list of countries to involve in the computation
         savedir: str, default to None
@@ -137,7 +145,7 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
     destination,origin,data,area = get_parameters(case)
     
     # Import content of raw files
-    df = load_files(path_dir, destination,origin,data,area,is_verbose=is_verbose)
+    df = load_files(path_dir, start, end, destination, origin, data, area, is_verbose=is_verbose)
     
     # Get auxilary information
     prod_units = get_origin_unit(df,origin) # list of prod units or origin countries
@@ -188,29 +196,7 @@ def create_per_country(path_dir:dict, case:str, ctry:list=None, savedir:str=None
 # -
 
 
-def load_single_files(file_path, column_types, area, useful):
-    """Load the ENTSO-E data for a single file
-    """
-    # Extract the information
-    d = pd.read_csv(file_path, sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
-
-    # Only select country level & Useful columns
-    d = d.loc[d.loc[:,area]=="CTY", useful]
-    
-    return d
-
-
-# +
-
-#################
-#################
-# ## Load files
-##############
-
-# -
-
-
-def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
+def load_files(path_dir, start=None, end=None, destination=None,origin=None,data=None,area=None,case=None,is_verbose=False):
     """Load the ENTSO-E data and concatenate the information
     """
     if None in [destination,origin,data,area]:
@@ -224,7 +210,7 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
                     'ActualGenerationOutput': 'float32', 'ActualConsumption': 'float32'}
     useful = ['DateTime',destination,'ResolutionCode',origin,data] # columns to keep
 
-    files = [path_dir + f for f in os.listdir(path_dir) if os.path.isfile(path_dir+f)] # gather file pathways
+    files = _get_file_list(start=start, end=end, path_dir=path_dir) # gather file pathways
 
     t0 = time()
     # Single processing
@@ -251,6 +237,60 @@ def load_files(path_dir, destination=None,origin=None,data=None,area=None,case=N
     if is_verbose: print(f"Data loading: {round(time()-t0,2)} sec")
     if is_verbose: print(f"Memory usage table: {round(df.memory_usage().sum()/(1024**2),2)} MB")
     return df
+
+
+# +
+
+#################
+#################
+# ## Set Time
+##############
+
+# -
+    
+
+def _get_file_list(start, end, path_dir):
+    """Set the list of files to load.
+    If start is None: take all before end.
+    If end is None: take all after start.
+    """
+    list_files = sorted(os.listdir(path_dir))
+    
+    if ((start is None) & (end is None)): # Both -> Take all
+        start = list_files[0][:7].replace("_","-")+"-01" # Date of first file
+        end = list_files[-1][:7].replace("_","-")+"-01" # Date of last file
+    elif end is None: # Start but no end: until now
+        end = list_files[-1][:7].replace("_","-")+"-01" # Date of last file
+    elif start is None: # End but no start -> All until end
+        start = list_files[0][:7].replace("_","-")+"-01" # Date of first file
+    
+    all_months = pd.period_range(start=start, end=end, freq='M')
+    possibles = [f"{a.year}_{a.month:02d}_" for a in all_months]
+    list_files = [path_dir+f for f in list_files if f[:8] in possibles]
+        
+    return list_files
+
+
+# +
+
+#################
+#################
+# ## Load single file
+##############
+
+# -
+
+
+def load_single_files(file_path, column_types, area, useful):
+    """Load the ENTSO-E data for a single file
+    """
+    # Extract the information
+    d = pd.read_csv(file_path, sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
+
+    # Only select country level & Useful columns
+    d = d.loc[d.loc[:,area]=="CTY", useful]
+    
+    return d
 
 
 # +
