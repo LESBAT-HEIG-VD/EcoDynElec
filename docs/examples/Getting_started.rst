@@ -17,6 +17,7 @@ In an Anaconda prompt, command prompt or any other terminal where
 ``python`` can be executed, run the following:
 
 >> cd /path/to/dynamical/package/
+
 >> python setup.py install
 
 Now ``dynamical`` can be imported and used as any other python package.
