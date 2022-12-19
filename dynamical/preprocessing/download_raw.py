@@ -37,6 +37,14 @@ def download(config, is_verbose=False):
     None
     """
     t0 = time()
+    
+    ### Verify the configuration
+    if isinstance(config, str):
+        if any([config.endswith(k) for k in ('.xlsx','.xls','.ods')]):
+            config = Parameter(excel=config)
+        else:
+            raise NotImplementedError(f"File extension for {config} is not supported.")
+        
     ### Get the start and end dates
     dates = _set_time(config.start, config.end)
     
