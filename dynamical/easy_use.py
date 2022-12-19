@@ -205,35 +205,31 @@ def execute(config, missing_mapping='error', is_verbose=False):
 # ######################################
 # ######################################
 # -
-def get_inverted_matrix(p=None, excel=None, is_verbose=False):
+def get_inverted_matrix(config=None, is_verbose=False):
     """Triggers the computation process until the electricity tracking to return the
     electricity mix in all involved coutries. No data saving is involved.
     
-    :param p: a set of parameters to govern the computation, defaults to None
-    :type p: class:`dynamical.Parameter`, optional
-    :param excel: path to an xlsx file containing parameters, default to None
-    :type excel: str, optional
+    :param config: a set of parameters to govern the computation, defaults to None
+    :type config: class:`dynamical.Parameter`, optional
     :param is_verbose: to display information, defaults to False
     :type is_verbose: bool, optional
     :return: a collection of tables containing the decomposition of 1kWh of electricity
     :rtype: dict of `pandas.DataFrame`
     """
-    # """
-    # Execute the whole process until matrix inversion, but does not extract target.
-    # Parameter:
-    #     p: the parameter object (from class Parameter). Default: None
-    #     excel: str to the excel file with parameters. Default: None
-    #     is_verbose: bool to display information. Default: False
-    # Return:
-    #     list of pandas DataFrame with the impacts of 1kWh of electricity.
-    # """
+
     ###########################
-    ###### PARAMETERS
+    ###### PARAMETER & VERIF
     ######
-    if p is None: # Load
-        if excel is None:
-            excel = aux.get_default_file(r'ExcelFile_default.xlsx')
-        p = Parameter().from_excel(excel=excel)
+    if isinstance(config, Parameter): # If a parameter object
+        p = config
+    elif isinstance(config, str):
+        if any([config.endswith(k) for k in ('.xlsx','.xls','.ods')]):
+            p = Parameter(excel=config)
+        else:
+            raise NotImplementedError(f"File extension for {config} is not supported.")
+    else:
+        raise ValueError('Missing a configuration to pass parameters.')
+        
     
     if np.logical_and(p.residual_global,p.residual_local):
         raise ValueError("Residual can not be both global and local.")
@@ -242,10 +238,10 @@ def get_inverted_matrix(p=None, excel=None, is_verbose=False):
     ###### DOWNLOAD FROM SERVER
     ######
     if p.server.useServer:
-        if None in [p.path.raw_generation, p.path.raw_exchanges]: # If one path was not given
+        if None in [p.path.generation, p.path.exchanges]: # If one path was not given
             raise KeyError("Can not download files: missing path raw_generation and/or raw_exchange to save files.")
         if is_verbose: print("Download Entso-E data from server...")
-        download(p, is_verbose=is_verbose) # Save files in a local dirrectory
+        download(config=p, is_verbose=is_verbose) # Save files in a local dirrectory
     
     ###########################
     ###### LOAD DATASETS
