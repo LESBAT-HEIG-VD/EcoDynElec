@@ -41,22 +41,22 @@ def download(config, is_verbose=False):
     dates = _set_time(config.start, config.end)
     
     ### Decide on the files to download
-    file_list = {k: _get_file_list(*dates, getattr(configserver, f'_remote{k}Dir'),
-                                          getattr(configserver, f'_name{k}File') )
+    file_list = {k: _get_file_list(*dates, getattr(config.server, f'_remote{k}Dir'),
+                                          getattr(config.server, f'_name{k}File') )
                  for k in ['Generation','Exchanges']}
     
     ### Point to the saving locations
-    save_list = {k: _get_file_list(*dates, getattr(configpath, f'raw_{k.lower()}'),
-                                          getattr(configserver, f'_name{k}File') )
+    save_list = {k: _get_file_list(*dates, getattr(config.path, k.lower()),
+                                          getattr(config.server, f'_name{k}File') )
                  for k in file_list}
     
     ### Clear directories
-    if configserver.removeUnused:
-        _remove_olds(configpath.raw_generation, save_list['Generation']) # Remove unused generation
-        _remove_olds(configpath.raw_exchanges, save_list['Exchanges']) # Remove unused exchanges
+    if config.server.removeUnused:
+        _remove_olds(config.path.generation, save_list['Generation']) # Remove unused generation
+        _remove_olds(config.path.exchanges, save_list['Exchanges']) # Remove unused exchanges
         
     ### Download files
-    _reach_server(configserver, files=file_list, savepaths=save_list, is_verbose=is_verbose)
+    _reach_server(config.server, files=file_list, savepaths=save_list, is_verbose=is_verbose)
     
     ### EOF
     if is_verbose: print(f"\tDownload from server: {time()-t0:.2f} sec" + " "*40)
