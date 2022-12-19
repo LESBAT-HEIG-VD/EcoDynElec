@@ -48,7 +48,6 @@ For now the software can only be installed from the `gitlab repository <https://
     modules/impacts
     modules/tracking
     modules/preprocessing
-    modules/pkg_preprocessing
     modules/saving
     modules/checking
 
