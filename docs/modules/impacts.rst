@@ -1,4 +1,4 @@
-impacts 
+impacts
 ========================
 
 .. automodule:: dynamical.impacts

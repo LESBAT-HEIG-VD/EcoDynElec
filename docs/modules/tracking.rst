@@ -1,4 +1,4 @@
-tracking 
+tracking
 =========================
 
 .. automodule:: dynamical.tracking

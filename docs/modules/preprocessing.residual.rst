@@ -1,7 +1,7 @@
-raw entsoe
+residual
 =======================================
 
-.. automodule:: dynamical.load_data.raw_entsoe
+.. automodule:: dynamical.preprocessing.residual
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,7 @@
-autocomplete
+auxiliary 
 ========================================
 
-.. automodule:: dynamical.load_data.autocomplete
+.. automodule:: dynamical.preprocessing.auxiliary
    :members:
    :undoc-members:
    :show-inheritance:

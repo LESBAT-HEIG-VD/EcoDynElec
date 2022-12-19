@@ -1,4 +1,4 @@
-parameter classes 
+parameter
 ==========================
 
 .. automodule:: dynamical.parameter
