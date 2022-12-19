@@ -73,8 +73,7 @@ is covered in the `dedicated page <https://dynamical.readthedocs.io/en/latest/ex
 Execution with configuration in a spreadsheet
 ---------------------------------------------
 
-A blank template of the spreadsheet can be obtained on the GitLab
-repository.
+A blank template of the spreadsheet can be obtained on the `GitLab repository <https://gitlab.com/fledee/ecodyn/-/blob/main/examples/Spreadsheet_example.xlsx>`__.
 
 .. code:: ipython3
 
