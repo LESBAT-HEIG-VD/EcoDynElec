@@ -18,7 +18,7 @@ setup(
     author="Francois Ledee",
     author_email="ledee.francois@gmail.com",
     url="https://gitlab.com/fledee/ecodyn/",
-    packages=["dynamical"],
+    packages=find_packages("./", exclude=['test']),
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
