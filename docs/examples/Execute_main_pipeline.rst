@@ -5,7 +5,7 @@ Execution of DYNAMICAL
 called ``execute`` in the module ``easy_use``. This pipeline requires
 configuration information to be provided either as a spreadsheet or as a
 ``Parameter`` object. More details about how to handle the parameters in
-the `appropriate page <>`__
+the `appropriate page <https://dynamical.readthedocs.io/en/latest/examples/Execute_main_pipeline.html>`__
 
 Execution with configuration in a ``Parameter`` object
 ------------------------------------------------------
@@ -20,7 +20,7 @@ Execution with configuration in a ``Parameter`` object
     my_config = Parameter() # Initialize the configuration
 
 The configuration can be set further directly in the script, this point
-is covered in the `dedicated page <>`__. To trigger the process, run:
+is covered in the `dedicated page <https://dynamical.readthedocs.io/en/latest/examples/Execute_main_pipeline.html>`__. To trigger the process, run:
 
 .. code:: ipython3
 
