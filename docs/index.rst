@@ -24,10 +24,10 @@ For now the software can only be installed from the `gitlab repository <https://
     supplementary/functional_unit
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 3
     :caption: Structure
 
-    structure/structure
+    structure/architecture
 
 .. toctree::
     :maxdepth: 1
