@@ -16,18 +16,3 @@ Alternatively, parameters can be set via a spreadsheet. An example spreadsheet c
 Meanign and role of each parameter
 **********************************
 This section describes the meaning and role of each parameter. The `documentation <https://dynamical.readthedocs.io/en/latest/modules/parameter.html>`_ about the `Parameter` class also provides useful descriptions.
-
-.. csv-table:: Main Parameters: description and role
-    :file: images/parameters.csv
-    :widths: 15, 15, 70
-    :header-rows: 1
-
-.. csv-table:: Path Parameters: description and role
-    :file: images/filepath.csv
-    :widths: 15, 15, 70
-    :header-rows: 1
-
-.. csv-table:: Server Parameters: description and role
-    :file: images/server.csv
-    :widths: 15, 15, 70
-    :header-rows: 1
