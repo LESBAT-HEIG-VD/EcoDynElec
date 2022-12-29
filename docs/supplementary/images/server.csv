@@ -1,0 +1,7 @@
+Spreadsheet,Python,Description
+host,`Parameter.server.host`,Name of the sftp host
+port,`Parameter.server.port`,ID number of the port to use
+username,`Parameter.server.username`,Username or email to connect to the entsoe database
+password,`Parameter.server.password`,Password to connect to the entsoe database (optional)
+use server,`Parameter.server.useServer`,TRUE to request downloading files fron the ENTSO-E database. FALSE (default) will not download.
+remove unused,`Parameter.server.removeUnused`,TRUE to remove all local files whose dates do not correspond to the required computation period. FALSE (default) will not delete any file. This functionality is ignored if no file is downloaded.

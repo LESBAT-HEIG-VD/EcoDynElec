@@ -1,0 +1,14 @@
+Spreadsheet	Python	Description
+countries	`Parameter.ctry`	List of countries to involve in the computation
+target	`Parameter.target`	The country in which to evaluate the impacts
+start	`Parameter.start`	"Start date. YYYY | MM | dd | HH | mm in the spreadsheet. ""YYYY-MM-dd HH:mm"" in Python."
+end	`Parameter.end`	"End date. YYYY | MM | dd | HH | mm in the spreadsheet. ""YYYY-MM-dd HH:mm"" in Python."
+frequency	`Parameter.freq`	Length of the time step. Default is H. Possibilities are Y (year) M (month) W (week) d (day) H (hour) 30min and 15min
+timezone	`Parameter.timezone`	Time zone understandable by Python. To convert in local time after the computation.
+constant exchanges	`Parameter.cst_imports`	TRUE to consider constant impacts for all countries but the target. Impacts become equal to the impact of “Other countries”. Default is FALSE.
+exchanges from swissGrid	`Parameter.sg_imports`	TRUE to replace ENTSO-E cross-border exchanges at the Swiss border with SwissGrid data. Default is FALSE.
+net exchanges	`Parameter.net_exchanges`	TRUE to correct cross-border exchanges so that flow between two countries at each time step is only unidirectional. Default is FALSE and treats data as it is given.
+network losses	`Parameter.network_losses`	TRUE to consider the network losses. Default is FALSE.
+residual local	`Parameter.residual_local`	TRUE will include Swiss residual as non-exchangeable production (consumed in CH). Default is FALSE. Cannot be TRUE at the same time as residual global.
+residual global	`Parameter.residual_global`	TRUE will include Swiss residual as tradeable production. Default is FALSE. Cannot be TRUE at the same time as residual local.
+data cleaning	`Parameter.data_cleaning`	TRUE to turn on the data autocompleting process. Missing data is replaced with zeros otherwise. Default is TRUE.
