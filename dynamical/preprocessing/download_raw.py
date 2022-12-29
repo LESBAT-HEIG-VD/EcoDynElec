@@ -19,7 +19,7 @@ from getpass import getpass
 # -
 
 
-def download(config, is_verbose=False):
+def download(config, threshold_minutes=15, threshold_size=.9, is_verbose=False):
     """Downloads data from ENTSO-E servers and save it.
 
     Parameters
@@ -29,6 +29,12 @@ def download(config, is_verbose=False):
             The relevant information is the start and end date, as well
             as server information and path information to save raw_generation
             and raw_exchange.
+        thershold_minutes: int, default to 15
+            time in minutes. Maximum time between last download and
+            last remote unpdate to not download the file.
+        threshold_size: float, default to 0.9
+            minimum ratio of size difference between local and remote file below
+            which to download, if the last download is newer than `threshold_minutes`.
         is_verbose: bool, default to False
             to display information during the download
 
@@ -64,7 +70,8 @@ def download(config, is_verbose=False):
         _remove_olds(config.path.exchanges, save_list['Exchanges']) # Remove unused exchanges
         
     ### Download files
-    _reach_server(config.server, files=file_list, savepaths=save_list, is_verbose=is_verbose)
+    _reach_server(config.server, files=file_list, savepaths=save_list, is_verbose=is_verbose,
+                  threshold_minutes=threshold_minutes, threshold_size=threshold_size)
     
     ### EOF
     if is_verbose: print(f"\tDownload from server: {time()-t0:.2f} sec" + " "*40)
@@ -80,7 +87,7 @@ def download(config, is_verbose=False):
 # -
 
     
-def _reach_server(server_info, files, savepaths, is_verbose=False):
+def _reach_server(server_info, files, savepaths, threshold_minutes=15, threshold_size=.9, is_verbose=False):
     """Function establishing the connection with the server using credentials
     , collecting files and saving them. Nothing is returned.
     """
@@ -118,7 +125,7 @@ def _reach_server(server_info, files, savepaths, is_verbose=False):
         ### Download all files
         for categ in files: # Generation then Exchanges
             for i, (remote,local) in enumerate(zip(files[categ],savepaths[categ])): # For each file
-                if not _should_download(sftp, remote, local): continue;
+                if not _should_download(sftp, remote, local, threshold_minutes, threshold_size): continue;
                 
                 callback_fct = None
                 if is_verbose:
@@ -204,7 +211,7 @@ def _manage_password():
 # -
     
     
-def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.1):
+def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.9):
     """Investigates whether to download a file or not.
 
     Parameters
@@ -218,9 +225,9 @@ def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.
         thershold_minutes: int, default to 15
             time in minutes. Maximum time between last download and
             last remote unpdate to not download the file.
-        threshold_size: float, default to 0.1
-            maximum ratio of size difference between local and remote file
-            to not download, if the last download is newer than `threshold_minutes`.
+        threshold_size: float, default to 0.9
+            minimum ratio of size difference between local and remote file below
+            which to download, if the last download is newer than `threshold_minutes`.
 
     Returns
     -------
@@ -244,7 +251,7 @@ def _should_download(sftp, remote, local, threshold_minutes=15, threshold_size=.
     ### IF REMOTE IS (SIGNIFICANTLY) LARGER, DOWNLOAD
     remote_size = getattr(sftp.lstat(remote), 'st_size') # Size of remote document
     local_size = getattr(os.stat(local), 'st_size') # Size of local document
-    is_larger = ((remote_size-local_size)/remote_size) > threshold_size
+    is_larger = ((remote_size-local_size)/remote_size) > (1-threshold_size)
     if is_larger: return True
     
     ### OTHER CASES: DO NOT DOWNLOAD
