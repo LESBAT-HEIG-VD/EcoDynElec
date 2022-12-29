@@ -7,6 +7,7 @@ This residual must be estimated. Statistics and data from SwissGrid (Swiss netwo
 
 This residual production can be addede in two ways. It may be included "globally", i.e. the residual is considered a generation unit among other and its produced electricity enters the overall mix of Switzerland and can be exchanged with neighbour countries. Alternatively it may be included "locally", i.e. it is assumed to be produced and consumed in Switzerland only. To include this residual locally, the addition must be done after the electricity tracking (Figure 1), if the target country is Switzerland.
 
-.. image:: images/local_residual.png
-    :caption: Include the Swiss production residual locally.
+.. figure:: images/local_residual.png
     :alt: algorithmic structure to include residual locally
+    
+    *Include the Swiss production residual locally.*

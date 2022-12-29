@@ -19,15 +19,15 @@ This section describes the meaning and role of each parameter. The `documentatio
 
 .. csv-table:: Main Parameters: description and role
     :file: images/parameters.csv
-    :width: 25, 25, 50
+    :widths: 15, 15, 70
     :header-rows: 1
 
 .. csv-table:: Path Parameters: description and role
     :file: images/filepath.csv
-    :width: 25, 25, 50
+    :widths: 15, 15, 70
     :header-rows: 1
 
 .. csv-table:: Server Parameters: description and role
     :file: images/server.csv
-    :width: 25, 25, 50
+    :widths: 15, 15, 70
     :header-rows: 1

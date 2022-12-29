@@ -11,6 +11,7 @@ The FU vector is simply an already shaped matrix of data, ready-to-use, thus not
 
 The mapping file is an excel file. A blank template may be downloaded on the `git repository <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/mapping_template.xlsx?inline=false>`_. The document must be provided blank as it relies on data which require information provided by proprietary sources such as the `Ecoinvent database <https://ecoinvent.org/>`_. Details about this mapping file and its structure is provided in a `dedicated page <https://dynamical.readthedocs.io/en/latest/supplementary/mapping_usage.html>`_ of the documentation.
 
-.. image:: images/load_impacts.png
-    :caption: Structure of impacts loading in `dynamical`
+.. figure:: images/load_impacts.png
     :alt: Load impacts
+    
+    *Structure of impacts loading in `dynamical`*
