@@ -28,6 +28,11 @@ For now the software can only be installed from the `gitlab repository <https://
     :caption: Structure
 
     structure/architecture
+    structure/data_loading
+    structure/load_impacts
+    structure/tracking
+    structure/impacts
+    structure/local_residual
 
 .. toctree::
     :maxdepth: 1
