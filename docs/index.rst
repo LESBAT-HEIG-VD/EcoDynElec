@@ -1,11 +1,11 @@
 Dynamical: Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
 =============================================================================
 
-dynamical software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
+Dynamical software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
 
 .. image:: images/workflow.png
 
-`dynamical` is a free software under APACHE 2.0 licence. It was developped in a collaboration between the `EMPA <https://www.empa.ch/>`_, `HEIG-VD <https://heig-vd.ch/>`_, the `SUPSI <https://www.supsi.ch/home.html>`_.
+``dynamical`` is a free software under APACHE 2.0 licence. It was developped in a collaboration between the `EMPA <https://www.empa.ch/>`_, `HEIG-VD <https://heig-vd.ch/>`_, the `SUPSI <https://www.supsi.ch/home.html>`_.
 
 Installation
 ============
@@ -62,7 +62,7 @@ For now the software can only be installed from the `gitlab repository <https://
 
 Renaming the whold directory
 ============================
-We are going to need a complete renaming, as `dynamical` is not satisfying at all.
+We are going to need a complete renaming, as ``dynamical`` is not satisfying at all.
 This means different things, as explained in `this post <https://stackoverflow.com/questions/2041993/how-do-i-rename-a-git-repository>`_
 
 
@@ -73,7 +73,7 @@ Displayed Name
 
 Rename the displayed name (for example, shown by `gitweb`):
 
-    - Edit `.git/description` to contain the repository's name.
+    - Edit ``.git/description`` to contain the repository's name.
     - Save the file.
 
 Repository Directory

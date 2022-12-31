@@ -1,12 +1,12 @@
 Tracking
 =========
 
-The electricity tracking algorithm is at the heart of `dynamical`. This methodology is the specificity of `dynamical` over other similar tools. The overall chaining of function is exposed in Figure 1.
+The electricity tracking algorithm is at the heart of ``dynamical``. This methodology is the specificity of ``dynamical`` over other similar tools. The overall chaining of function is exposed in Figure 1.
 
 .. figure:: images/tracking.png
     :alt: Module tracking
     
-    *Figure 1: Structure of the `tracking` module of `dynamical`.*
+    *Figure 1: Structure of the ``tracking`` module of ``dynamical``.*
     
     
 The whole principle of the electricity tracking is based on the fundamental equation of life-cycle-assessment (`Heijungs and Suh, 2002 <https://books.google.ca/books?id=pLwqBgAAQBAJ&dq=computational+structure+of+life+cycle+assessment&lr=>`_). The technology matrix is noted A, though the present description uses (I-A) as the matrix to invert, while the reference does invert the technology matrix A. This is only a question of notations but the maths are similar. The proper algorithm is executed as shown in Figure 2:

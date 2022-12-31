@@ -32,7 +32,7 @@ Handling the parameters before the download allows to reduce the amount of files
 
 Using Python
 ------------
-Parameters can be managed from Python via the `Parameter` class, for the download and more generally for the whole process. Only the parameters detailed in the following examples are useful for the download. More information about the parameters is available at the `dedicated page <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html>`_.
+Parameters can be managed from Python via the ``Parameter`` class, for the download and more generally for the whole process. Only the parameters detailed in the following examples are useful for the download. More information about the parameters is available at the `dedicated page <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html>`_.
 
 .. code-block:: python
     :caption: Initialize parameters for the download in ``dynamical``
@@ -61,7 +61,7 @@ Parameters can be managed from Python via the `Parameter` class, for the downloa
 
 Using a Spreadsheet
 -------------------
-An alternative for more visual configuration is to use a spreadsheet (Figure 2). This approach more generally allows a configuration of the whole process, though this section focuses on the downloading abilities. Information from all three tabs of the spreadsheet is required, the most important being the Server tab. Acceptable formats for the spreadhseet are `.xlsx` (default), `.xls` (requires the additional `xlrd package <https://pypi.org/project/xlrd/>`_) and `.ods` (requires the additional `odfpy package <https://pypi.org/project/odfpy/>`_). An example spreadsheet can be downloaded from the `git repository <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_.
+An alternative for more visual configuration is to use a spreadsheet (Figure 2). This approach more generally allows a configuration of the whole process, though this section focuses on the downloading abilities. Information from all three tabs of the spreadsheet is required, the most important being the Server tab. Acceptable formats for the spreadhseet are ``.xlsx`` (default), ``.xls`` (requires the additional `xlrd package <https://pypi.org/project/xlrd/>`_) and ``.ods`` (requires the additional `odfpy package <https://pypi.org/project/odfpy/>`_). An example spreadsheet can be downloaded from the `git repository <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_.
 
 .. figure:: images/ParameterExcel_Server.png
     :alt: Spreadsheet tab to configure the server access
@@ -88,7 +88,7 @@ The module ``dynamical.preprocessing.download_raw`` can be used to download the 
     from dynamical.preprocessing.download_raw import download
     download(config=param)
     
-Alternatively, if a spreadsheet is used, the path to the spreadsheet can be passed to the `config=` parameter.
+Alternatively, if a spreadsheet is used, the path to the spreadsheet can be passed to the ``config=`` parameter.
 
 .. code-block:: python
     :caption: Downloading process with ``dynamical`` using the spreadsheet configuration
