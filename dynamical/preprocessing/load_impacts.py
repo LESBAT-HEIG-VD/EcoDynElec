@@ -183,7 +183,7 @@ def other_from_excel(mapping):
     d = pd.read_excel(mapping,sheet_name="ENTSOE_avg",
                       header=1, usecols=np.arange(2,7),
                       index_col=[0]) # extract
-    return d.loc[['ENTSOE'],:].rename(index={'ENTSOE':'Mix_Other'}) # format
+    return d.loc[['ENTSOE average mix'],:].rename(index={'ENTSOE average mix':'Mix_Other'}) # format
 
 
 # +
