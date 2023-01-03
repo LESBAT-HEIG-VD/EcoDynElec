@@ -137,10 +137,6 @@ def extract_mapping(ctry, mapping_path=None, cst_import=False, residual=False, t
     elif '__iter__' not in dir(ctry):
         raise TypeError("Parameter ctry should be a list, tuple or str")
     
-    ### Verify mapping file OR FU file
-    if mapping_path is None:
-        mapping_path = get_default_file(name='Mapping_default.xlsx')
-    
     ### Extract the impact information
     impacts = {}
     
@@ -209,14 +205,12 @@ def country_from_excel(mapping, place):
     
     key = [k for k in d.columns if str(k).lower().find('impact')!=-1][-1] # Select last 'impact' column as key
     columns = d.loc[:,key:].iloc[0]
-    #columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
     columns = columns[ columns.apply(lambda x: not str(x).endswith('KBOB')) ] # Strike out KBOB... Do your own mapping man!
 
     # Get only important data
     d = d.loc[:,columns.index].dropna(axis=0).rename(columns=columns.to_dict())
     to_drop = [k for k in d.index if str(k).lower().find('sources entso-e')!=-1]
     d = d.loc[d.index.notnull()].drop(index=to_drop, errors='ignore') # Select the correct indexes
-    #d = d.loc[d.index.notnull()].drop(index=['Energy sources ENTSO-E'], errors='ignore') # Select the correct indexes
 
     # Replace "-" with zeros.
     d = d.replace("-",0).astype('float32')
@@ -255,7 +249,7 @@ def residual_from_excel(mapping, place):
         the impact of residual production is added.
     """
     try: # test if the "country" is available in the mapping file
-        d = pd.read_excel(mapping,sheet_name="Residue",index_col=0)
+        d = pd.read_excel(mapping,sheet_name="Residual",index_col=0)
     except Exception as e:
         raise ValueError(f" Residual not available: {e}")
         
