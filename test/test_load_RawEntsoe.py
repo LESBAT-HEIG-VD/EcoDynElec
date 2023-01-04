@@ -2,7 +2,7 @@ import unittest
 import os
 from pandas.core.frame import DataFrame
 
-from dynamical.load_data import raw_entsoe
+from dynamical.preprocessing import raw_entsoe
 
 
 def get_rootpath(level=0):
@@ -24,7 +24,7 @@ class TestRawEntso(unittest.TestCase):
         
     def files_created(self, root, ctry, case):
         for c in ctry: # Test if all files were created
-            filepath = f"{root}{c}_{case}_MWh.csv"
+            filepath = f"{root}{c}_{case}_MW.csv"
             self.assertTrue(os.path.isfile(filepath))
             
             if os.path.isfile(filepath): # Clear file if it exists

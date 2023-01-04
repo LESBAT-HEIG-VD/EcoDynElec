@@ -2,8 +2,9 @@ import os
 import unittest
 
 from numpy import unique
+from pandas import DataFrame as df
 from pandas.core.frame import DataFrame
-from dynamical.load_data import auxiliary
+from dynamical.preprocessing import auxiliary
 
 
 
@@ -15,11 +16,11 @@ class TestAuxiliary(unittest.TestCase):
     
     ########################
     ### TESTS ON get_default_file
-    def test_get_default_fileExcelFile(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('ExcelFile_default.xlsx')))
+    def test_get_default_fileFUVector(self):
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Functional_Unit_vector.csv')))
     
     def test_get_default_fileMapping(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Mapping_default.xlsx')))
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('mapping_template.xlsx')))
     
     def test_get_default_fileNeighbourhood(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Neighbourhood_EU.csv')))
@@ -174,8 +175,8 @@ class TestAuxiliary(unittest.TestCase):
         with self.assertRaises(KeyError):
             auxiliary.load_rawEntso(mix_data=0)
             
-    #TODO: Add other tests on passing a DataFrame or a filepath.
-    #TODO: Test the output
+    def test_load_rawEntsoDataframe(self):
+        self.assertEqual(auxiliary.load_rawEntso(mix_data=df(None)), df(None))
         
     
     

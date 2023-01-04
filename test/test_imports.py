@@ -12,9 +12,6 @@ def test_if_available(name, package=None):
     else:
         return True
 
-def test_func(a,b):
-    return a-b
-
 
 class TestImportMethods(unittest.TestCase):
     
@@ -48,23 +45,29 @@ class TestImportMethods(unittest.TestCase):
     def test_saving_import(self):
         self.assertTrue(test_if_available('dynamical.saving'))
         
-    def test_residual_import(self):
-        self.assertTrue(test_if_available('dynamical.residual'))
-        
     def test_loading_import(self):
-        self.assertTrue(test_if_available('dynamical.load_data'))
+        self.assertTrue(test_if_available('dynamical.preprocessing'))
+        
+    def test_loadAutocomplete_import(self):
+        self.assertTrue(test_if_available('dynamical.preprocessing.autocomplete'))
         
     def test_loadAuxiliary_import(self):
-        self.assertTrue(test_if_available('dynamical.load_data.auxiliary'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.auxiliary'))
+        
+    def test_loadDownload_import(self):
+        self.assertTrue(test_if_available('dynamical.preprocessing.download_raw'))
         
     def test_loadGenExch_import(self):
-        self.assertTrue(test_if_available('dynamical.load_data.generation_exchanges'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.generation_exchanges'))
         
     def test_loadImpacts_import(self):
-        self.assertTrue(test_if_available('dynamical.load_data.impacts'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.load_impacts'))
         
     def test_loadRawEntsoe_import(self):
-        self.assertTrue(test_if_available('dynamical.load_data.raw_entsoe'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.raw_entsoe'))
+        
+    def test_residual_import(self):
+        self.assertTrue(test_if_available('dynamical.preprocessing.residual'))
         
         
 

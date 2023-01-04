@@ -252,8 +252,11 @@ def residual_from_excel(mapping, place):
         d = pd.read_excel(mapping,sheet_name="Residual",index_col=0)
     except Exception as e:
         raise ValueError(f" Residual not available: {e}")
-        
-    columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
+    
+    key = [k for k in d.columns if str(k).lower().find('impact')!=-1][-1] # Select last 'impact' column as key
+    columns = d.loc[:,key:].iloc[0]
+    columns = columns[ columns.apply(lambda x: not str(x).endswith('KBOB')) ] # Strike out KBOB... Do your own mapping man!   
+    #columns = d.loc[:,'Environmental impacts of ENTSO-E sources':].iloc[0]
 
     # Select the righ column
     d = d.loc[:,columns.index].rename(columns=columns.to_dict()).rename_axis('')
