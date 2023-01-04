@@ -22,12 +22,16 @@ def compute_impacts(mix_data, impact_data, strategy='error', is_verbose=False):
     
     Parameters
     ----------
-        mix_data: information about the electric mix in the target country (pandas DataFrame)
-        impact_data: impact matrix for all production units (pandas DataFrame)
-        is_verbose: to display information (bool, default: False)
+        mix_data: pandas.DataFrame
+            information about the electric mix in the target country
+        impact_data: pandas.DataFrame
+            impact matrix for all production units
+        is_verbose: bool, default to False
+            to display information
 
     Returns
     -------
+    dict
         dict of pandas DataFrame containing the impacts.
     """
     
