@@ -46,11 +46,11 @@ For now the software can only be installed from the `gitlab repository <https://
     examples/Electricity_mix_map
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :caption: Modules
     :hidden:
 
-    modules/easy_use
+    modules/pipelines
     modules/parameter
     modules/impacts
     modules/tracking
