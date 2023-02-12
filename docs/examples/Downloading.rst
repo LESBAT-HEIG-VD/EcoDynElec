@@ -97,7 +97,7 @@ asked later. Also note that values for ``config.server.host`` and
 is not necessary to specify them again.
 
 2. Download using the ``downloading`` module
------------------------------------------
+--------------------------------------------
 
 Once the configuration is properly done, the following commands allow to
 download the data (and only do the download).
