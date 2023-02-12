@@ -23,12 +23,12 @@ class TestDownload(unittest.TestCase):
     def identify(self):
         ### Ask for username
         if self.user is None:
-            self.user = input("Username: ")
+            self.user = input("Username for ENTSO-E: ")
         
         ### Ask for password
         if self.pwd is None:
             ### First try
-            pwd = getpass("Password: ")
+            pwd = getpass("Password for ENTSO-E: ")
             transport = self.connect(pwd)
             if not transport:
                 print("Error in credentials. Last try before skipping this section.")
