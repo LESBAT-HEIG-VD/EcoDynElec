@@ -1,7 +1,7 @@
-download raw
+downloading
 ============================================
 
-.. automodule:: dynamical.preprocessing.download_raw
+.. automodule:: dynamical.preprocessing.downloading
    :members:
    :undoc-members:
    :show-inheritance:

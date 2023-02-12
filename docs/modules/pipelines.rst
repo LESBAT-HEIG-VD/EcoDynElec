@@ -1,7 +1,7 @@
-easy use
+pipelines
 ==========================
 
-.. automodule:: dynamical.easy_use
+.. automodule:: dynamical.pipelines
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,7 @@
-generation exchanges 
+loading
 ====================================================
 
-.. automodule:: dynamical.preprocessing.generation_exchanges
+.. automodule:: dynamical.preprocessing.loading
    :members:
    :undoc-members:
    :show-inheritance:

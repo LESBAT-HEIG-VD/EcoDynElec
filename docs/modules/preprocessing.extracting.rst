@@ -1,7 +1,7 @@
-raw entsoe
+extracting
 ==========================================
 
-.. automodule:: dynamical.preprocessing.raw_entsoe
+.. automodule:: dynamical.preprocessing.extracting
    :members:
    :undoc-members:
    :show-inheritance:
