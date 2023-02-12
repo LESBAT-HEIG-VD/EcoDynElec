@@ -1,4 +1,4 @@
-"""The `easy_use` module is the main module of `dynamical`.
+"""The `pipelines` module is the main module of `dynamical`.
 It consists in a collection of high-level functions triggering
 processes intricating most of the functions of the package.
 
