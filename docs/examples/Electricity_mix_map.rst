@@ -11,7 +11,7 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
 
 .. code:: ipython3
 
-    from dynamical.easy_use import get_inverted_matrix # Import the function
+    from dynamical.pipelines import get_inverted_matrix # Import the function
     from parameter import Parameter # Import the parameter handler object
 
 .. code:: ipython3

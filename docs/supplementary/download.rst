@@ -80,12 +80,12 @@ Once the configuration is set properly, data can be downloaded.
 Only the dowload
 ----------------
 
-The module ``dynamical.preprocessing.download_raw`` can be used to download the required generation and exchanges files for all months covered by the user-defined dates (Figure 4). Before the download, the module verifies if it is worth transferring each file; download is aborted if (1) it already exists locally, (2) the local version was modified less than 15min before the remove version was modified and (3) the local file is 90% or less in size than the remote file. Conditions 2 and 3 allow to download again if a file was partially downloaded (interruption during of previous download). Their parameters (15min and 90%) are default values but can be modified by the user in the `download` function.
+The module ``dynamical.preprocessing.downloading`` can be used to download the required generation and exchanges files for all months covered by the user-defined dates (Figure 4). Before the download, the module verifies if it is worth transferring each file; download is aborted if (1) it already exists locally, (2) the local version was modified less than 15min before the remove version was modified and (3) the local file is 90% or less in size than the remote file. Conditions 2 and 3 allow to download again if a file was partially downloaded (interruption during of previous download). Their parameters (15min and 90%) are default values but can be modified by the user in the `download` function.
 
 .. code-block:: python
     :caption: Trigger the downloading process with ``dynamical`` using the parameter tool
 
-    from dynamical.preprocessing.download_raw import download
+    from dynamical.preprocessing.downloading import download
     download(config=param)
     
 Alternatively, if a spreadsheet is used, the path to the spreadsheet can be passed to the ``config=`` parameter.
@@ -93,7 +93,7 @@ Alternatively, if a spreadsheet is used, the path to the spreadsheet can be pass
 .. code-block:: python
     :caption: Downloading process with ``dynamical`` using the spreadsheet configuration
 
-    from dynamical.preprocessing.download_raw import download
+    from dynamical.preprocessing.downloading import download
     download(config="~/Downloads/Spreadsheet_example.xlsx")
 
 Chain download and execution
@@ -104,11 +104,11 @@ If the configuration is also set for further computation, the download can be ch
 .. code-block:: python
     :caption: Triggering the whole process with ``dynamical`` using the spreadsheet configuration
 
-    from dynamical.easy_use import execute
+    from dynamical.pipelines import execute
     results = execute(config=param)
 
 .. code-block:: python
     :caption: Triggering the whole process with ``dynamical`` using the spreadsheet configuration
 
-    from dynamical.easy_use import execute
+    from dynamical.pipelines import execute
     results = execute(config="~/Downloads/Spreadsheet_example.xlsx")

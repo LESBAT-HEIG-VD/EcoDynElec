@@ -17,7 +17,7 @@ Creating parameters and execute DYNAMICAL
     import os, sys
     sys.path.insert(0, os.path.abspath("../"))
     from dynamical.parameter import Parameter # Import the class to manipulate parameters
-    from dynamical.easy_use import execute # Import function managing the whole execution
+    from dynamical.pipelines import execute # Import function managing the whole execution
 
 .. code:: ipython3
 

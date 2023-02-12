@@ -42,7 +42,7 @@ As generation units differ between two data sources, the units from the ENTSO-E 
 
 SwissGrid
 *************
-Swiss Grid information contains global 15min frequency information about the electric grid in Switzerland. Files can be downloaded on SwissGrid website under rubric `*transmission* <https://www.swissgrid.ch/en/home/operation/grid-data/transmission.html>`_. Several information is used at different steps of the computation.
+Swiss Grid information contains global 15min frequency information about the electric grid in Switzerland. Files can be downloaded on SwissGrid website under rubric `transmission <https://www.swissgrid.ch/en/home/operation/grid-data/transmission.html>`_. Several information is used at different steps of the computation.
 
 The exchanges between Switzerland and their neighbor countries (Cross Border Exchange, columns K-R) are used as exchanges at the Swiss borders instead of ENTSO-E data if requested by the user.
 

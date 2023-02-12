@@ -1,8 +1,8 @@
-Execution of DYNAMICAL
-======================
+Execution of ``dynamical`` 
+==========================
 
 ``dynamical`` does combine all its functionalities within one pipeline
-called ``execute`` in the module ``easy_use``. This pipeline requires
+called ``execute`` in the module ``pipelines``. This pipeline requires
 configuration information to be provided either as a spreadsheet or as a
 ``Parameter`` object. More details about how to handle the parameters in
 the `appropriate page <https://dynamical.readthedocs.io/en/latest/examples/Handle_parameters.html>`__
@@ -12,7 +12,7 @@ Execution with configuration in a ``Parameter`` object
 
 .. code:: ipython3
 
-    from dynamical.easy_use import execute # Import function managing the whole execution
+    from dynamical.pipelines import execute # Import function managing the whole execution
     from dynamical.parameter import Parameter # Import the parameter management function
 
 .. code:: ipython3
@@ -77,7 +77,7 @@ A blank template of the spreadsheet can be obtained on the `GitLab repository <h
 
 .. code:: ipython3
 
-    from dynamical.easy_use import execute # Import function managing the whole execution
+    from dynamical.pipelines import execute # Import function managing the whole execution
 
 .. code:: ipython3
 

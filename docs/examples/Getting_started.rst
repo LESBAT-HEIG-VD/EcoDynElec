@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-``Dynamical`` must first be downloaded from its `Git
+``dynamical`` must first be downloaded from its `Git
 repository <https://gitlab.com/fledee/ecodyn>`__. After its download,
 the package can be used and installed in different ways, as explained
 below.
@@ -9,16 +9,16 @@ below.
 Conventional install
 --------------------
 
-``Dynamical`` has not been added to the packages available via ``pip``
+``dynamical`` has not been added to the packages available via ``pip``
 or ``conda``. Thus the install requires to trigger the ``setup.py``
 file. More on this in the `official Python
 documentation <https://docs.python.org/3/install/#distutils-based-source-distributions>`__.
 In an Anaconda prompt, command prompt or any other terminal where
 ``python`` can be executed, run the following:
 
->> cd /path/to/dynamical/package/
+``>> cd /path/to/dynamical/package/``
 
->> python setup.py install
+``>> python setup.py install``
 
 Now ``dynamical`` can be imported and used as any other python package.
 
@@ -29,7 +29,7 @@ Guaranteed install
 ------------------
 
 To make sure the package can be used in every python environment, the
-absolute path to the ``Dynamical`` package must be temporarily added to
+absolute path to the ``dynamical`` package must be temporarily added to
 the python records. This method simply tells python where to find the
 source information. Actually, “installing python packages” just means
 “telling python where to find packages on a machine to execute them”.

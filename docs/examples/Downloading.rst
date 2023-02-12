@@ -1,15 +1,15 @@
-Downloading data with ``Dynamical``
+Downloading data with ``dynamical``
 ===================================
 
-``Dynamical`` integrates the possibility to download the required data
+``dynamical`` integrates the possibility to download the required data
 from ENTSO-E servers. Though, *using the software may be slow*, thus the
 use of a third-party SFTP software is detailed in the `Supplementary
 Information <https://dynamical.readthedocs.io/en/latest/supplementary/download.html#>`__.
 
-This page details how to use ``Dynamical`` to download the required data
+This page details how to use ``dynamical`` to download the required data
 from ENTSO-E databases. It covers: + How to configure the software to
-request the downloading + How to use use the ``download`` module of
-``Dynamical`` + How to use the main pipeline, including the download of
+request the downloading + How to use use the ``downloading`` module of
+``dynamical`` + How to use the main pipeline, including the download of
 data.
 
 1. Configuration
@@ -35,7 +35,7 @@ created for free on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__. + **password**: your
 password, as created for free on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__. For security reasons, we
-do recommend to let the field blank, which will let the ``download``
+do recommend to let the field blank, which will let the ``downloading``
 package ask for the password in a more secured manner. + **use server**:
 **TRUE** if you want to download the data. Blank or **FALSE** will not
 download the data (default). + **remove unused**: **TRUE** if you want
@@ -96,7 +96,7 @@ asked later. Also note that values for ``config.server.host`` and
 ``config.server.port`` are set per default during the initialization, it
 is not necessary to specify them again.
 
-2. Download using the ``download`` module
+2. Download using the ``downloading`` module
 -----------------------------------------
 
 Once the configuration is properly done, the following commands allow to
@@ -105,7 +105,7 @@ download the data (and only do the download).
 .. code:: ipython3
 
     ### Import the function to download
-    from dynamical.preprocessing.download_raw import download
+    from dynamical.preprocessing.downloading import download
 
 After importing the ``download`` function, the following command will
 grab the required data on the server. The following uses the
@@ -135,7 +135,7 @@ this configuration as parameter.
 .. code:: ipython3
 
     ### Import the main execution function
-    from dynamical.easy_use import execute
+    from dynamical.pipelines import execute
 
 The following cell executes the whole pipeline, including download, from
 a configuration set up with Python.
