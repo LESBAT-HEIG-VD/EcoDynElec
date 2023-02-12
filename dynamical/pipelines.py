@@ -18,10 +18,10 @@ import os
 ####### Local modules
 from dynamical.parameter import Parameter
 
-from dynamical.preprocessing.download_raw import download
+from dynamical.preprocessing.downloading import download
 import dynamical.preprocessing.auxiliary as aux
 from dynamical.preprocessing.load_impacts import extract_mapping, extract_FU
-from dynamical.preprocessing.generation_exchanges import import_data
+from dynamical.preprocessing.loading import import_data
 from dynamical.preprocessing.residual import include_local_residual
 
 from dynamical.tracking import track_mix

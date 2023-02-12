@@ -10,7 +10,7 @@ from time import time
 #################### Local functions
 from dynamical.checking import check_frequency, check_regularity_frequency
 from dynamical.preprocessing.residual import include_global_residual
-from dynamical.preprocessing.raw_entsoe import extract
+from dynamical.preprocessing.extracting import extract
 from dynamical.preprocessing.autocomplete import get_steps_per_hour
 
 
