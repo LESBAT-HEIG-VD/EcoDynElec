@@ -54,7 +54,7 @@ Country sheet
 
 The structure of the mapping file is highlighted in Figure 1. It can be divided into 5 sets of columns: the generation type in ENTSO-E, the corresponding technology(ies) in the LCA database, shares of each technology, the impacts associated to each technology, and the grouped impacts per type of generation type.
 
-.. figure: ../images/missing.png
+.. figure:: ../images/missing.png
     :alt: Detailed structure of the Mapping file
     
     *Figure 1: Detailed structure of the (template) mapping file*
