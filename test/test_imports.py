@@ -34,7 +34,7 @@ class TestImportMethods(unittest.TestCase):
         self.assertTrue(test_if_available('dynamical.tracking'))
         
     def test_easyUse_import(self):
-        self.assertTrue(test_if_available('dynamical.easy_use'))
+        self.assertTrue(test_if_available('dynamical.pipelines'))
         
     def test_impacts_import(self):
         self.assertTrue(test_if_available('dynamical.impacts'))
@@ -55,16 +55,16 @@ class TestImportMethods(unittest.TestCase):
         self.assertTrue(test_if_available('dynamical.preprocessing.auxiliary'))
         
     def test_loadDownload_import(self):
-        self.assertTrue(test_if_available('dynamical.preprocessing.download_raw'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.downloading'))
         
     def test_loadGenExch_import(self):
-        self.assertTrue(test_if_available('dynamical.preprocessing.generation_exchanges'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.loading'))
         
     def test_loadImpacts_import(self):
         self.assertTrue(test_if_available('dynamical.preprocessing.load_impacts'))
         
     def test_loadRawEntsoe_import(self):
-        self.assertTrue(test_if_available('dynamical.preprocessing.raw_entsoe'))
+        self.assertTrue(test_if_available('dynamical.preprocessing.extracting'))
         
     def test_residual_import(self):
         self.assertTrue(test_if_available('dynamical.preprocessing.residual'))

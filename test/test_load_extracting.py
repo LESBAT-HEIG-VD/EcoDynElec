@@ -2,7 +2,7 @@ import unittest
 import os
 from pandas.core.frame import DataFrame
 
-from dynamical.preprocessing import raw_entsoe
+from dynamical.preprocessing import extracting
 
 
 def get_rootpath(level=0):
@@ -12,7 +12,7 @@ def get_rootpath(level=0):
     return (rp + "/").replace("\\","/").replace("//","/")
 
 
-class TestRawEntso(unittest.TestCase):
+class TestExtracting(unittest.TestCase):
         
     
     def nature(self, element, keys):
