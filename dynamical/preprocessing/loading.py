@@ -164,15 +164,7 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
     dict
         processed generation data per country
     """
-    path, savegen = None, None
-    if ((path_prep is None)&(path_gen is None)):
-        raise KeyError("No path is given for Generation data.")
-    elif ((path_prep is None)&(path_gen is not None)): # Need raw file
-        path = path_gen # Then use raw file
-    elif ((path_prep is not None)&(path_gen is None)): # Got a file prepared
-        path = path_prep # Then use prepared file
-    else: # Both are not None
-        path, savegen = path_gen, path_prep # Then use raw and save in path_prep.
+    path, savegen = _infer_paths(path_prep, path_gen, case='Generation')
     
     #######################
     ###### Generation data
@@ -315,15 +307,7 @@ def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=No
     dict
         dict of pandas.DataFrame containing cross-border flows.
     """
-    path, saveimp = None, None
-    if ((path_prep is None)&(path_imp is None)):
-        raise KeyError("No path is given for Generation data.")
-    elif ((path_prep is None)&(path_imp is not None)): # Need raw file
-        path = path_imp # Then use raw file
-    elif ((path_prep is not None)&(path_imp is None)): # Got a file prepared
-        path = path_prep # Then use prepared file
-    else: # Both are not None
-        path, saveimp = path_imp, path_prep # Then use raw and save in path_prep.
+    path, savegen = _infer_paths(path_prep, path_imp, case='Exchanges')
     
     if is_verbose: print("Get and reduce importation data...")
         
@@ -505,6 +489,32 @@ def _join_generation_exchanges(Gen, Cross, is_verbose=False):
         Union[f] = pd.concat([Gen[f],Cross[f]],axis=1) # gathering of the data
     
     return pd.concat([Union[f] for f in Union.keys()],axis=1) # Join all the tables together
+
+
+# +
+
+#####################################
+# ####################################
+# Infer paths
+# ####################################
+# ####################################
+
+# -
+
+def _infer_paths(path_prep, path_raw, case='Generation'):
+    """Function to correctly set the paths to files and savin directory"""
+    path, savegen = None, None
+    
+    if ((path_prep is None)&(path_raw is None)):
+        raise KeyError(f"No path is given for {case} data.")
+    elif ((path_prep is None)&(path_raw is not None)): # Need raw file
+        path = path_raw # Then use raw file
+    elif ((path_prep is not None)&(path_raw is None)): # Got a file prepared
+        path = path_prep # Then use prepared file
+    else: # Both are not None
+        path, savegen = path_raw, path_prep # Then use raw and save in path_prep.
+    
+    return path, savegen
 
 
 # +
