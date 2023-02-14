@@ -5,12 +5,36 @@ The ``dynamical`` software allows high-level customization via some parameters. 
 
 From Python interface
 *********************
-Parameters can be set directly in Python using the `Parameter` class of ``dynamical``. Here is how the ``Parameter`` class is organized and what it contains. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html>`_.
+Parameters can be set directly in Python using the `Parameter` class of ``dynamical``. Here is how the ``Parameter`` class is organized and what it contains. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html#meanign-and-role-of-each-parameter>`_.
 
 
 From the spreadsheet
 *********************
-Alternatively, parameters can be set via a spreadsheet. An `example spreadsheet <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_ can be downloaded for the git repository. Here is what it looks like. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html>`_.
+Alternatively, parameters can be set via a spreadsheet. An `example spreadsheet <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_ can be downloaded for the git repository. Here is what it looks like. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html#meanign-and-role-of-each-parameter>`_.
+
+.. figure:: ./images/ParameterExcel_Param.png
+    :alt: Parameter spreadsheet main
+    :scale: 80
+
+    *Figure 1: Spreadsheet for setting parameters: main Parameter tab*
+
+
+.. figure:: ./images/ParameterExcel_Paths.png
+    :alt: Parameter spreadsheet paths
+    :scale: 80
+
+    *Figure 2: Spreadsheet for setting parameters: Paths tab*
+
+
+.. figure:: ./images/ParameterExcel_Server.png
+    :alt: Parameter spreadsheet server
+    :scale: 80
+
+    *Figure 3: Spreadsheet for setting parameters: Server tab*
+
+
+
+
 
 
 Meanign and role of each parameter

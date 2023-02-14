@@ -189,8 +189,11 @@ class Filepath():
             directory containing cross-border flow  files from ENTSO-E database
         savedir: str
             directory where to save the results. Default: None (no saving)
+        fu_vector: str
+            file with the impact matrix in a directly usable format as .csv
+            (impact per kWh produced for each production unit)
         mapping: str
-            file with the mapping (impact per kWh produced for each production unit)
+            file with the mapping as a spreadsheet (impact per kWh produced for each production unit)
         neighbours: str
             file gathering the list of neighbours of each european country
         gap: str
