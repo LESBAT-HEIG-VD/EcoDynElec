@@ -117,16 +117,16 @@ def execute(config, missing_mapping='error', is_verbose=False):
     else: prod_gap=None
 
     # Load impact matrix (FU vector by default)
-    if p.path.mapping is None:
-        impact_matrix = extract_FU(path_fu=p.path.fu_vector, ctry=p.ctry, target=p.target,
-                                   cst_imports=p.cst_imports,
-                                   residual=np.logical_or(p.residual_global, p.residual_local))
-        
-    elif p.path.fu_vector is None: # Only if path mapping (Excel Mapping file) and NOT path fu.
+    if p.path.mapping is not None: # Priority to the mapping spreadhseet, as soon as it is specified
         impact_matrix = extract_mapping(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
                                             residual=np.logical_or(p.residual_global, p.residual_local),
                                             target=p.target, is_verbose=is_verbose)
     
+    else: # If no mapping specified, go for the FU vector: it can grab the default vector automatically
+        impact_matrix = extract_FU(path_fu=p.path.fu_vector, ctry=p.ctry, target=p.target,
+                                   cst_imports=p.cst_imports,
+                                   residual=np.logical_or(p.residual_global, p.residual_local))
+        
     
 
     # Load generation and exchange data from entso-e    
