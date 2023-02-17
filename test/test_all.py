@@ -5,6 +5,7 @@ import sys
 import unittest
 
 package = os.path.abspath( os.path.dirname( os.path.dirname(__file__) ) ) # Path to package if needs to be installed
+python = f"python{sys.version[:3]}"
 
         
         
@@ -14,7 +15,8 @@ if __name__ == '__main__':
     try:
         import ecodynelec
     except:
-        print("Installing ecodynelec...")
+        print(f"Installing ecodynelec from {package}...")
+        print(f"Executing: {python} -m pip install -e {package}")
         os.system(f"{python} -m pip install -e {package}")
 
     #from test_load_downloads import TestDownload
