@@ -1,7 +1,7 @@
 loading
 ====================================================
 
-.. automodule:: dynamical.preprocessing.loading
+.. automodule:: ecodynelec.preprocessing.loading
    :members:
    :undoc-members:
    :show-inheritance:

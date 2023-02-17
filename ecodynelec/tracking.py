@@ -8,8 +8,8 @@ import os
 from time import time
 
 ############### Local functions
-from dynamical.checking import check_frequency
-from dynamical.preprocessing.auxiliary import load_rawEntso
+from ecodynelec.checking import check_frequency
+from ecodynelec.preprocessing.auxiliary import load_rawEntso
 
 
 #

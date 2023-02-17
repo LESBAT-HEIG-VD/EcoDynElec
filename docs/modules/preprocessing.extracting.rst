@@ -1,7 +1,7 @@
 extracting
 ==========================================
 
-.. automodule:: dynamical.preprocessing.extracting
+.. automodule:: ecodynelec.preprocessing.extracting
    :members:
    :undoc-members:
    :show-inheritance:

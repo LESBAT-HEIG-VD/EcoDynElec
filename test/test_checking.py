@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dynamical import checking
+from ecodynelec import checking
 
 
 def generate_mapping():

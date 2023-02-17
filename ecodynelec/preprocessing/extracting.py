@@ -11,7 +11,7 @@ import os
 from functools import partial
 import concurrent
 
-from dynamical.preprocessing.autocomplete import autocomplete
+from ecodynelec.preprocessing.autocomplete import autocomplete
 
 # +
 

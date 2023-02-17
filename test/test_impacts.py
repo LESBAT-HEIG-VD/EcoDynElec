@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dynamical import impacts
+from ecodynelec import impacts
 
 
 def generate_data():

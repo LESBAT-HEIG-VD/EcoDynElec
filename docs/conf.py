@@ -12,13 +12,13 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../dynamical/'))
+sys.path.insert(0, os.path.abspath('../ecodynelec/'))
 sys.path.insert(0, os.path.abspath('../'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'dynamical'
+project = 'ecodynelec'
 copyright = '2022, Francois Ledee'
 author = 'Francois Ledee'
 

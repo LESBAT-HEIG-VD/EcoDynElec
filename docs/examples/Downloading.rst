@@ -1,22 +1,22 @@
-Downloading data with ``dynamical``
+Downloading data with ``ecodynelec``
 ===================================
 
-``dynamical`` integrates the possibility to download the required data
+``ecodynelec`` integrates the possibility to download the required data
 from ENTSO-E servers. Though, *using the software may be slow*, thus the
 use of a third-party SFTP software is detailed in the `Supplementary
-Information <https://dynamical.readthedocs.io/en/latest/supplementary/download.html#>`__.
+Information <https://ecodynelec.readthedocs.io/en/latest/supplementary/download.html#>`__.
 
-This page details how to use ``dynamical`` to download the required data
+This page details how to use ``ecodynelec`` to download the required data
 from ENTSO-E databases. It covers: + How to configure the software to
 request the downloading + How to use use the ``downloading`` module of
-``dynamical`` + How to use the main pipeline, including the download of
+``ecodynelec`` + How to use the main pipeline, including the download of
 data.
 
 1. Configuration
 ----------------
 
 The configuration can be made in 2 ways, as explained in `Supplementary
-Information <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html#>`__.
+Information <https://ecodynelec.readthedocs.io/en/latest/supplementary/parameters.html#>`__.
 One can set it up via the ``Parameter`` module or using a spreadsheet.
 
 1.1 Using a spreadsheet
@@ -48,7 +48,7 @@ the fields **path generation** and **path exchanges** of the tab
 *Filepath* of the spreadsheet (Figure below). Also make sure you set the
 date accordingly (tab *Parameter*), to allow the selection of files to
 download. More information on the *Parameter* tab in the `Supplementary
-Information <https://dynamical.readthedocs.io/en/latest/supplementary/parameters.html#>`__.
+Information <https://ecodynelec.readthedocs.io/en/latest/supplementary/parameters.html#>`__.
 
 1.2 Using the ``Parameter`` module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ be used.
 
 .. code:: ipython3
 
-    from dynamical.parameter import Parameter # Import the Parameter class
+    from ecodynelec.parameter import Parameter # Import the Parameter class
 
 Strictly regarding the requirements for downloading, we require + to set
 the dates + to indicate the directory where to download + to configure
@@ -105,7 +105,7 @@ download the data (and only do the download).
 .. code:: ipython3
 
     ### Import the function to download
-    from dynamical.preprocessing.downloading import download
+    from ecodynelec.preprocessing.downloading import download
 
 After importing the ``download`` function, the following command will
 grab the required data on the server. The following uses the
@@ -129,13 +129,13 @@ spreadsheet was written correctly.
 It is also possible to include the download within the overall
 computation pipeline. To do so, make sure the configuration is set
 correctly as explained in section 1, either in a spreadsheet or in
-Python. Then simply execute the main function of ``dynamical`` passing
+Python. Then simply execute the main function of ``ecodynelec`` passing
 this configuration as parameter.
 
 .. code:: ipython3
 
     ### Import the main execution function
-    from dynamical.pipelines import execute
+    from ecodynelec.pipelines import execute
 
 The following cell executes the whole pipeline, including download, from
 a configuration set up with Python.

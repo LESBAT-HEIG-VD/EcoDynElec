@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 ########### Local functions
-from dynamical.checking import check_residual_availability
+from ecodynelec.checking import check_residual_availability
 
 
 # +

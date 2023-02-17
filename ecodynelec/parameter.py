@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import os
 
-from dynamical.checking import check_frequency
+from ecodynelec.checking import check_frequency
 
 
 
@@ -71,7 +71,7 @@ class Parameter():
     
     def __init__(self, excel=None):
         """Gather all necessary information to parametrize the execution of diverse
-        functions of the module `dynamical.easy_use`.
+        functions of the module `ecodynelec.easy_use`.
 
         Parameters
         ----------
@@ -194,7 +194,7 @@ class Parameter():
 # -
 
 class Filepath():
-    """Collection of `dynamical` parameters specifically related to data to be loaded from local machine.
+    """Collection of `ecodynelec` parameters specifically related to data to be loaded from local machine.
     
     Attributes
     ----------
@@ -233,7 +233,7 @@ class Filepath():
     
     def __init__(self, excel=None):
         """Gather parameters about local data files for the execution of diverse
-        functions of the module `dynamical.easy_use`.
+        functions of the module `ecodynelec.easy_use`.
 
         Parameters
         ----------
@@ -324,7 +324,7 @@ class Server():
         username: str, default to None
             the username for the account to connect with
         password: str, default to None
-            the password of the account. No encryption on the `dynamical` end. The credentials 
+            the password of the account. No encryption on the `ecodynelec` end. The credentials 
             (`username` and `password`) are asked during the execution if missing from this
             class. Best practice for occasional use of the download functionality is to enter
             your credentials only during the main execution and not via this class or in spreadsheet.
@@ -352,7 +352,7 @@ class Server():
     
     def __init__(self, excel=None):
         """Gather downloading parameters to configurate the execution of diverse
-        functions of the module `dynamical.easy_use`.
+        functions of the module `ecodynelec.easy_use`.
 
         Parameters
         ----------

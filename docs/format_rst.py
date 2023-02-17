@@ -72,8 +72,8 @@ def unflag_drafts(path:str="./draft/"):
     ### Modify the extension of all .rst files
     for f in os.listdir(abspath):
         if f.endswith(".rst.draft"):
-            if f.startswith('dynamical.'):
-                os.rename( os.path.join(abspath,f), os.path.join( abspath,f.replace("dynamical.","").replace(".draft","") ) )
+            if f.startswith('ecodynelec.'):
+                os.rename( os.path.join(abspath,f), os.path.join( abspath,f.replace("ecodynelec.","").replace(".draft","") ) )
             else:
                 os.rename( os.path.join(abspath,f), os.path.join( abspath,f.replace(".draft","") ) )
 

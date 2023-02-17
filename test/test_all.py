@@ -12,9 +12,9 @@ package = os.path.abspath( os.path.dirname( os.path.dirname(__file__) ) ) # Path
 if __name__ == '__main__':
 
     try:
-        import dynamical
+        import ecodynelec
     except:
-        print("Installing dynamical...")
+        print("Installing ecodynelec...")
         os.system(f"{python} -m pip install -e {package}")
 
     #from test_load_downloads import TestDownload

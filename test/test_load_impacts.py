@@ -4,8 +4,8 @@ import unittest
 from numpy import unique, all
 from pandas.core import frame
 from pandas import DataFrame, Index
-from dynamical.preprocessing import load_impacts
-from dynamical.preprocessing.auxiliary import get_default_file
+from ecodynelec.preprocessing import load_impacts
+from ecodynelec.preprocessing.auxiliary import get_default_file
 
 
 

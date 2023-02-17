@@ -1,7 +1,7 @@
 auxiliary 
 ========================================
 
-.. automodule:: dynamical.preprocessing.auxiliary
+.. automodule:: ecodynelec.preprocessing.auxiliary
    :members:
    :undoc-members:
    :show-inheritance:

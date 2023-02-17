@@ -4,7 +4,7 @@ import unittest
 from numpy import unique
 from pandas import DataFrame as df
 from pandas.core.frame import DataFrame
-from dynamical.preprocessing import auxiliary
+from ecodynelec.preprocessing import auxiliary
 
 
 

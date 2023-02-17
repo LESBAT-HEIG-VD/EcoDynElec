@@ -2,8 +2,8 @@ import unittest
 import os
 from pandas.core.frame import DataFrame
 
-from dynamical import pipelines
-from dynamical.parameter import Parameter
+from ecodynelec import pipelines
+from ecodynelec.parameter import Parameter
 
 
 def generate_config():

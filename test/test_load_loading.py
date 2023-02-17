@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dynamical.preprocessing import loading
+from ecodynelec.preprocessing import loading
 
 
 class TestLoading(unittest.TestCase):

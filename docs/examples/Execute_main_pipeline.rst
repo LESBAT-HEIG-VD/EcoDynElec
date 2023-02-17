@@ -1,26 +1,26 @@
-Execution of ``dynamical`` 
+Execution of ``ecodynelec`` 
 ==========================
 
-``dynamical`` does combine all its functionalities within one pipeline
+``ecodynelec`` does combine all its functionalities within one pipeline
 called ``execute`` in the module ``pipelines``. This pipeline requires
 configuration information to be provided either as a spreadsheet or as a
 ``Parameter`` object. More details about how to handle the parameters in
-the `appropriate page <https://dynamical.readthedocs.io/en/latest/examples/Handle_parameters.html>`__
+the `appropriate page <https://ecodynelec.readthedocs.io/en/latest/examples/Handle_parameters.html>`__
 
 Execution with configuration in a ``Parameter`` object
 ------------------------------------------------------
 
 .. code:: ipython3
 
-    from dynamical.pipelines import execute # Import function managing the whole execution
-    from dynamical.parameter import Parameter # Import the parameter management function
+    from ecodynelec.pipelines import execute # Import function managing the whole execution
+    from ecodynelec.parameter import Parameter # Import the parameter management function
 
 .. code:: ipython3
 
     my_config = Parameter() # Initialize the configuration
 
 The configuration can be set further directly in the script, this point
-is covered in the `dedicated page <https://dynamical.readthedocs.io/en/latest/examples/Handle_parameters.html>`__. To trigger the process, run:
+is covered in the `dedicated page <https://ecodynelec.readthedocs.io/en/latest/examples/Handle_parameters.html>`__. To trigger the process, run:
 
 .. code:: ipython3
 
@@ -77,7 +77,7 @@ A blank template of the spreadsheet can be obtained on the `GitLab repository <h
 
 .. code:: ipython3
 
-    from dynamical.pipelines import execute # Import function managing the whole execution
+    from ecodynelec.pipelines import execute # Import function managing the whole execution
 
 .. code:: ipython3
 

@@ -10,7 +10,7 @@ with open(dir_path+"/requirements.txt") as f:
 
 
 setup(
-    name="dynamical",
+    name="ecodynelec",
     version="0.1.0",
     description="A library for dynamic LCA of european electricity.",
     long_description=long_description,

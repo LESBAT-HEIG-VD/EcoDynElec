@@ -1,12 +1,12 @@
 Tracking
 =========
 
-The electricity tracking algorithm is at the heart of ``dynamical``. This methodology is the specificity of ``dynamical`` over other similar tools. The overall chaining of function is exposed in Figure 1.
+The electricity tracking algorithm is at the heart of ``ecodynelec``. This methodology is the specificity of ``ecodynelec`` over other similar tools. The overall chaining of function is exposed in Figure 1.
 
 .. figure:: images/tracking.png
     :alt: Module tracking
     
-    *Figure 1: Structure of the ``tracking`` module of ``dynamical``.*
+    *Figure 1: Structure of the ``tracking`` module of ``ecodynelec``.*
     
     
 The whole principle of the electricity tracking is based on the fundamental equation of life-cycle-assessment (`Heijungs and Suh, 2002 <https://books.google.ca/books?id=pLwqBgAAQBAJ&dq=computational+structure+of+life+cycle+assessment&lr=>`_). The technology matrix is noted A, though the present description uses (I-A) as the matrix to invert, while the reference does invert the technology matrix A. This is only a question of notations but the maths are similar. The proper algorithm is executed as shown in Figure 2:
@@ -35,4 +35,4 @@ The main step is the matrix invesion step. The best algorithms to perform this t
     
     *Figure 5: Data piece in the structure of the technology matrix*
 
-The resulting matrix contains the information about all sources of electricty for the mixes in every involved country. The so-called functional-unit (FU) vector allows to select the correct column in the resulting matrix. It usually is a vector full of zeros, with a single 1 corresponding to the column to extract. Grid losses can be considered here, by replacing the single number in the vector by the amount of electricity to produce to deliver 1kWh to the user (i.e. a figure greater than 1). As grid losses change at every time step, one different FU vector per time step is used, thus the `t` index on Figure 2. More on this point in the `dedicated page <https://dynamical.readthedocs.io/en/latest/supplementary/functional_unit.html>`_ of the documentation.
+The resulting matrix contains the information about all sources of electricty for the mixes in every involved country. The so-called functional-unit (FU) vector allows to select the correct column in the resulting matrix. It usually is a vector full of zeros, with a single 1 corresponding to the column to extract. Grid losses can be considered here, by replacing the single number in the vector by the amount of electricity to produce to deliver 1kWh to the user (i.e. a figure greater than 1). As grid losses change at every time step, one different FU vector per time step is used, thus the `t` index on Figure 2. More on this point in the `dedicated page <https://ecodynelec.readthedocs.io/en/latest/supplementary/functional_unit.html>`_ of the documentation.

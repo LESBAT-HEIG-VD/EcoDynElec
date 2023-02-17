@@ -1,7 +1,7 @@
 residual
 =======================================
 
-.. automodule:: dynamical.preprocessing.residual
+.. automodule:: ecodynelec.preprocessing.residual
    :members:
    :undoc-members:
    :show-inheritance:

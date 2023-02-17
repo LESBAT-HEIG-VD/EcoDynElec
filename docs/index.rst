@@ -1,11 +1,11 @@
-Dynamical: Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
+EcoDynElec: Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
 =============================================================================
 
-Dynamical software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
+EcoDynElec software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
 
 .. image:: images/workflow.png
 
-``dynamical`` is a free software under APACHE 2.0 licence. It was developped in a collaboration between the `EMPA <https://www.empa.ch/>`_, `HEIG-VD <https://heig-vd.ch/>`_, the `SUPSI <https://www.supsi.ch/home.html>`_.
+``ecodynelec`` is a free software under APACHE 2.0 licence. It was developped in a collaboration between the `EMPA <https://www.empa.ch/>`_, `HEIG-VD <https://heig-vd.ch/>`_, the `SUPSI <https://www.supsi.ch/home.html>`_.
 
 Installation
 ============
@@ -13,9 +13,9 @@ For now the software can only be installed from the `gitlab repository <https://
 
 Contributions
 =============
-Dynamical did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
+EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
 
-.. image:: images/dynamical.png
+.. image:: images/ecodynelec.png
 
 .. toctree::
     :maxdepth: 1
@@ -66,7 +66,7 @@ Dynamical did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bât
 
 Renaming the whold directory
 ============================
-We are going to need a complete renaming, as ``dynamical`` is not satisfying at all.
+We are going to need a complete renaming, as ``ecodynelec`` is not satisfying at all.
 This means different things, as explained in `this post <https://stackoverflow.com/questions/2041993/how-do-i-rename-a-git-repository>`_
 
 

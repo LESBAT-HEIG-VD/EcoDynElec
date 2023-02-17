@@ -1,7 +1,7 @@
 checking
 =========================
 
-.. automodule:: dynamical.checking
+.. automodule:: ecodynelec.checking
    :members:
    :undoc-members:
    :show-inheritance:

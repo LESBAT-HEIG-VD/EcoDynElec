@@ -21,7 +21,7 @@ The most straightforward example is to use the `easy_use` module.
 .. code-block::
     :caption: Straightforward use
 
-        from dynamical.easy_use import execute
+        from ecodynelec.easy_use import execute
         impacts = execute(excel="paht/to/excel_parameters.xlsx")
 
 

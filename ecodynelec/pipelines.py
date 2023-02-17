@@ -1,4 +1,4 @@
-"""The `pipelines` module is the main module of `dynamical`.
+"""The `pipelines` module is the main module of `ecodynelec`.
 It consists in a collection of high-level functions triggering
 processes intricating most of the functions of the package.
 
@@ -16,19 +16,19 @@ import os
 
 # +
 ####### Local modules
-from dynamical.parameter import Parameter
+from ecodynelec.parameter import Parameter
 
-from dynamical.preprocessing.downloading import download
-import dynamical.preprocessing.auxiliary as aux
-from dynamical.preprocessing.load_impacts import extract_mapping, extract_FU
-from dynamical.preprocessing.loading import import_data
-from dynamical.preprocessing.residual import include_local_residual
+from ecodynelec.preprocessing.downloading import download
+import ecodynelec.preprocessing.auxiliary as aux
+from ecodynelec.preprocessing.load_impacts import extract_mapping, extract_FU
+from ecodynelec.preprocessing.loading import import_data
+from ecodynelec.preprocessing.residual import include_local_residual
 
-from dynamical.tracking import track_mix
-from dynamical.impacts import compute_impacts
-from dynamical.checking import check_mapping
+from ecodynelec.tracking import track_mix
+from ecodynelec.impacts import compute_impacts
+from ecodynelec.checking import check_mapping
 
-from dynamical import saving
+from ecodynelec import saving
 
 # +
 
@@ -50,7 +50,7 @@ def execute(config, missing_mapping='error', is_verbose=False):
     
     Parameters
     ----------
-        config: dynamical.Parameter or str
+        config: ecodynelec.Parameter or str
             a set of confugration parameters to govern the computation,
             either as Parameter object or str pointing at an xlsx file.
         missing_mapping: str, default to 'error'
@@ -210,7 +210,7 @@ def get_inverted_matrix(config=None, is_verbose=False):
     electricity mix in all involved coutries. No data saving is involved.
     
     :param config: a set of parameters to govern the computation, defaults to None
-    :type config: class:`dynamical.Parameter`, optional
+    :type config: class:`ecodynelec.Parameter`, optional
     :param is_verbose: to display information, defaults to False
     :type is_verbose: bool, optional
     :return: a collection of tables containing the decomposition of 1kWh of electricity

@@ -1,7 +1,7 @@
 pipelines
 ==========================
 
-.. automodule:: dynamical.pipelines
+.. automodule:: ecodynelec.pipelines
    :members:
    :undoc-members:
    :show-inheritance:

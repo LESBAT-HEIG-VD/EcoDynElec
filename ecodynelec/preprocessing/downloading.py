@@ -24,8 +24,8 @@ def download(config, threshold_minutes=15, threshold_size=.9, is_verbose=False):
 
     Parameters
     ----------
-        config: dynamical.Parameter
-            collection of parameters for the execution of dynamical.
+        config: ecodynelec.Parameter
+            collection of parameters for the execution of ecodynelec.
             The relevant information is the start and end date, as well
             as server information and path information to save raw_generation
             and raw_exchange.

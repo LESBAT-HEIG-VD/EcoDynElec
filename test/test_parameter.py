@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from dynamical import parameter
+from ecodynelec import parameter
 
 
 class NoError(Exception):

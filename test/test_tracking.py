@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dynamical import tracking
+from ecodynelec import tracking
 
 
 def generate_table():

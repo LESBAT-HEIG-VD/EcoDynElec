@@ -1,7 +1,7 @@
 tracking
 =========================
 
-.. automodule:: dynamical.tracking
+.. automodule:: ecodynelec.tracking
    :members:
    :undoc-members:
    :show-inheritance:

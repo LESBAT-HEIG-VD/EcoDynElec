@@ -16,8 +16,8 @@ Creating parameters and execute DYNAMICAL
 
     import os, sys
     sys.path.insert(0, os.path.abspath("../"))
-    from dynamical.parameter import Parameter # Import the class to manipulate parameters
-    from dynamical.pipelines import execute # Import function managing the whole execution
+    from ecodynelec.parameter import Parameter # Import the class to manipulate parameters
+    from ecodynelec.pipelines import execute # Import function managing the whole execution
 
 .. code:: ipython3
 
@@ -110,8 +110,8 @@ The next cell visualizes the changes made in the parameter object
     residual_global --> False
     data_cleaning --> False
     
-    Filepath to generation --> /home/user/dynamical/examples/test_data/generations/
-    Filepath to exchanges --> /home/user/dynamical/examples/test_data/exchanges/
+    Filepath to generation --> /home/user/ecodynelec/examples/test_data/generations/
+    Filepath to exchanges --> /home/user/ecodynelec/examples/test_data/exchanges/
     Filepath to savedir --> None
     Filepath to fu_vector --> None
     Filepath to mapping --> None
@@ -183,8 +183,8 @@ A spreadsheet may be used for a user-friendlier interface. An example spreadshee
     residual_global --> False
     data_cleaning --> False
     
-    Filepath to generation --> /home/user/dynamical/examples/test_data/generations/
-    Filepath to exchanges --> /home/user/dynamical/examples/test_data/exchanges/
+    Filepath to generation --> /home/user/ecodynelec/examples/test_data/generations/
+    Filepath to exchanges --> /home/user/ecodynelec/examples/test_data/exchanges/
     Filepath to savedir --> None
     Filepath to fu_vector --> None
     Filepath to mapping --> None

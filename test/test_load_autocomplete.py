@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dynamical.preprocessing import autocomplete
+from ecodynelec.preprocessing import autocomplete
 
 
 

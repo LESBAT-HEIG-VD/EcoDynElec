@@ -2,7 +2,7 @@
 
 
 ######## CREATE RST FILES FROM CODE
-sphinx-apidoc -e -o ./modules/drafts/ ../dynamical/
+sphinx-apidoc -e -o ./modules/drafts/ ../ecodynelec/
 
 ####### CLEAN THE FILES
 

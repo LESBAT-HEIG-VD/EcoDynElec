@@ -5,7 +5,7 @@ import paramiko
 from getpass import getpass
 from datetime import datetime, timedelta
 
-from dynamical.preprocessing import downloading
+from ecodynelec.preprocessing import downloading
 
 
 

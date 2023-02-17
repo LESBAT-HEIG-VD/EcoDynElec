@@ -1,7 +1,7 @@
 autocomplete
 ===========================================
 
-.. automodule:: dynamical.preprocessing.autocomplete
+.. automodule:: ecodynelec.preprocessing.autocomplete
    :members:
    :undoc-members:
    :show-inheritance:

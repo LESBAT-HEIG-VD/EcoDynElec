@@ -2,7 +2,7 @@ import unittest
 import os
 from pandas.core.frame import DataFrame
 
-from dynamical.preprocessing import extracting
+from ecodynelec.preprocessing import extracting
 
 
 def get_rootpath(level=0):

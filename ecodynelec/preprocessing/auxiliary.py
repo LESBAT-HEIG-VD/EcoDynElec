@@ -1,6 +1,6 @@
 """
 Module containing a collection of functions to load side-datasets
-that may be required during the execution of `dynamical` proceses.
+that may be required during the execution of `ecodynelec` proceses.
 """
 
 import numpy as np
@@ -9,7 +9,7 @@ import os
 import warnings
 
 ################# Local functions
-from dynamical.checking import check_frequency
+from ecodynelec.checking import check_frequency
 
 
 # +
