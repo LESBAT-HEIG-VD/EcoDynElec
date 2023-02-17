@@ -31,32 +31,32 @@ class TestExtracting(unittest.TestCase):
                 os.remove(filepath)
         
     def test_get_parameters(self):
-        self.assertEqual(raw_entsoe.get_parameters('import'),
+        self.assertEqual(extracting.get_parameters('import'),
                          ('InMapCode','OutMapCode','FlowValue','OutAreaTypeCode'),
                          msg=" Exchange case")
-        self.assertEqual(raw_entsoe.get_parameters('generation'),
+        self.assertEqual(extracting.get_parameters('generation'),
                          ('MapCode','ProductionType','ActualGenerationOutput','AreaTypeCode'),
                          msg=" Generation case")
         
     def test_get_parametersError(self):
         with self.assertRaises(KeyError):
-            raw_entsoe.get_parameters(0) # Test the error for bad parameter
+            extracting.get_parameters(0) # Test the error for bad parameter
     
     def test_load_filesError(self): # Error if no case given
         path = get_rootpath()
         with self.assertRaises(KeyError):
-            raw_entsoe.load_files(path, destination=None, case=None)
+            extracting.load_files(path, destination=None, case=None)
     
     def test_extractBadFiles(self): # Error if no filepath passed
         with self.assertRaises(KeyError):
-            raw_entsoe.extract(dir_gen=None, dir_imp=None)
+            extracting.extract(ctry=['CH'], dir_gen=None, dir_imp=None)
             
     def test_extractGen(self): # Check the nature of returned elments
         root = get_rootpath(level=1)
         list_countries = ['AT','CH','DE','FR','IT']
         dir_gen = f"{root}examples/test_data/generations/"
         # Generation only
-        self.nature(raw_entsoe.extract(ctry=list_countries, dir_gen=dir_gen, dir_imp=None),
+        self.nature(extracting.extract(ctry=list_countries, dir_gen=dir_gen, dir_imp=None),
                     keys=list_countries)
             
     def test_extractExch(self): # Check the nature of returned elments
@@ -64,7 +64,7 @@ class TestExtracting(unittest.TestCase):
         root = get_rootpath(level=1)
         dir_imp = root+"examples/test_data/exchanges/"
         # Exchanges only
-        self.nature(raw_entsoe.extract(ctry=list_countries, dir_gen=None, dir_imp=dir_imp),
+        self.nature(extracting.extract(ctry=list_countries, dir_gen=None, dir_imp=dir_imp),
                     keys=list_countries)
             
     def test_extractAll(self): # Check the nature of returned elments
@@ -73,7 +73,7 @@ class TestExtracting(unittest.TestCase):
         dir_gen = root+"examples/test_data/generations/"
         dir_imp = root+"examples/test_data/exchanges/"
         # Generation and Exchanges
-        out = raw_entsoe.extract(ctry=list_countries, dir_gen=dir_gen, dir_imp=dir_imp)
+        out = extracting.extract(ctry=list_countries, dir_gen=dir_gen, dir_imp=dir_imp)
         self.assertEqual(len(out),2) # 2 elements returned
         self.nature(out[0], keys=list_countries)
         self.nature(out[1], keys=list_countries)
@@ -82,7 +82,7 @@ class TestExtracting(unittest.TestCase):
         list_countries = ['AT','CH','DE','FR','IT']
         root1 = get_rootpath(level=1)
         root0 = get_rootpath(level=0)
-        out = raw_entsoe.create_per_country(path_dir=root1+"examples/test_data/generations/", case='generation',
+        out = extracting.create_per_country(path_dir=root1+"examples/test_data/generations/", case='generation',
                                             ctry=list_countries,
                                             savedir=root0+"test_data/prep_generations/",
                                             savedir_resolution=root0+"test_data/")
@@ -105,7 +105,7 @@ class TestExtracting(unittest.TestCase):
         list_countries = ['AT','CH','DE','FR','IT']
         root1 = get_rootpath(level=1)
         root0 = get_rootpath(level=0)
-        out = raw_entsoe.create_per_country(path_dir=root1+"examples/test_data/exchanges/", case='import',
+        out = extracting.create_per_country(path_dir=root1+"examples/test_data/exchanges/", case='import',
                                             ctry=list_countries,
                                             savedir=root0+"test_data/prep_exchanges/",
                                             savedir_resolution=root0+"test_data/")

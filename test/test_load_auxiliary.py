@@ -176,7 +176,7 @@ class TestAuxiliary(unittest.TestCase):
             auxiliary.load_rawEntso(mix_data=0)
             
     def test_load_rawEntsoDataframe(self):
-        self.assertEqual(auxiliary.load_rawEntso(mix_data=df(None)), df(None))
+        self.assertTrue( all(auxiliary.load_rawEntso(mix_data=df(None)) == df(None)) )
         
     
     

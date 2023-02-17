@@ -1,25 +1,34 @@
 """Module to run all test files alltogether"""
 
-import os, sys, pathlib
-sys.path.insert(0, "/home/user/EcoDynBat/ecodyn/") # Better would be to pip-install in modifiable version...
+import os
+import sys
+import unittest
 
+package = os.path.abspath( os.path.dirname( os.path.dirname(__file__) ) ) # Path to package if needs to be installed
 
-def test_all():
-    try:
-        import dynamical
-    except:
-        os.system("python3 -m pip install --user -e /home/user/EcoDunBat/ecodyn/")
-    
-    path = pathlib.Path(__file__).parent.resolve()
-    print(f"Current folder is {path}")
-    files = [f for f in os.listdir(path) if ((f.startswith("test_"))&(f!="test_all.py"))]
-    
-    for f in files:
-        os.system(f"python3 ./{f}")
-
-        
         
         
         
 if __name__ == '__main__':
-    test_all()
+
+    try:
+        import dynamical
+    except:
+        print("Installing dynamical...")
+        os.system(f"{python} -m pip install -e {package}")
+
+    #from test_load_downloads import TestDownload
+    #from test_load_extracting import TestExtracting # Use Files
+    #from test_load_auxiliary import TestAuxiliary # Use Files
+    #from test_load_impacts import TestLoadImpacts # Use Files
+    from test_parameter import TestParameterServer
+    #from test_parameter import TestParameterPaths, TestParameterMain # Use Files
+    from test_checking import TestChecking
+    from test_imports import TestImportMethods
+    from test_impacts import TestCalcImpacts
+    from test_load_loading import TestLoading
+    from test_tracking import TestTracking
+    from test_load_autocomplete import TestAutocomplete
+    #from test_pipelines import TestPipelines # Use Files
+    
+    res = unittest.main(verbosity=2)
