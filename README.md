@@ -4,5 +4,6 @@ EcoDyn is a python package to allow an easy and handy computation of environment
 
 
 
-### Installation guilde
+### Contributions
+``Dynamical`` package was used in the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
 

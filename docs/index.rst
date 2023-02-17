@@ -11,6 +11,10 @@ Installation
 ============
 For now the software can only be installed from the `gitlab repository <https://gitlab.com/fledee/ecodyn/>`_
 
+Contributions
+=============
+Dynamical did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
+
 .. image:: images/dynamical.png
 
 .. toctree::
