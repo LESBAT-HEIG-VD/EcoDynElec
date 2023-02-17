@@ -104,24 +104,24 @@ def reorder_info(data):
     list
         all_sources: list of production means and mixes, with precision of the country of origin (list)
     """
-
+    
     # Reorganize columns in the dataset
     ctry = sorted(list(np.unique([k.split("_")[-1] for k in data.columns])))# List of considered countries
-    ctry_mix = list(np.unique([k.split("_")[1] for k in data.columns if k[:3]=="Mix"])) # List of importing countries (right order)
+    ctry_mix = list(np.unique([k.split("_")[1] for k in data.columns if k.startswith("Mix_")])) # List of importing countries (right order)
     ctry_mix = ctry +[k for k in ctry_mix if k not in ctry] # add "Others" in the end of pays_mixe
 
     # Definition of the means of production and column names for the calculation matrix
     prod_means = []
     all_sources = []
-    for k in data.columns:
-        if k.split("_")[-1]==ctry[0]: # Gather all energy source names (only for one country)
-            if k[:3]!="Mix":
-                prod_means.append(k.split("_{}".format(ctry[0]))[0])
-            elif k[:3]=="Mix":
-                prod_means.append("_".join(k.split("_")[:-1])) # Energy exchanges
-                all_sources.append("_".join(k.split("_")[:-1]))
+    for k in data.columns[data.columns.str.endswith(ctry[0])]:
+        # Gather all energy source names (only for one country)
+        if k.startswith("Mix_"):
+            prod_means.append("_".join(k.split("_")[:-1])) # Energy exchanges
+            all_sources.append("_".join(k.split("_")[:-1]))
+        else:
+            prod_means.append(k.split("_{}".format(ctry[0]))[0])
 
-    all_sources += [k for k in data.columns if k[:3]!="Mix"] # Add AFTER the names of means of production
+    all_sources += [k for k in data.columns if not k.startswith("Mix_")] # Add AFTER the names of means of production
     
     return ctry, ctry_mix, prod_means, all_sources
 

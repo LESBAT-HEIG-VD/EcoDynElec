@@ -117,8 +117,9 @@ def equalize_impact_vector(impact_data, mix, strategy='error'):
         locate = np.logical_and( units_from_mix, mix.sum()==0 )
         missing_prod = mix.columns[locate]
         ### Cross the information: problematic units
-        problem_units = missing_mapping[~missing_mapping.str.contains("|".join(missing_prod))]
-
+        # problem_units = missing_mapping[~missing_mapping.str.contains("|".join(missing_prod))] # bug when all units produce
+        problem_units = missing_mapping[~np.array([m in missing_prod for m in missing_mapping])]
+        
         ### TARGET THE PROBLEMATIC UNITS FIRST (not completing the zeros before)
         if len(problem_units)>0:
             if strategy.lower() in ['raise', 'error']:

@@ -1,5 +1,5 @@
 """The module `parameter` contains the parameter classes allowing
-the management of parameters useful for in `easy_use` module and
+the management of parameters useful for in `pipelines` module and
 to extract parameters from a spreadsheet.
 
 The module contains the following classes:
@@ -11,6 +11,8 @@ The module contains the following classes:
 import numpy as np
 import pandas as pd
 import os
+
+from dynamical.checking import check_frequency
 
 
 
@@ -26,6 +28,8 @@ class Parameter():
     ----------
         path: str
             FilePath object containing information about path to different documents.
+        server: str
+            Server object containing information about connections to ENTSO-E server.
         ctry: list
             the (sorted) list of countries to include
         target: str
@@ -109,33 +113,46 @@ class Parameter():
                 + f"\n\n{self.path} \n{self.server}" )
         
     def __setattr__(self, name, value):
+        _booleans = ["cst_imports","sg_imports","net_exchanges","network_losses",
+                     "residual_local","residual_global","data_cleaning"] # Define boolean variables
+        
         if np.logical_and(self._is_frozen, not hasattr(self, name)):
             raise AttributeError(f"'parameter' object has no attribute '{name}'")
         elif name in ['start','end']:
             super().__setattr__(name, pd.to_datetime(value, yearfirst=True)) # set as time
         elif name == 'ctry':
             super().__setattr__(name, sorted(value)) # always keep sorted
-        elif ((name in ['freq','frequency']) & (value in ['Y','M'])): # Start of Month or Year only.
-            super().__setattr__(name, value+"S")
+        elif name in ['freq','frequency']:
+            check_frequency(value)
+            if value in ['Y','M']: # Start of Month or Year only.
+                super().__setattr__(name, value+"S")
+            else: super().__setattr__(name, value)
+        elif name in _booleans:
+            super().__setattr__(name, bool(value))
+        elif name in ['path','server']:
+            self._set_subclass(name, value)
         else:
             super().__setattr__(name, value) # otherwise just set value
+            
+    def _set_subclass(self, name, value):
+        match = [("path",Filepath),('server',Server)]
+        if any([ ((name==n)&(isinstance(value, v))) for n,v in match]):
+            super().__setattr__(name, value)
+        else:
+            raise TypeError(f"{name} attribute can not be of instance {type(value)}")
     
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
         date = array.fillna(0)
         if date.sum()==0: return None
+        if len(date)<5: date = pd.Series( np.concatenate([ date, [1,1,0,0][len(date)-5:] ]) )
         return "{0}-{1}-{2} {3}:{4}".format(*date.apply(adapt).values)
     
     def _set_to_None(self):
-        attributes = [a for a in dir(self) if ((a[0]!="_")&(not callable( getattr(self, a) )))]
+        "Turn NaN attributes into None (e.g. from Excel, empty cells turns into NaN)"
+        attributes = [a for a in dir(self) if ((not a.startswith("_"))&(not callable( getattr(self, a) )))]
         for a in attributes:
             if np.all( pd.isna(getattr(self, a)) ): setattr( self, a, None )
-                
-    def _set_bool(self, value):
-        if pd.isna(value):
-            return None
-        else:
-            return bool(value)
     
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
@@ -156,13 +173,13 @@ class Parameter():
         self.freq = param_excel.loc['frequency'].iloc[0]
         self.timezone = param_excel.loc['timezone'].iloc[0]
 
-        self.cst_imports = self._set_bool(param_excel.loc['constant exchanges'].iloc[0])
-        self.sg_imports = self._set_bool(param_excel.loc['exchanges from swissGrid'].iloc[0])
-        self.net_exchanges = self._set_bool(param_excel.loc['net exchanges'].iloc[0])
-        self.network_losses = self._set_bool(param_excel.loc['network losses'].iloc[0])
-        self.residual_local = self._set_bool(param_excel.loc['residual local'].iloc[0])
-        self.residual_global = self._set_bool(param_excel.loc['residual global'].iloc[0])
-        self.data_cleaning = self._set_bool(param_excel.loc['data cleaning'].iloc[0])
+        self.cst_imports = param_excel.loc['constant exchanges'].iloc[0]
+        self.sg_imports = param_excel.loc['exchanges from swissGrid'].iloc[0]
+        self.net_exchanges = param_excel.loc['net exchanges'].iloc[0]
+        self.network_losses = param_excel.loc['network losses'].iloc[0]
+        self.residual_local = param_excel.loc['residual local'].iloc[0]
+        self.residual_global = param_excel.loc['residual global'].iloc[0]
+        self.data_cleaning = param_excel.loc['data cleaning'].iloc[0]
 
         
         self.path = self.path.from_excel(excel)
@@ -214,7 +231,7 @@ class Filepath():
     """
     _is_frozen = False # Class attribute to prevent new attributes
     
-    def __init__(self):
+    def __init__(self, excel=None):
         """Gather parameters about local data files for the execution of diverse
         functions of the module `dynamical.easy_use`.
 
@@ -233,6 +250,9 @@ class Filepath():
         self.gap = None
         self.swissGrid = None
         self.networkLosses = None
+        
+        if excel is not None: # Initialize with an excel file
+            self.from_excel(excel)
         
         self._is_frozen = True # Freeze the list of attributes
         
@@ -257,7 +277,7 @@ class Filepath():
         elif np.logical_and(not self._is_frozen, name=='_is_frozen'):
             super().__setattr__(name, value)
         else:
-            raise ValueError(f'Unidentified file or directory: {os.path.abspath(value)}')
+            raise FileNotFoundError(f'Unidentified file or directory: {os.path.abspath(value)}')
     
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
@@ -330,7 +350,7 @@ class Server():
     """
     _is_frozen = False # Class attribute to prevent new attributes
     
-    def __init__(self):
+    def __init__(self, excel=None):
         """Gather downloading parameters to configurate the execution of diverse
         functions of the module `dynamical.easy_use`.
 
@@ -357,6 +377,9 @@ class Server():
         self.username = None
         self.password = None # Preferable to ask for it. May be interesting to store if we can encrypt.
         
+        if excel is not None: # Initialize with an excel file
+            self.from_excel(excel)
+        
         self._is_frozen = True # Freeze the list of attributes
         
         
@@ -378,9 +401,11 @@ class Server():
                 super().__setattr__(name, False) # set False
             else: super().__setattr__(name, None) # set an empty info
         elif name in ['useServer','removeUnused']:
-            if value in ['False','No','',' ','-','/']:
+            if value in [0,'False','No','',' ','-','/']:
                 super().__setattr__(name, False)
-            else: super().__setattr__(name, value)
+            elif value in [1,'True','Yes','',' ','-','/']:
+                super().__setattr__(name, True)
+            else: raise TypeError(f"{name} attribute can not be {value}")
         else:
             super().__setattr__(name, value) # Set the value
         

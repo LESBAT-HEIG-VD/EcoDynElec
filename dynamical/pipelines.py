@@ -129,7 +129,7 @@ def execute(config, missing_mapping='error', is_verbose=False):
         
     
 
-    # Load generation and exchange data from entso-e    
+    # Load generation and exchange data from entso-e
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
                                path_gen=p.path.generation, path_imp=p.path.exchanges,
@@ -266,14 +266,13 @@ def get_inverted_matrix(config=None, is_verbose=False):
     else: prod_gap=None
     
 
-    # Load generation and exchange data from entso-e    
+    # Load generation and exchange data from entso-e
     raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, target=p.target,
                                involved_countries=neighbours, prod_gap=prod_gap, sg_data=sg,
-                               path_gen=p.path.generation, path_gen_raw=p.path.raw_generation,
-                               path_imp=p.path.exchanges, path_imp_raw=p.path.raw_exchanges,
+                               path_gen=p.path.generation, path_imp=p.path.exchanges,
                                savedir=p.path.savedir, net_exchange=p.net_exchanges, 
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
-                               is_verbose=is_verbose)
+                               clean_data=p.data_cleaning, is_verbose=is_verbose)
     
     
     ########################

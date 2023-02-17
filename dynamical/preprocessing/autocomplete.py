@@ -79,6 +79,7 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
     excess_thresholds = {c :{k: int(limit*lengths[c][k])
                              for k in lengths[c]}
                          for c in lengths}
+
     long_gaps = sort_gaps(all_gaps, lower=long_thresholds,
                           upper=excess_thresholds, lengths=lengths) # Sort gaps for long
     excess_gaps = sort_gaps(all_gaps, lower=excess_thresholds,
@@ -108,7 +109,7 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
 ###
 def infer_resolution(data:dict):
     """Infers the resolution of all fields for all countries"""
-    resolution = pd.DataFrame({c: {k: infer_one( data[c].loc[:,k].dropna(axis=0).index )
+    resolution = pd.DataFrame({c: {k: infer_one( data[c].loc[:,k].dropna(axis=0).index)
                                    for k in data[c].columns} # All still dataframes
                                for c in data})
     if not all(resolution.index.str.len()==2): # Generation
@@ -117,7 +118,11 @@ def infer_resolution(data:dict):
 
 def infer_one(obj):
     """Infer frequency for one single time Series"""
-    freq = pd.infer_freq(obj) # Use built-in pandas
+    if len(obj)>3:
+        freq = pd.infer_freq(obj) # Use built-in pandas
+    else: # Avoid issue when not enough data, just assume a 15min step.
+        freq='15T'
+
     if freq is not None: # but function is not robust
         return freq # at all...
     
@@ -291,9 +296,8 @@ def select_long_gaps(gaps, name, lower, upper, length):
         long_gaps = gaps[gaps[:,0]>lower] 
     
     ### Handle specific gaps
-    if ((gaps.shape[0]>0)&(upper is None)):
+    if ((gaps.shape[0]>0)&(upper is not None)):
         long_gaps = add_specific_gaps(gaps, name, length, long_gaps)
-    
     return long_gaps
 
 def add_specific_gaps(all_gaps, name, length, long_gaps):
@@ -301,12 +305,13 @@ def add_specific_gaps(all_gaps, name, length, long_gaps):
     # At the start
     if np.logical_and.reduce([name == 'Solar', # If solar
                               all_gaps[0,1]==0, # If gap at the start
-                              all_gaps[0] not in long_gaps]): # If not already long gap
+                              all_gaps[0].tolist() not in long_gaps.tolist()]): # If not already long gap
         long_gaps = np.concatenate( [all_gaps[[0]],long_gaps], axis=0 )
+
     # At the end
     if np.logical_and.reduce([name == 'Solar', # If solar
                               all_gaps[-1,2]==length, # If gap at the end
-                              all_gaps[-1] not in long_gaps]): # If not already long gap
+                              all_gaps[-1].tolist() not in long_gaps.tolist()]): # If not already long gap
         long_gaps = np.concatenate( [long_gaps, all_gaps[[-1]] ], axis=0 )
     
     return long_gaps
@@ -331,7 +336,6 @@ def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbo
         is_verbose: bool, default to False
             to display information.
     """
-    
     for i,c in enumerate(data): # For all countries
         ### Fill the periods
         for j,k in enumerate(data[c]): # For all elements of each country
@@ -346,7 +350,7 @@ def fill_one_series(data, period_indexes, delta):
     filled = data.copy()
     for gap in period_indexes:
         ### Create Average Day
-        avg_day = filled.iloc[gap[1]-delta : gap[2]+delta].groupby(lambda x: x.strftime('%H:%M')).mean()
+        avg_day = filled.iloc[max(0, gap[1]-delta) : min(gap[2]+delta, filled.shape[0])].groupby(lambda x: x.strftime('%H:%M')).mean()
         ### Fill the period
         filled.iloc[gap[1]:gap[2]] = fill_one_period(avg_day, to_fill=filled.iloc[gap[1]:gap[2]])
     return filled

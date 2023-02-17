@@ -13,6 +13,39 @@ from warnings import warn
 #
 # ############################
 # ############################
+# # Custom Errors and Warnings
+# ############################
+# ############################
+class IncompleteError(ValueError):
+    """Error if NaNs are found in the mapping"""
+    def __init__(self, message):
+        super().__init__(message)
+
+class MissingError(ValueError):
+    """Error if units are missing in the mapping"""
+    def __init__(self, message=''):
+        super().__init__(message)
+    
+class IncompleteWarning(UserWarning):
+    """Warning if NaNs are found in the mapping"""
+    def __init__(self, message):
+        super().__init__(message)
+
+class MissingWarning(UserWarning):
+    """Warning if units are missing in the mapping"""
+    def __init__(self, message):
+        super().__init__(message)
+
+
+#
+#
+#
+#
+#
+#
+#
+# ############################
+# ############################
 # # Check frequency
 # ############################
 # ############################
@@ -32,7 +65,7 @@ def check_frequency(freq):
     """
     allowed = ["Y","YS","M","MS","W","w","D","d","H","30min","30T","15min","15T"]
     if freq not in allowed:
-        raise KeyError(f'the specified timestep must be in {allowed}')
+        raise ValueError(f'the specified timestep must be in {allowed}')
     return True
 
 
@@ -106,15 +139,30 @@ def check_mapping(mapping, mix, strategy='error'):
     ### Active production units with no mapping
     in_mapping = with_prod.str.contains("|".join(mapping.index))
     
-    if not all(in_mapping):
+    ### Identifies the issues
+    
+    if not all(in_mapping): # I.e. if some producing units are not referenced in mapping
         units = list(with_prod[~in_mapping])
         if strategy.lower() in ['raise','error']:
-            raise ValueError(f"The following units do produce and have no mapping: {units}")
+            raise MissingError(f"The following units do produce and have no mapping: {units} ({strategy})")
         else:
             warning_msg = f"The following units do produce and have no mapping: {units}."
             warning_msg += f" Impact values will be inferred following the strategy `{strategy}`."
-            warn(warning_msg)
+            warn(warning_msg, MissingWarning)
             sys.stderr.flush()
+    
+    else: # i.e. all producing units have a reference in mapping
+        locNaN = np.where(mapping.loc[with_prod[in_mapping]].isna()) # Prod units with NaN in Mapping
+        withNaN = {with_prod[i]: list(mapping.columns[locNaN[1][locNaN[0]==i]])
+                   for i in np.unique(locNaN[0])} # List of tech with NaN for some indexes
+        if withNaN: # If not empty
+            if strategy.lower() in ['raise','error']:
+                raise IncompleteError(f"Missing impact values for the following active producers: {withNaN}({strategy})")
+            else:
+                warning_msg = f"The following active producers are missing some impact values: {withNaN}"
+                warning_msg += f" Impact values will be inferred following the strategy `{strategy}`."
+                warn(warning_msg, IncompleteWarning)
+                sys.stderr.flush()
     
     return True
 
@@ -130,7 +178,7 @@ def check_mapping(mapping, mix, strategy='error'):
 # ############################
 # ############################
 
-def check_residual_avaliability(prod, residual, freq='H'):
+def check_residual_availability(prod, residual, freq='H'):
     """Verifies if the residual information are available for the whole duration.
 
     Parameters

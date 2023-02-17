@@ -66,11 +66,7 @@ def import_data(ctry, start=None, end=None, freq="H", target="CH",
         imp_preprocessed: str, default to None
             directory containing the files for preprocessed cross-border flow data
         savedir: str, default to None
-            directory to save auxilary information for loaded data
-        savegen: str, default to None
-            directory to save generation data from raw files
-        saveimp: str, default to None
-            directory to save exchanges data from raw files
+            directory to save information
         residual_global: bool, default to False
             to consider the production residual as produced electricity that can be exchanged with neighbour countries
         correct_imp: bool, default to False
@@ -190,7 +186,7 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
     for c in ctry:# Preprocess all files / data per country
         # Extract the generation data file
         if path==path_prep: # Load preprocessed files
-            Gen[c] = pd.read_csv(path+files[c],index_col=0) # Extraction of preprocessed files
+            Gen[c] = pd.read_csv(os.path.join(path,files[c]),index_col=0) # Extraction of preprocessed files
         
         # Check and modify labels if needed
         Gen[c].columns = Gen[c].columns.str.rstrip() + " " # (first remove if any, then) set additional ' ' at the end
@@ -202,7 +198,8 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
         Gen[c] = Gen[c].loc[start:end]
 
         source = list(Gen[c].columns) # production plants types
-        source[source.index("Other ")] = "Other fossil " # rename one specific column (space at the end is important !)
+        if "Other " in source: # Expected this label for "Other fossil" from ENTSO-E data
+            source[source.index("Other ")] = "Other fossil " # rename one specific column
 
         Gen[c].columns = [s.replace(" ","_")+c for s in source] # rename columns
         
@@ -307,7 +304,7 @@ def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=No
     dict
         dict of pandas.DataFrame containing cross-border flows.
     """
-    path, savegen = _infer_paths(path_prep, path_imp, case='Exchanges')
+    path, saveimp = _infer_paths(path_prep, path_imp, case='Exchanges')
     
     if is_verbose: print("Get and reduce importation data...")
         
@@ -316,14 +313,14 @@ def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=No
         files = {}
         for c in ctry:
             try:
-                files[c] = [f for f in os.listdir(path_imp) if ((f.startswith(c))&(f.endswith('MW.csv')))][0]
+                files[c] = [f for f in os.listdir(path) if ((f.startswith(c))&(f.endswith('MW.csv')))][0]
             except Exception as e:
-                raise KeyError(f"No pre-processed exchange data for {c}: {e}")
+                raise KeyError(f'No pre-processed exchange data for "{c}": {e}')
                 
         Cross = {} # Dict for the generation of each country
         
     elif path==path_imp: # Just fill the Gen directly for row files
-        Cross = extract(ctry=ctry, start=start, end=end, dir_imp=path, savedir_imp=saveimp,save_resolution=savedir,
+        Cross = extract(ctry=ctry, start=start, end=end, dir_imp=path, savedir_imp=saveimp ,save_resolution=savedir,
                         n_hours=n_hours, days_around=days_around, limit=limit, correct_imp=clean_imports,
                         is_verbose=is_verbose) # if from raw files
 
@@ -331,7 +328,7 @@ def import_exchanges(ctry, start, end, path_imp=None, path_prep=None, savedir=No
     for i,c in enumerate(ctry):# File extraction
         if path==path_prep:
             if is_verbose: print("\t{}/{} - {}...".format(i+1,len(files),c))
-            Cross[c] = pd.read_csv(path_imp+files[c],index_col=0) # Extraction
+            Cross[c] = pd.read_csv(os.path.join(path,files[c]),index_col=0) # Extraction
 
         # Transform index in time data, then keeps only period of interest
         Cross[c].index = pd.to_datetime(Cross[c].index,yearfirst=True) # Considered period only
@@ -563,7 +560,7 @@ def resample_data(Data, freq):
             conv_factor = get_steps_per_hour('H') # Factor to convert MW to MWh
             # Resample Power and turn into energy
             Data[f] = (((Data[f]
-                         .resample(freq)
+                         .resample('H')
                          .mean() # Average as power still
                          .interpolate()
                          .fillna(0)
