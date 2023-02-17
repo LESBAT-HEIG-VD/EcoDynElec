@@ -6,11 +6,11 @@ This page explains how to use the mapping spreadsheet in detail.
 
 Introduction
 ------------
-The mapping spreadsheet contains a methodology to address the discrepency between the source of electricity generation data and the LCA database from which impact information are extracted. A `blank template <https://gitlab.com/fledee/ecodyn/-/raw/main/support_files/mapping_template.xlsx?inline=false>`_ suited for linking the ENTSO-E data with impacts information from an LCA database can be downloaded from the Git. This tempate already contains equations for all required fields, for all countries represented in the ENTSO-E database.
+The mapping spreadsheet contains a methodology to address the discrepency between the source of electricity generation data and the LCA database from which impact information are extracted. A `blank template <https://gitlab.com/fledee/ecodynelec/-/raw/main/support_files/mapping_template.xlsx?inline=false>`_ suited for linking the ENTSO-E data with impacts information from an LCA database can be downloaded from the Git. This tempate already contains equations for all required fields, for all countries represented in the ENTSO-E database.
 
 A condensed version containing the impact values for every ENTSO-E generation type is used per default, but it only contains values for a limited set of countries. This condensed matrix is named "*FU-vector*" and has been built with the LCA database of Ecoinvent.
 
-The software ``ecodynelec`` can use both a mapping spreadsheet and a FU-vector as input. Per default, it uses the `FU-vector available <https://gitlab.com/fledee/ecodyn/-/raw/main/support_files/Functional_Unit_Vector.csv?inline=false>`_ in the software files for the four following impact indexes: Climate change, Human carcynogenic toxicity, Fine particle formation matter and Land use.
+The software ``ecodynelec`` can use both a mapping spreadsheet and a FU-vector as input. Per default, it uses the `FU-vector available <https://gitlab.com/fledee/ecodynelec/-/raw/main/support_files/Functional_Unit_Vector.csv?inline=false>`_ in the software files for the four following impact indexes: Climate change, Human carcynogenic toxicity, Fine particle formation matter and Land use.
 
 Additional impact indexes can be added or used by the user. The author declines all responsibility of biased results obtained due to incorrect usage of the impact data by the user.
 

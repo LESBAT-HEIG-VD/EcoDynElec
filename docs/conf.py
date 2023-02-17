@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'ecodynelec'
-copyright = '2022, Francois Ledee'
+copyright = '2023, Francois Ledee'
 author = 'Francois Ledee'
 
 # The full version, including alpha/beta/rc tags

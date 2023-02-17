@@ -156,7 +156,7 @@ The next cell visualizes the changes made in the parameter object
 Loading parameters from an xlsx spreadsheet
 -------------------------------------------
 
-A spreadsheet may be used for a user-friendlier interface. An example spreadsheet may be downloaded from the `GitLab repository <https://gitlab.com/fledee/ecodyn/-/blob/main/examples/Spreadsheet_example.xlsx>`__.
+A spreadsheet may be used for a user-friendlier interface. An example spreadsheet may be downloaded from the `GitLab repository <https://gitlab.com/fledee/ecodynelec/-/blob/main/examples/Spreadsheet_example.xlsx>`__.
 
 .. code:: ipython3
 

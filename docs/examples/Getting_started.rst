@@ -2,7 +2,7 @@ Getting started
 ===============
 
 ``ecodynelec`` must first be downloaded from its `Git
-repository <https://gitlab.com/fledee/ecodyn>`__. After its download,
+repository <https://gitlab.com/fledee/ecodynelec>`__. After its download,
 the package can be used and installed in different ways, as explained
 below.
 

@@ -10,7 +10,7 @@ To install, you've better time going with downloading from the GitLab repository
 .. code-block::
     :caption: Installation from the repository
         
-        git clone gitlab@gitlab.com:fledee/ecodyn.git
+        git clone gitlab@gitlab.com:fledee/ecodynelec.git
 
 
 

@@ -61,7 +61,7 @@ Parameters can be managed from Python via the ``Parameter`` class, for the downl
 
 Using a Spreadsheet
 -------------------
-An alternative for more visual configuration is to use a spreadsheet (Figure 2). This approach more generally allows a configuration of the whole process, though this section focuses on the downloading abilities. Information from all three tabs of the spreadsheet is required, the most important being the Server tab. Acceptable formats for the spreadhseet are ``.xlsx`` (default), ``.xls`` (requires the additional `xlrd package <https://pypi.org/project/xlrd/>`_) and ``.ods`` (requires the additional `odfpy package <https://pypi.org/project/odfpy/>`_). An example spreadsheet can be downloaded from the `git repository <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_.
+An alternative for more visual configuration is to use a spreadsheet (Figure 2). This approach more generally allows a configuration of the whole process, though this section focuses on the downloading abilities. Information from all three tabs of the spreadsheet is required, the most important being the Server tab. Acceptable formats for the spreadhseet are ``.xlsx`` (default), ``.xls`` (requires the additional `xlrd package <https://pypi.org/project/xlrd/>`_) and ``.ods`` (requires the additional `odfpy package <https://pypi.org/project/odfpy/>`_). An example spreadsheet can be downloaded from the `git repository <https://gitlab.com/fledee/ecodynelec/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_.
 
 .. figure:: images/ParameterExcel_Server.png
     :alt: Spreadsheet tab to configure the server access

@@ -17,7 +17,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Francois Ledee",
     author_email="ledee.francois@gmail.com",
-    url="https://gitlab.com/fledee/ecodyn/",
+    url="https://gitlab.com/fledee/ecodynelec/",
     packages=find_packages("./", exclude=['test']),
     include_package_data=True,
     classifiers=[

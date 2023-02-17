@@ -10,7 +10,7 @@ Parameters can be set directly in Python using the `Parameter` class of ``ecodyn
 
 From the spreadsheet
 *********************
-Alternatively, parameters can be set via a spreadsheet. An `example spreadsheet <https://gitlab.com/fledee/ecodyn/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_ can be downloaded for the git repository. Here is what it looks like. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://ecodynelec.readthedocs.io/en/latest/supplementary/parameters.html#meanign-and-role-of-each-parameter>`_.
+Alternatively, parameters can be set via a spreadsheet. An `example spreadsheet <https://gitlab.com/fledee/ecodynelec/-/raw/main/examples/Spreadsheet_example.xlsx?inline=false>`_ can be downloaded for the git repository. Here is what it looks like. For the meaning of each parameter, see the section `Meaning and role of each parameter <https://ecodynelec.readthedocs.io/en/latest/supplementary/parameters.html#meanign-and-role-of-each-parameter>`_.
 
 .. figure:: ./images/ParameterExcel_Param.png
     :alt: Parameter spreadsheet main
@@ -69,7 +69,7 @@ File path parameters are in the "Filepath" tab of the spreadsheet, or attribures
 * **exchange directory** (spreadsheet) / ``Parameter.path.exchanges`` (python): Directory containing the exchanges data. This is also the directory where downloaded files are saved. Path can be relative to the location where the user's script is executed, or the absolute path.
 * **saving directory** (spreadsheet) / ``Parameter.path.savedir`` (python): Directory where to save computation results. Results are only returned in Python if the field is empty or None. Path can be relative to the location where the user's script is executed, or the absolute path. Default is None.
 * **FU vector** (spreadsheet) / ``Parameter.path.fu_vector`` (python): The location of impact per unit type in a single table format. Default file from the support files is used if None is given.
-* **mapping file** (spreadsheet) / ``Parameter.path.mapping`` (python): The location of a mapping file. A blank example is available for download on the `git repository <https://gitlab.com/fledee/ecodyn/-/raw/main/support_files/mapping_template.xlsx?inline=false>`_. Default FU vector from the support files is used if None is given.
+* **mapping file** (spreadsheet) / ``Parameter.path.mapping`` (python): The location of a mapping file. A blank example is available for download on the `git repository <https://gitlab.com/fledee/ecodynelec/-/raw/main/support_files/mapping_template.xlsx?inline=false>`_. Default FU vector from the support files is used if None is given.
 * **neighboring file** (spreadsheet) / ``Parameter.path.neighbours`` (python): The location of a file reporting the connectivity between european countries. Default file fron the support files is used if None is given.
 * **gap file** (spreadsheet) / ``Parameter.path.gap`` (python): The location of a file containing estimates of the composition of the Swiss residual. Default file fron the support files is used if None is given.
 * **file swissGrid** (spreadsheet) / ``Parameter.path.swissGrid`` (python): The location of a file containing information from SwissGrid. Default file fron the support files is used if None is given.

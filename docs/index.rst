@@ -9,7 +9,7 @@ EcoDynElec software tracks the origin of electricity accross european countries 
 
 Installation
 ============
-For now the software can only be installed from the `gitlab repository <https://gitlab.com/fledee/ecodyn/>`_
+For now the software can only be installed from the `gitlab repository <https://gitlab.com/fledee/ecodynelec/>`_
 
 Contributions
 =============

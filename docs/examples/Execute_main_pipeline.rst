@@ -73,7 +73,7 @@ is covered in the `dedicated page <https://ecodynelec.readthedocs.io/en/latest/e
 Execution with configuration in a spreadsheet
 ---------------------------------------------
 
-A blank template of the spreadsheet can be obtained on the `GitLab repository <https://gitlab.com/fledee/ecodyn/-/blob/main/examples/Spreadsheet_example.xlsx>`__.
+A blank template of the spreadsheet can be obtained on the `GitLab repository <https://gitlab.com/fledee/ecodynelec/-/blob/main/examples/Spreadsheet_example.xlsx>`__.
 
 .. code:: ipython3
 
