@@ -5,7 +5,8 @@ import sys
 import unittest
 
 package = os.path.abspath( os.path.dirname( os.path.dirname(__file__) ) ) # Path to package if needs to be installed
-python = f"python{sys.version[:3]}"
+#python = f"python{sys.version[:3]}"
+python = "python"
 
         
         
