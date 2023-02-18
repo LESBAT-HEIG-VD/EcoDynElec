@@ -15,4 +15,4 @@ An online documentation was written and is available on the [dedicated ReadTheDo
 ## Contributions
 EcoDynElec did contribute to the project [EcoDynBat - Ecobilan Dynamique des Bâtiments](https://www.aramis.admin.ch/Texte/?ProjectID=41804).
 
-![logo](docs/images/ecodynelec.png)
+![logo](docs/images/logo.png)
