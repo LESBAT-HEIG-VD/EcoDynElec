@@ -1,5 +1,5 @@
 Downloading data with ``ecodynelec``
-===================================
+=====================================
 
 ``ecodynelec`` integrates the possibility to download the required data
 from ENTSO-E servers. Though, *using the software may be slow*, thus the

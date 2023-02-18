@@ -25,7 +25,7 @@ Navigate through the remote architecture and download the files of interest. The
 
 
 Configuration to download with ``ecodynelec``
-********************************************
+*********************************************
 This section shows how to use ``ecodynelec`` package to download the data.
 
 Handling the parameters before the download allows to reduce the amount of files to download. The connection information can be handled with the `Parameter` class of EcoDynElec using Python or  from an excel spreadsheet (Figure 2). For convenience in frequent reuse, the password can be written in plain text, though no encryption is used. For security reasons, the password can be omitted at that stage and be only provided later when DYNAMICAL connects with the server.
@@ -74,7 +74,7 @@ The other required information is the start and end dates (Parameter tab) to sel
 
 
 Download the data with ``ecodynelec``
-************************************
+*************************************
 Once the configuration is set properly, data can be downloaded.
 
 Only the dowload

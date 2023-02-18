@@ -1,5 +1,5 @@
 Execution of ``ecodynelec`` 
-==========================
+===========================
 
 ``ecodynelec`` does combine all its functionalities within one pipeline
 called ``execute`` in the module ``pipelines``. This pipeline requires

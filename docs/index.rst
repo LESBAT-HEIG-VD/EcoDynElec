@@ -1,5 +1,5 @@
 EcoDynElec: Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
-=============================================================================
+==============================================================================
 
 EcoDynElec software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
 
@@ -15,7 +15,7 @@ Contributions
 =============
 EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
 
-.. image:: images/ecodynelec.png
+.. image:: images/logo.png
 
 .. toctree::
     :maxdepth: 1
