@@ -61,6 +61,7 @@ EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâ
     modules/preprocessing
     modules/saving
     modules/checking
+    modules/updating
 
 
 
