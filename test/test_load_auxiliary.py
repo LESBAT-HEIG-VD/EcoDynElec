@@ -19,9 +19,6 @@ class TestAuxiliary(unittest.TestCase):
     def test_get_default_fileFUVector(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Functional_Unit_vector.csv')))
     
-    def test_get_default_fileMapping(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('mapping_template.xlsx')))
-    
     def test_get_default_fileNeighbourhood(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Neighbourhood_EU.csv')))
     
@@ -29,7 +26,7 @@ class TestAuxiliary(unittest.TestCase):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Pertes_OFEN.csv')))
     
     def test_get_default_fileResidual(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Repartition_Residus.xlsx')))
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Share_residual.csv')))
     
     def test_get_default_fileSwissGrid(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('SwissGrid_total.csv')))
