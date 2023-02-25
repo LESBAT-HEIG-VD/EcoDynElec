@@ -12,7 +12,7 @@ import numpy as np
 from time import time
 from concurrent.futures import ProcessPoolExecutor
 
-from elecodyn.preprocessing.auxiliary import get_default_file
+from ecodynelec.preprocessing.auxiliary import get_default_file
 
 
 
@@ -42,30 +42,28 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
     ### Verify the path_dir
     if path_dir is None:
         ### Try to reach a default directory
-        path_dir = os.path.join(os.dirname(os.dirname(os.path.abspath(__file__))), 'support_files')
+        path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
     
-    if os.path.isdir( default_path ): # Verify if path is valid
-        path_dir = default_path
-    else:
+    if not os.path.isdir( path_dir ): # Verify if path is valid
         raise FileNotFoundError(f"Need to specify a directory containing updated files to save them into software files.")
         
     ### Verify the names if using path_dir
     expected = ["Neighbourhood_EU.csv","Functional_Unit_Vector.csv","Pertes_OFEN.csv","Repartition_Residus.xlsx"]
-    files = os.path.listdir(path_dir)
-    if not all(exp in files):
+    files = os.listdir(path_dir)
+    if not all(exp in files for exp in expected):
         missing = [f for f in expected if f not in files]
         raise FileNotFoundError(f"The following files are missing. Please use individual update functions for individual updates. {missing}")
     
     
     ### Process all common updates
-    if is_verbose: print(f"Update Neighbourhood file...")
     update_neighbours(os.path.join(path_dir,"Neighbourhood_EU.csv"))
-    if is_verbose: print(f"Update FU vector file")
+    if is_verbose: print(f"Updated Neighbourhood file")
     update_FUVector(os.path.join(path_dir,"Functional_Unit_Vector.csv"))
-    if is_verbose: print(f"Update Losses file")
+    if is_verbose: print(f"Updated FU vector file")
     update_Losses(os.path.join(path_dir,"Pertes_OFEN.csv"))
-    if is_verbose: print(f"Update Residual share file")
+    if is_verbose: print(f"Updated Losses file")
     update_residual_share(os.path.join(path_dir,"Repartition_Residus.xlsx"), save=True)
+    if is_verbose: print(f"Updated Residual share file")
     
     
     ### Go on with SwissGrid
@@ -187,7 +185,7 @@ def update_sg(path_dir=None, path_files=None, save=True, is_verbose=False):
     t0 = time()
     whole_sg = []
     with ProcessPoolExecutor() as pool:
-        for table in pool.map( prepare_sg_year, files ):
+        for table in pool.map( _prepare_sg_year, files ):
             whole_sg.append(table)
     whole_sg = pd.concat(whole_sg, axis=0).sort_index()
     if is_verbose:
@@ -197,7 +195,7 @@ def update_sg(path_dir=None, path_files=None, save=True, is_verbose=False):
     
     ### Save the data
     if save:
-        target = get_default_file("SwissGridTotal.csv")
+        target = get_default_file("SwissGrid_total.csv")
         if is_verbose: print(f"Re-writing {target}...")
         ## Build the path to file
         whole_sg.to_csv(target, index=True)
@@ -239,5 +237,5 @@ def _prepare_sg_year(path, year=None):
                          parse_dates=False, usecols=col_selection).drop(index='Zeitstempel',errors='ignore')
     
     ### Clean data
-    data.index = set_index(data.index)
-    return data.rename(columns=rename_columns(data.columns)).astype("int32")
+    data.index = _set_index_sg(data.index)
+    return data.rename(columns=_rename_columns_sg(data.columns)).astype("int32")
