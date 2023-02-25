@@ -12,7 +12,7 @@ import numpy as np
 from time import time
 from concurrent.futures import ProcessPoolExecutor
 
-from dynamical.preprocessing.auxiliary import get_default_file
+from elecodyn.preprocessing.auxiliary import get_default_file
 
 
 

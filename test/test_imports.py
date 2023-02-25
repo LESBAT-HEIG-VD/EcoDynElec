@@ -39,6 +39,9 @@ class TestImportMethods(unittest.TestCase):
     def test_impacts_import(self):
         self.assertTrue(test_if_available('ecodynelec.impacts'))
         
+    def test_updating_import(self):
+        self.assertTrue(test_if_available('ecodynelec.updating'))
+        
     def test_checking_import(self):
         self.assertTrue(test_if_available('ecodynelec.checking'))
         
