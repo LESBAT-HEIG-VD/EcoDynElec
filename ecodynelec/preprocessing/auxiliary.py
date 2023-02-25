@@ -214,14 +214,21 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     """
     ### Default path
     if path_gap is None:
-        path_gap = get_default_file(name='Repartition_Residus.xlsx')
+        paht_gap = get_default_file(name="Share_residual.csv") # Change
+        df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load default from software files
+    elif not os.path.isfile(path_gap):
+        paht_gap = get_default_file(name="Share_residual.csv") # Change
+        df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load default from software files
+    elif os.path.splitext(path_gap)=='.csv':
+        df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load csv file from user
     
-    interest = ['Centrales au fil de l’eau','Centrales therm. classiques et renouvelables']
-    df = pd.read_excel(path_gap, header=header, index_col=0).loc[interest].T
-    df["Hydro_Res"] = df['Centrales au fil de l’eau']/df.sum(axis=1) # calculate the % part of each potential source
-    df["Other_Res"] = 1-df.loc[:,'Hydro_Res']
-    
-    df.index = pd.to_datetime(df.index,yearfirst=True) # time data
+    else:
+        ### Extraction tailored for the .xlsx in support files
+        interest = {'Centrales au fil de l’eau': "Hydro_Res",
+                    'Centrales therm. classiques et renouvelables':"Other_Res"}
+        df = pd.read_excel(path, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
+        df = (df/df.sum(axis=0)).T
+        df.index = pd.to_datetime(df.index,yearfirst=True) # time data
     
     ###########################
     ##### Adapt the time resolution of raw data
@@ -327,14 +334,30 @@ def load_rawEntso(mix_data, freq='H'):
 
 # -
 
-def get_default_file(name,level=3):
-    """Function to load a default file form directory 'support_file'"""
-    ### Default RELATIVE path (indepenently of the file structure)
-    path = os.path.abspath(r"{}".format(__file__)).replace("\\","/").split("/")[:-level] # List to main directory of EcoDyn
-    path = path + ['support_files',name] # add the default SwissGrid file
-    if os.path.isfile(r"{}".format("/".join(path))):
-        return r"{}".format("/".join(path)) # Recreate the file address
-    elif level<=2:
-        return get_default_file(name,level=level-1)
-    else:
-        raise KeyError(f"Default support file {name} not found.")
+def get_default_file(name, level=0, max_level=3):
+    """Function to return the absolute path of default files. The function uses the location
+    of the current auxiliary.py file but assumes no structure in EcoDynElec. It only searches
+    the structure upward"""
+    ### Limit
+    if level>=max_level:
+        raise FileNotFoundError(f"Default support file {name} not found.")
+        
+    ### Function to find parent dir
+    parent = lambda path,n: os.path.dirname(path) if n==0 else os.path.dirname(parent(path,n-1))
+    
+    current_dir = parent( os.path.abspath(__file__), level )
+    
+    ### Check for file in current directory
+    search = os.path.join(current_dir, name)
+    if os.path.isfile(search):
+        return search
+    
+    ### Otherwise, search 1 level in sub-directory
+    for f in os.listdir(current_dir):
+        if os.path.isdir( os.path.join(current_dir, f) ):
+            search = os.path.join(current_dir,f,name)
+            if os.path.isfile(search):
+                return search
+    
+    ### Otherwise, search recursively above (until limit reached)
+    return get_default_file(name, level=level+1)
