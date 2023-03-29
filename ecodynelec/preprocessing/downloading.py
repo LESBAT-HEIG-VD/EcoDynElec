@@ -9,6 +9,8 @@ import paramiko
 from functools import partial
 from getpass import getpass
 
+from ecodynelec.parameter import Parameter
+
 # +
 
 #################
@@ -94,6 +96,10 @@ def _reach_server(server_info, files, savepaths, threshold_minutes=15, threshold
     
     ### Create the connection
     if is_verbose: print("Connection...", end='\r')
+
+    ### Get the username, if required
+    if server_info.username in [None,'']:
+        server_info.username = input("Username: ")
     
     ### Connexion loop
     password = server_info.password # Get the password from parameters
