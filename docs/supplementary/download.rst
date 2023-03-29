@@ -28,7 +28,7 @@ Configuration to download with ``ecodynelec``
 *********************************************
 This section shows how to use ``ecodynelec`` package to download the data.
 
-Handling the parameters before the download allows to reduce the amount of files to download. The connection information can be handled with the `Parameter` class of EcoDynElec using Python or  from an excel spreadsheet (Figure 2). For convenience in frequent reuse, the password can be written in plain text, though no encryption is used. For security reasons, the password can be omitted at that stage and be only provided later when DYNAMICAL connects with the server.
+Handling the parameters before the download allows to reduce the amount of files to download. The connection information can be handled with the `Parameter` class of EcoDynElec using Python or  from an excel spreadsheet (Figure 2). For convenience in frequent reuse, the password can be written in plain text, though no encryption is used. For security reasons, the password can be omitted at that stage and be only provided later when EcoDynElec connects with the server.
 
 Using Python
 ------------
@@ -77,8 +77,8 @@ Download the data with ``ecodynelec``
 *************************************
 Once the configuration is set properly, data can be downloaded.
 
-Only the dowload
-----------------
+Only the download
+------------------
 
 The module ``ecodynelec.preprocessing.downloading`` can be used to download the required generation and exchanges files for all months covered by the user-defined dates (Figure 4). Before the download, the module verifies if it is worth transferring each file; download is aborted if (1) it already exists locally, (2) the local version was modified less than 15min before the remove version was modified and (3) the local file is 90% or less in size than the remote file. Conditions 2 and 3 allow to download again if a file was partially downloaded (interruption during of previous download). Their parameters (15min and 90%) are default values but can be modified by the user in the `download` function.
 

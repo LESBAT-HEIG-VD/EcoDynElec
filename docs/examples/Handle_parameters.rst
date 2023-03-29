@@ -1,15 +1,14 @@
-Handle parameters from Python
+Handle parameters
 =============================
 
-This page contains an example to create parameters from the Python
-interface directly. + First, the process is entirely done by hand + Then
-the possibility to load from a spreadsheet to the parameter object is
-highlighted.
+This page shows how to modify the configuration of ``ecodynelec``. The modification
+can be handled `directly with Python <https://ecodynelec.readthedocs.io/en/latest/examples/Handle_parameters.html#creating-parameters-and-execute-decodynelec>`__ or `using an intermediate
+spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/Handle_parameters.html#loading-parameters-from-an-xlsx-spreadsheet>`__ to be loaded with a ``Parameter`` object.
 
 *Note: the example section provides only data for default countries and
 for Feb. 01, 2017.*
 
-Creating parameters and execute DYNAMICAL
+Creating parameters and execute EcoDynElec
 -----------------------------------------
 
 .. code:: ipython3
@@ -133,7 +132,7 @@ The next cell visualizes the changes made in the parameter object
 
 .. code:: ipython3
 
-    impacts = execute(config=my_param, is_verbose=False) # Execute DYNAMICAL from the parameter object
+    impacts = execute(config=my_param, is_verbose=False) # Execute EcoDynElec from the parameter object
 
 .. code:: ipython3
 
