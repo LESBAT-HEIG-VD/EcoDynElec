@@ -155,7 +155,7 @@ def load_grid_losses(network_loss_path, start=None, end=None):
     """
     ### Default path
     if network_loss_path is None:
-        network_loss_path = get_default_file(name='Pertes_OFEN.csv')
+        network_loss_path = get_default_file(name='SFOE_data.csv')
     
     # Get and calculate new power demand for the FU vector
     losses = pd.read_csv(network_loss_path)

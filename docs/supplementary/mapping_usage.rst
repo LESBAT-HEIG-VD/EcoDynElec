@@ -80,10 +80,10 @@ Average sheet
 ~~~~~~~~~~~~~
 The average sheet is of utmost importance, as it contains the values that will be used for the impact of electricity originating from countries not included in the computation but neighbouring the involved countries. The sheet only requires one impact value per impact category.
 
-.. figure:: ./images/Mapping_Residual.png
-    :alt: Detailed structure of the residual sheet
+.. figure:: ./images/Mapping_Other.png
+    :alt: Detailed structure of the Other sheet
     
-    *Figure 2: Detailed structure of the residual sheet of the (template) mapping file*
+    *Figure 2: Detailed structure of the average sheet of the (template) mapping file*
 
 
 
@@ -91,10 +91,10 @@ Residual sheet
 ~~~~~~~~~~~~~~
 The residual sheet is structured in the exact same way as a country sheet, except for the pre-suggested technologies. In the *Residual* sheet, the two included technologies are the *Residual_Hydro* and the *Residual_Other*, in accordance with the methodology described in the `associated publication <https://www.researchgate.net/profile/Sebastien-Lasvaux/publication/349139291_Dynamic_Life_Cycle_Assessment_of_the_building_electricity_demand/links/60225b5445851589399073e0/Dynamic-Life-Cycle-Assessment-of-the-building-electricity-demand.pdf>`_ and specified in the `dedicated page <https://ecodynelec.readthedocs.io/en/latest/structure/local_residual.html>`_ of the documentation.
 
-.. figure:: ./images/Mapping_Other.png
-    :alt: Detailed structure of the Other sheet
+.. figure:: ./images/Mapping_Residual.png
+    :alt: Detailed structure of the residual sheet
     
-    *Figure 3: Detailed structure of the average sheet of the (template) mapping file*
+    *Figure 3: Detailed structure of the residual sheet of the (template) mapping file*
 
 
 This sheet has been designed so the user can build the residual using existing technologies and its own estimated shares.
@@ -124,7 +124,7 @@ The last paragraph already mentions most of the possible changes. Beside filling
 
 Link Mapping-FU vector
 ----------------------
-The `FU-vector <https://ecodynelec.readthedocs.io/en/latest/supplementary/functional_unit.html>`_ (FU stands for Functional Unit) is a matrix of values concatenating the rightmost set of columns in the country and residual tabs of a mapping spreadsheet. The first row of the FU-vector is always the (mandatory) values of the **ENTSOE avg sheet**. The FU vector only contains values, i.e. the content extracted from the mapping spreadhseet **after** filtering of missing information.
+The `FU-vector <https://ecodynelec.readthedocs.io/en/latest/supplementary/functional_unit.html>`_ (FU stands for Functional Unit) is a matrix of values concatenating the rightmost set of columns in the country and residual tabs of a mapping spreadsheet. The first row of the FU-vector is always the (mandatory) values of the **ENTSOE avg sheet**. The FU vector only contains values, i.e. the content extracted from the mapping spreadsheet **after** filtering of missing information.
 
 The user can rely on the default values provided with the software. The author can only guarantee the adequacy of these default values and can not be held responsible for any erroneous result obtained caused by incorrect or unjustified replacement or modification of the impact values in a mapping spreadsheet or FU vector. 
 

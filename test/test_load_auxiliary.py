@@ -23,7 +23,7 @@ class TestAuxiliary(unittest.TestCase):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Neighbourhood_EU.csv')))
     
     def test_get_default_fileLosses(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Pertes_OFEN.csv')))
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('SFOE_data.csv')))
     
     def test_get_default_fileResidual(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Share_residual.csv')))

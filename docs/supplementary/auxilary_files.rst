@@ -12,10 +12,10 @@ List for all European countries of their direct neighbors, i.e. directly linked 
 
 
 
-Pertes OFEN
+SFOE Data
 *************
 Losses are considered only for Swizerland.
-Table of monthly statistics from the Swiss Federal Office of Energy (SFOE) covering 2012 to 2021. These values are obtained in Table A-1a (p47-p49) from each annual `SFOE Electricity Statistics <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/energy-statistics/electricity-statistics.html>`_ report. Only the column "*Pertes*" is used in the current version of DYNAMICAL, though additional information is kept for possible use extension.
+Table of monthly statistics from the Swiss Federal Office of Energy (SFOE) covering 2012 to 2021. These values are obtained in Table A-1a (p47-p49) from each annual `SFOE Electricity Statistics <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/energy-statistics/electricity-statistics.html>`_ report. Only the column "*Pertes*" is used in the current version of EcoDynElec, though additional information is kept for possible use extension.
 
 
 
@@ -26,9 +26,9 @@ Table of monthly statistics from the Swiss Federal Office of Energy (SFOE) cover
 
 
 
-Repartition Residual
+Residual model
 ********************
-The need for considering a production residual in Switzerland comes from a difference in global electricity generation reported in SFOE annual reports and on the ENTSO-E databases. Information from the SFOE comes from Table 23 (p29) of each annual `SFOE Electricity Statistics <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/energy-statistics/electricity-statistics.html>`_ report. Current information provided in DYNAMICAL covers 2016 to 2021 with one weekday, one Saturday and one Sunday per month.
+The need for considering a production residual in Switzerland comes from a difference in global electricity generation reported in SFOE annual reports and on the ENTSO-E databases. Information from the SFOE comes from Table 23 (p29) of each annual `SFOE Electricity Statistics <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/energy-statistics/electricity-statistics.html>`_ report. Current information provided in EcoDynElec covers 2016 to 2021 with one weekday, one Saturday and one Sunday per month.
 
 As generation units differ between two data sources, the units from the ENTSO-E database are aggregated prior the comparison. The available file is the result of the comparison in percentage, highlighting the relative composition of excess of energy production reported in the SFOE documents and not in ENTSO-E databases
 
@@ -46,7 +46,7 @@ Swiss Grid information contains global 15min frequency information about the ele
 
 The exchanges between Switzerland and their neighbor countries (Cross Border Exchange, columns K-R) are used as exchanges at the Swiss borders instead of ENTSO-E data if requested by the user.
 
-The total energy production is compared with the sum of Swiss production in ENTSO-E databases to evaluate amount of residual energy. This amount of residual is then coupled with relative information from the Repartition Residual file.
+The total energy production is compared with the sum of Swiss production in ENTSO-E databases to evaluate amount of residual energy. This amount of residual is then coupled with relative information from the ``Residual_model`` file.
 
 
 
@@ -64,14 +64,14 @@ The so-called Mapping contains all modeling hypotheses to compute the impacts of
 
 #. The first few columns on the left represent the link between generic unit types available in ENTSO-E databases and detailed unit types as available in Ecoinvent.
 #. The second block, labeled Environmental impacts of Ecoinvent sources, contains the impacts per kWh of production from each unit type as defined in the Ecoinvent database. The values are from Ecoinvent. Ecoinvent also suggests an overall technology share (how much of each unit type is installed in the country) used to link unit types from both Ecoinvent and ENTSO-E databases.
-#. The third block, labeled Environmental impacts of ENTSO-E sources, contains the impacts per kWh of production grouped by unit type as defined in the ENTSO-E database. This block contains the values to be used in DYNAMICAL.
+#. The third block, labeled Environmental impacts of ENTSO-E sources, contains the impacts per kWh of production grouped by unit type as defined in the ENTSO-E database. This block contains the values to be used in EcoDynElec.
 #. A fourth block may be located bellow the first block. They allow an estimation of Other Fossil and Other Renewable, two production unit types provided in ENTSO-E databases and absent from Ecoinvent. The impact of each of these units is replaced by the impacts of one other production unit of Ecoinvent. Three choices are available for each unit type: Max. (choses replacement unit that maximizes the impacts of this unit), Min. (idem with minimum) and Moy. (average scenario). Per default, the Max. is selected.
 
 This format is similar for all countries. Though it differs slightly between AT, CH, DE, FR, IT, CZ and the rest of countries.
 
 For the Residual, the impacts are presented and computed in first to third blocks in the same manner and the choice of unit type is also determined via a similar fourth block. A fifth block is added bellow and contains all impact values of unit types that are most likely to supply the residual.
 
-Some DYNAMICAL functions were specifically tailored to extract relevant information from excel spreadsheets with this exact formatting. Impact values per unit type and country are then merged together in an exploitable vector of unitary impacts called Functional Unit (FU) vector.
+Some functions of EcoDynElec were specifically tailored to extract relevant information from excel spreadsheets with this exact formatting. Impact values per unit type and country are then merged together in an exploitable vector of unitary impacts called Functional Unit (FU) vector.
 
 
 
