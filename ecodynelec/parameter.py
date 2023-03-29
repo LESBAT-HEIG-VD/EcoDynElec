@@ -11,6 +11,7 @@ The module contains the following classes:
 import numpy as np
 import pandas as pd
 import os
+import warnings
 
 from ecodynelec.checking import check_frequency
 
@@ -277,7 +278,13 @@ class Filepath():
         elif np.logical_and(not self._is_frozen, name=='_is_frozen'):
             super().__setattr__(name, value)
         else:
-            raise FileNotFoundError(f'Unidentified file or directory: {os.path.abspath(value)}')
+            if name in ('generation','exchanges','savedir'): # Create them and send a warning
+                msg = f"Unidentified {name} directory {os.path.abspath(value)}. It was created as new empty directory."
+                warnings.warn(msg, FileNotFoundWarning)
+                os.makedirs( os.path.abspath(value) ) # Create the folder
+                super().__setattr__(name, os.path.abspath(r"{}".format(value))+"/") # Create
+            else:
+                raise FileNotFoundError(f'Unidentified file or directory: {os.path.abspath(value)}')
     
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
@@ -428,3 +435,13 @@ class Server():
         self.removeUnused = param_excel.loc['remove unused'].iloc[0]
         
         return self
+
+
+
+# +
+## WARNING CLASS
+# -
+
+class FileNotFoundWarning(UserWarning):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
