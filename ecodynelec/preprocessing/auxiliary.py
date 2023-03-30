@@ -52,24 +52,20 @@ def load_swissGrid(path_sg, start=None, end=None, freq='H'):
     if end is not None: end = pd.to_datetime(end)
     
     ### Import SwissGrid data
-    parser = lambda x: pd.to_datetime(x, format='%d.%m.%Y %H:%M')
-    sg = pd.read_csv(path_sg, index_col=0, parse_dates=[0], date_parser=parser,dtype="float32")
+    sg = pd.read_csv(path_sg, index_col=0, parse_dates=True, dtype="float32")
     
     sg = sg.drop(columns=["Consommation_CH","Consommation_Brut_CH"]) # Remove unused columns
-    # Clear ambiguous dates and set dates to utc
-    sg = clear_ambiguous_dates(sg).tz_localize(tz='CET',ambiguous='infer').tz_convert(tz='UTC').tz_localize(None)
-    sg.index -= pd.Timedelta("15min") # starts at 00:00 CET (not 00:15)
     
     ### Check info availability (/!\ if sg smaller, big problem not filled yet !!!)
     if 'Production_CH' not in sg.columns:
         raise KeyError("Missing information 'Production_CH' in SwissGrid Data.")
     if ((start is None) | (end is None)):
-        warning = "  /!\ Some date limits are None. SwissGrid is on period {} - {}. It may not match the Generation and Exchange."
-        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+        msg = "  /!\ Some date limits are None. SwissGrid is on period {} - {}. It may not match the Generation and Exchange."
+        warnings.warn(msg.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
     elif ((start<sg.index[0])|(end>sg.index[-1])): # print information only
-        warning = "  /!\ Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
-        warnings.warn(warning.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
-        
+        msg = "  /!\ Resudual computed only during {} - {}. SwissGrid Data not available on the rest of the period."
+        warnings.warn(msg.format(sg.loc[start:end].index[0],sg.loc[start:end].index[-1]))
+    
     ### Rename the columns
     sg.columns = ["Production_CH","Mix_CH_AT","Mix_AT_CH","Mix_CH_DE","Mix_DE_CH",
                   "Mix_CH_FR","Mix_FR_CH","Mix_CH_IT","Mix_IT_CH"]
@@ -214,19 +210,19 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     """
     ### Default path
     if path_gap is None:
-        paht_gap = get_default_file(name="Share_residual.csv") # Change
+        path_gap = get_default_file(name="Share_residual.csv") # Change
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load default from software files
     elif not os.path.isfile(path_gap):
-        paht_gap = get_default_file(name="Share_residual.csv") # Change
+        path_gap = get_default_file(name="Share_residual.csv") # Change
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load default from software files
-    elif os.path.splitext(path_gap)=='.csv':
+    elif os.path.splitext(path_gap)[1]=='.csv':
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load csv file from user
     
     else:
         ### Extraction tailored for the .xlsx in support files
         interest = {'Centrales au fil de l’eau': "Hydro_Res",
                     'Centrales therm. classiques et renouvelables':"Other_Res"}
-        df = pd.read_excel(path, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
+        df = pd.read_excel(path_gap, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
         df = (df/df.sum(axis=0)).T
         df.index = pd.to_datetime(df.index,yearfirst=True) # time data
     
@@ -314,7 +310,7 @@ def load_rawEntso(mix_data, freq='H'):
                  "w":"week","MS":"month","M":"month","YS":"year","Y":"year"}
         
         data = pd.read_csv(mix_data+f"ProdExchange_{tPass[freq]}.csv",
-                               index_col=0, parse_dates=[0])
+                               index_col=0, parse_dates=True)
             
     elif type(mix_data)==pd.core.frame.DataFrame: # import from the DataFrame passed as argument
         data = mix_data
