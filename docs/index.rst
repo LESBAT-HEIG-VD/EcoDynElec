@@ -81,23 +81,22 @@ Contributions
 =============
 EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
 
-.. image:: images/logo.png
 
 .. toctree::
     :maxdepth: 1
-    :caption: Supplementary
+    :caption: Input Data
 
-    supplementary/download
-    supplementary/mapping_usage
-    supplementary/parameters
-    supplementary/auxilary_files
-    supplementary/functional_unit
+    data_input/download
+    data_input/mapping_usage
+    data_input/parameters
+    data_input/auxilary_files
+    data_input/functional_unit
 
 .. toctree::
     :maxdepth: 3
     :caption: Structure
 
-    structure/architecture
+    structure/overview
     structure/data_loading
     structure/load_impacts
     structure/tracking
@@ -106,7 +105,7 @@ EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâ
 
 .. toctree::
     :maxdepth: 1
-    :caption: Examples
+    :caption: How to use
     
     examples/Handle_parameters
     examples/Downloading
