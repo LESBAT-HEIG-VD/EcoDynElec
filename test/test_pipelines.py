@@ -7,9 +7,11 @@ from ecodynelec.parameter import Parameter
 
 
 def generate_config():
+    parent_dir = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+
     config = Parameter()
-    config.path.generation = os.path.abspath("../examples/test_data/generations/")
-    config.path.exchanges = os.path.abspath("../examples/test_data/exchanges/")
+    config.path.generation = os.path.join(parent_dir, "examples/test_data/generations/")
+    config.path.exchanges = os.path.join(parent_dir, "examples/test_data/exchanges/")
     return config
 
 

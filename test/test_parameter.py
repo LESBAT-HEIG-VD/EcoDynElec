@@ -95,12 +95,14 @@ class TestParameterMain(unittest.TestCase):
         verify_types(self, config)
         
     def test_typesExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass(excel=path_excel)
         verify_types(self, config)
         
     def test_typesFromExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass().from_excel(excel=path_excel)
         verify_types(self, config)
         
@@ -170,15 +172,21 @@ class TestParameterPaths(unittest.TestCase):
     def verify_modification(self, obj, correct=True):
         """Check only the elements that may raise an Error"""
         if correct: # Verify no issue when changing
-            good_path = os.path.abspath("../examples/test_data/")
+            path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+            good_path = os.path.join(path_parent, "examples/test_data/")
             for attr in self.strNone_attributes:
                 with self.assertRaises(NoError, msg=f"Correct {attr}"):
                     rightSet(obj, attr, good_path, failure=FileNotFoundError)
         else:
             bad_path = "path_does_not_exist"
             for attr in self.strNone_attributes:
-                with self.assertRaises(FileNotFoundError, msg=f"Wrong {attr}"):
-                    setattr( obj, attr, bad_path )
+                if attr in ('generation','exchanges','savedir'): # Send a warning
+                    with self.assertWarns(parameter.FileNotFoundWarning, msg=f"Wrong {attr}"):
+                        setattr( obj, attr, bad_path )
+                        os.rmdir(bad_path) ### Also needs to remove bad empty folder now...
+                else: # Raise an error
+                    with self.assertRaises(FileNotFoundError, msg=f"Wrong {attr}"):
+                        setattr( obj, attr, bad_path )
             
     
     def test_typesDefault(self):
@@ -186,12 +194,14 @@ class TestParameterPaths(unittest.TestCase):
         verify_types(self, config)
         
     def test_typesExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass(excel=path_excel)
         verify_types(self, config)
         
     def test_typesFromExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass().from_excel(excel=path_excel)
         verify_types(self, config)
         
@@ -249,12 +259,14 @@ class TestParameterServer(unittest.TestCase):
         verify_types(self, config)
         
     def test_typesExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass(excel=path_excel)
         verify_types(self, config)
         
     def test_typesFromExcel(self):
-        path_excel = os.path.abspath("../examples/Spreadsheet_download.xlsx")
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        path_excel = os.path.join(path_parent, "examples/Spreadsheet_download.xlsx")
         config = self.subclass().from_excel(excel=path_excel)
         verify_types(self, config)
         

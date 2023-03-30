@@ -17,7 +17,7 @@ class TestAuxiliary(unittest.TestCase):
     ########################
     ### TESTS ON get_default_file
     def test_get_default_fileFUVector(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Functional_Unit_vector.csv')))
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Functional_Unit_Vector.csv')))
     
     def test_get_default_fileNeighbourhood(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Neighbourhood_EU.csv')))
@@ -32,7 +32,7 @@ class TestAuxiliary(unittest.TestCase):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('SwissGrid_total.csv')))
     
     def test_get_default_fileError(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(FileNotFoundError):
             auxiliary.get_default_file("NOFile")
         
         

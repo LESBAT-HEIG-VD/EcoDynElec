@@ -73,7 +73,8 @@ class TestLoading(unittest.TestCase):
         
         
     def test_importExchange(self):
-        pathdir = os.path.abspath("../examples/test_data/prepared/") # Dir with example files
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        pathdir = os.path.join(path_parent, "examples/test_data/prepared/") # Dir with example files
         expected = pd.read_csv(os.path.join(pathdir,"ExchTest_MW.csv"), index_col=0, parse_dates=True)
         
         ### Test the error for missing file
@@ -93,7 +94,8 @@ class TestLoading(unittest.TestCase):
         
         
     def test_importGeneration(self):
-        pathdir = os.path.abspath("../examples/test_data/prepared/") # Dir with example files
+        path_parent = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
+        pathdir = os.path.join(path_parent, "examples/test_data/prepared/") # Dir with example files
         expected = pd.read_csv(os.path.join(pathdir,"ProdTest_MW.csv"), index_col=0, parse_dates=True)
         expected.columns = [f"Plant{k+1}_Prod" for k in range(3)] + ["Other_fossil_Prod"]
         
