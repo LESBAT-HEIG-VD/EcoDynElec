@@ -21,9 +21,11 @@ class TestLoadImpacts(unittest.TestCase):
     
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
+        parent_dir = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) # Parent of file dir
+
         self.template = get_default_file('mapping_template.xlsx')
-        self.mapping = os.path.abspath(r"../examples/test_data/other/mapping_test.xlsx")
-        self.noRes_mapping = os.path.abspath(r"../examples/test_data/other/mapping_testNoResidual.xlsx")
+        self.mapping = os.path.join(parent_dir, "examples/test_data/other/mapping_test.xlsx")
+        self.noRes_mapping = os.path.join(parent_dir, "examples/test_data/other/mapping_testNoResidual.xlsx")
         
         
     ###########################
@@ -48,9 +50,9 @@ class TestLoadImpacts(unittest.TestCase):
         ctry = ['AT','BA','BE','BG','CH','CY','CZ','DE','DK','EE','ES','FI','FR',
                 'GE','GR','HR','HU','IE','IT','LT','LU','LV','MD','ME','MK','NL',
                 'NO','PL','PT','RO','RS','SE','SI','SK','UA','UK','XK']
-        for c in ctry:
-            self.assertIsInstance(load_impacts.country_from_excel(self.template, place=c),
-                                  frame.DataFrame, msg=c)
+        self.assertTrue( all(isinstance(load_impacts.country_from_excel(self.template, place=c),
+                                        frame.DataFrame, msg=c)
+                             for c in ctry)  )
     
     ###########################
     #### RESIDUAL FROM EXCEL
