@@ -1,5 +1,7 @@
 numpy
 pandas
-openpyxl
+openpyxl # To read .xlsx files
+xlrd # To read .xls files
+odfpy # To read .ods files
 paramiko
 matplotlib
