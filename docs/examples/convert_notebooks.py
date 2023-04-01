@@ -4,8 +4,9 @@ Converts example notebooks into rst files
 
 import os
 
-path_notebooks = os.path.abspath("../../examples/")
-path_doc = os.path.abspath("./")
+parent = lambda path,n: os.path.dirname(path) if n==0 else parent(os.path.dirname(path),n-1)
+path_notebooks = os.path.join(parent(os.path.abspath(__file__),2), 'examples/')
+path_doc = os.path.dirname( os.path.abspath(__file__) )
 
 
 # Convert the notebooks

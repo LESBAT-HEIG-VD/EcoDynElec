@@ -1,10 +1,17 @@
 Compute electric mix for all countries
 ======================================
 
-DYNAMICAL allow to only compute the electric mix for all considered
-countries at the time. These matrices are intermediate results in the
-usual DYNAMICAL process. The functionality was added due to its
-potential usefulness.
+The main pipeline of ``ecodynelec`` presented in tutorials
+`1 <https://ecodynelec.readthedocs.io/en/latest/examples/with_python.html#execution>`__
+and
+`2 <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html#execution>`__
+only compute the electricity mix and impacts for one target country.
+
+However ``ecodynelec`` can compute the electric mix for all considered
+countries, **all at once**. In facts, this information is an
+intermediate result in the main pipeline. The feature of extracting this
+intermediate result was added due to its potential usefulness. This
+tutorial shows how.
 
 In technical words, a function ``get_inverted_matrix`` allow to retrieve
 the invert of technology matrix :math:`(I-A)^{-1}`.
@@ -12,24 +19,30 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
 .. code:: ipython3
 
     from ecodynelec.pipelines import get_inverted_matrix # Import the function
-    from parameter import Parameter # Import the parameter handler object
+    from ecodynelec.parameter import Parameter # Import the parameter handler object
 
 .. code:: ipython3
 
-    # Configure parameter to reduce the number of time steps
-    my_param = Parameter().from_excel("Spreadsheet_test.xlsx")
-    my_param.start="2017-02-01 12:00"
-    my_param.end="2017-02-01 14:00"
-    my_param.freq = "H"
+    # Configuration to reduce the number of time steps
+    my_config = Parameter().from_excel("./Spreadsheet_example.xlsx")
+    my_config.start="2017-02-01 12:00"
+    my_config.end="2017-02-01 14:00" # Only 2 hours
+    my_config.freq = "H" # Only in hourly time step
+    my_config.path.generation = "./test_data/generations/" # Generation files
+    my_config.path.exchanges = "./test_data/exchanges/" # Exchanges files
 
 .. code:: ipython3
 
-    mix = get_inverted_matrix(config=my_param)
+    # Execute the function
+    mix = get_inverted_matrix(config=my_config)
+
+The result is **one matrix per time step**, all stored in a ``list``.
+Here is an overview of the first matrix, i.e. corresponding to the first
+time step.
 
 .. code:: ipython3
 
-    mix[0]
-
+    display(mix[0])
 
 
 
@@ -79,11 +92,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
       <tbody>
         <tr>
           <th>Mix_AT</th>
-          <td>1.000034</td>
-          <td>1.914997e-02</td>
-          <td>1.385938e-04</td>
+          <td>1.000053</td>
+          <td>2.964993e-02</td>
+          <td>2.145851e-04</td>
           <td>0.0</td>
-          <td>0.000637</td>
+          <td>0.000990</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -103,11 +116,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         </tr>
         <tr>
           <th>Mix_CH</th>
-          <td>0.001787</td>
-          <td>1.003225e+00</td>
-          <td>7.260626e-03</td>
+          <td>0.001788</td>
+          <td>1.003252e+00</td>
+          <td>7.260827e-03</td>
           <td>0.0</td>
-          <td>0.033385</td>
+          <td>0.033487</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -127,11 +140,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         </tr>
         <tr>
           <th>Mix_DE</th>
-          <td>0.224013</td>
-          <td>4.451191e-01</td>
-          <td>1.003222e+00</td>
+          <td>0.224020</td>
+          <td>4.487106e-01</td>
+          <td>1.003247e+00</td>
           <td>0.0</td>
-          <td>0.014813</td>
+          <td>0.014977</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -151,11 +164,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         </tr>
         <tr>
           <th>Mix_FR</th>
-          <td>0.007310</td>
-          <td>2.377682e-01</td>
-          <td>3.155733e-02</td>
+          <td>0.007299</td>
+          <td>2.315305e-01</td>
+          <td>3.151219e-02</td>
           <td>1.0</td>
-          <td>0.053205</td>
+          <td>0.053158</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -176,10 +189,10 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         <tr>
           <th>Mix_IT</th>
           <td>0.004988</td>
-          <td>9.551584e-05</td>
-          <td>6.912757e-07</td>
+          <td>1.478873e-04</td>
+          <td>1.070303e-06</td>
           <td>0.0</td>
-          <td>1.000003</td>
+          <td>1.000005</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -247,11 +260,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         </tr>
         <tr>
           <th>Solar_IT</th>
-          <td>0.000390</td>
-          <td>7.458758e-06</td>
-          <td>5.398119e-08</td>
+          <td>0.000418</td>
+          <td>1.237887e-05</td>
+          <td>8.958943e-08</td>
           <td>0.0</td>
-          <td>0.078089</td>
+          <td>0.083705</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -272,10 +285,10 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         <tr>
           <th>Waste_IT</th>
           <td>0.000005</td>
-          <td>9.666313e-08</td>
-          <td>6.995790e-10</td>
+          <td>1.539660e-07</td>
+          <td>1.114296e-09</td>
           <td>0.0</td>
-          <td>0.001012</td>
+          <td>0.001041</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -319,11 +332,11 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
         </tr>
         <tr>
           <th>Wind_Onshore_IT</th>
-          <td>0.000422</td>
-          <td>8.089134e-06</td>
-          <td>5.854340e-08</td>
+          <td>0.000417</td>
+          <td>1.236860e-05</td>
+          <td>8.951514e-08</td>
           <td>0.0</td>
-          <td>0.084689</td>
+          <td>0.083636</td>
           <td>0.0</td>
           <td>0.0</td>
           <td>0.0</td>
@@ -345,7 +358,6 @@ the invert of technology matrix :math:`(I-A)^{-1}`.
     </table>
     <p>106 rows × 106 columns</p>
     </div>
-
 
 
 Build function to condense and visualize data
@@ -392,7 +404,8 @@ Visualize the origin per production type (columns) in each country (index)
 
 .. code:: ipython3
 
-    group_by_family(mix[0].loc["Mix_Other":, :"Mix_IT"]) # 1st time step
+    # Visualize table grouped by type of plant for 1st time step
+    group_by_family(mix[0].loc["Mix_Other":, :"Mix_IT"])
 
 
 
@@ -427,43 +440,43 @@ Visualize the origin per production type (columns) in each country (index)
       <tbody>
         <tr>
           <th>Mix_AT</th>
-          <td>0.485924</td>
-          <td>0.030762</td>
-          <td>0.261834</td>
-          <td>0.097567</td>
-          <td>0.123913</td>
+          <td>0.485921</td>
+          <td>0.030766</td>
+          <td>0.261810</td>
+          <td>0.097588</td>
+          <td>0.123915</td>
         </tr>
         <tr>
           <th>Mix_CH</th>
-          <td>0.298574</td>
-          <td>0.414085</td>
-          <td>0.150002</td>
-          <td>0.134030</td>
-          <td>0.003309</td>
+          <td>0.303191</td>
+          <td>0.415665</td>
+          <td>0.141009</td>
+          <td>0.135522</td>
+          <td>0.004613</td>
         </tr>
         <tr>
           <th>Mix_DE</th>
-          <td>0.593146</td>
-          <td>0.136779</td>
-          <td>0.030051</td>
-          <td>0.237876</td>
-          <td>0.002149</td>
+          <td>0.593127</td>
+          <td>0.136792</td>
+          <td>0.030061</td>
+          <td>0.237861</td>
+          <td>0.002158</td>
         </tr>
         <tr>
           <th>Mix_FR</th>
-          <td>0.128053</td>
-          <td>0.713730</td>
-          <td>0.093241</td>
-          <td>0.064976</td>
+          <td>0.126312</td>
+          <td>0.713809</td>
+          <td>0.095752</td>
+          <td>0.064128</td>
           <td>0.000000</td>
         </tr>
         <tr>
           <th>Mix_IT</th>
-          <td>0.665790</td>
-          <td>0.046107</td>
-          <td>0.095778</td>
-          <td>0.192215</td>
-          <td>0.000110</td>
+          <td>0.666016</td>
+          <td>0.046303</td>
+          <td>0.090563</td>
+          <td>0.196964</td>
+          <td>0.000154</td>
         </tr>
       </tbody>
     </table>
@@ -473,7 +486,8 @@ Visualize the origin per production type (columns) in each country (index)
 
 .. code:: ipython3
 
-    group_by_family(mix[1].loc["Mix_Other":, :"Mix_IT"]) # 2nd time step
+    # Visualize table grouped by type of plant for 2st time step
+    group_by_family(mix[1].loc["Mix_Other":, :"Mix_IT"])
 
 
 
@@ -508,43 +522,43 @@ Visualize the origin per production type (columns) in each country (index)
       <tbody>
         <tr>
           <th>Mix_AT</th>
-          <td>0.504585</td>
-          <td>0.033245</td>
-          <td>0.234267</td>
-          <td>0.097192</td>
-          <td>0.130710</td>
+          <td>0.504558</td>
+          <td>0.033226</td>
+          <td>0.234255</td>
+          <td>0.097251</td>
+          <td>0.130711</td>
         </tr>
         <tr>
           <th>Mix_CH</th>
-          <td>0.293068</td>
-          <td>0.411462</td>
-          <td>0.165844</td>
-          <td>0.128263</td>
-          <td>0.001363</td>
+          <td>0.291884</td>
+          <td>0.413615</td>
+          <td>0.163239</td>
+          <td>0.129777</td>
+          <td>0.001485</td>
         </tr>
         <tr>
           <th>Mix_DE</th>
-          <td>0.594173</td>
-          <td>0.141458</td>
-          <td>0.028400</td>
-          <td>0.233368</td>
-          <td>0.002600</td>
+          <td>0.594143</td>
+          <td>0.141349</td>
+          <td>0.028476</td>
+          <td>0.233432</td>
+          <td>0.002601</td>
         </tr>
         <tr>
           <th>Mix_FR</th>
-          <td>0.131565</td>
-          <td>0.717227</td>
-          <td>0.086283</td>
-          <td>0.064926</td>
+          <td>0.130971</td>
+          <td>0.713597</td>
+          <td>0.089035</td>
+          <td>0.066397</td>
           <td>0.000000</td>
         </tr>
         <tr>
           <th>Mix_IT</th>
-          <td>0.664596</td>
-          <td>0.051813</td>
-          <td>0.110943</td>
-          <td>0.172590</td>
-          <td>0.000058</td>
+          <td>0.659795</td>
+          <td>0.051923</td>
+          <td>0.104881</td>
+          <td>0.183339</td>
+          <td>0.000063</td>
         </tr>
       </tbody>
     </table>
@@ -557,6 +571,7 @@ Visualize the origin per country (columns) in each country (index)
 
 .. code:: ipython3
 
+    # Visualize table grouped by country for 1st time step
     group_per_country(mix[0].loc["Mix_Other":, :"Mix_IT"]) # 1st time step
 
 
@@ -593,30 +608,30 @@ Visualize the origin per country (columns) in each country (index)
       <tbody>
         <tr>
           <th>Mix_AT</th>
-          <td>0.648382</td>
-          <td>0.000568</td>
-          <td>0.215232</td>
-          <td>0.007310</td>
-          <td>4.596044e-03</td>
-          <td>0.123913</td>
+          <td>0.648394</td>
+          <td>0.000558</td>
+          <td>0.215238</td>
+          <td>0.007299</td>
+          <td>4.594943e-03</td>
+          <td>0.123915</td>
         </tr>
         <tr>
           <th>Mix_CH</th>
-          <td>0.012416</td>
-          <td>0.318747</td>
-          <td>0.427671</td>
-          <td>0.237768</td>
-          <td>8.801108e-05</td>
-          <td>0.003309</td>
+          <td>0.019224</td>
+          <td>0.313375</td>
+          <td>0.431122</td>
+          <td>0.231531</td>
+          <td>1.362325e-04</td>
+          <td>0.004613</td>
         </tr>
         <tr>
           <th>Mix_DE</th>
-          <td>0.000090</td>
-          <td>0.002307</td>
-          <td>0.963897</td>
-          <td>0.031557</td>
-          <td>6.369617e-07</td>
-          <td>0.002149</td>
+          <td>0.000139</td>
+          <td>0.002268</td>
+          <td>0.963922</td>
+          <td>0.031512</td>
+          <td>9.859542e-07</td>
+          <td>0.002158</td>
         </tr>
         <tr>
           <th>Mix_FR</th>
@@ -629,12 +644,12 @@ Visualize the origin per country (columns) in each country (index)
         </tr>
         <tr>
           <th>Mix_IT</th>
-          <td>0.000413</td>
-          <td>0.010607</td>
-          <td>0.014232</td>
-          <td>0.053205</td>
-          <td>9.214323e-01</td>
-          <td>0.000110</td>
+          <td>0.000642</td>
+          <td>0.010460</td>
+          <td>0.014390</td>
+          <td>0.053158</td>
+          <td>9.211959e-01</td>
+          <td>0.000154</td>
         </tr>
       </tbody>
     </table>
@@ -644,6 +659,7 @@ Visualize the origin per country (columns) in each country (index)
 
 .. code:: ipython3
 
+    # Visualize table grouped by country for 2nd time step
     group_per_country(mix[1].loc["Mix_Other":, :"Mix_IT"]) # 2nd time step
 
 
@@ -680,30 +696,30 @@ Visualize the origin per country (columns) in each country (index)
       <tbody>
         <tr>
           <th>Mix_AT</th>
-          <td>0.636860</td>
-          <td>0.001400</td>
-          <td>0.218438</td>
-          <td>0.009143</td>
-          <td>3.448941e-03</td>
-          <td>0.130710</td>
+          <td>0.636863</td>
+          <td>0.001394</td>
+          <td>0.218425</td>
+          <td>0.009160</td>
+          <td>3.447687e-03</td>
+          <td>0.130711</td>
         </tr>
         <tr>
           <th>Mix_CH</th>
-          <td>0.001058</td>
-          <td>0.328765</td>
-          <td>0.422783</td>
-          <td>0.246025</td>
-          <td>5.729576e-06</td>
-          <td>0.001363</td>
+          <td>0.001698</td>
+          <td>0.327280</td>
+          <td>0.419678</td>
+          <td>0.249849</td>
+          <td>9.194443e-06</td>
+          <td>0.001485</td>
         </tr>
         <tr>
           <th>Mix_DE</th>
-          <td>0.000008</td>
-          <td>0.002599</td>
-          <td>0.957974</td>
-          <td>0.036818</td>
-          <td>4.530087e-08</td>
-          <td>0.002600</td>
+          <td>0.000013</td>
+          <td>0.002588</td>
+          <td>0.957950</td>
+          <td>0.036848</td>
+          <td>7.269581e-08</td>
+          <td>0.002601</td>
         </tr>
         <tr>
           <th>Mix_FR</th>
@@ -716,12 +732,12 @@ Visualize the origin per country (columns) in each country (index)
         </tr>
         <tr>
           <th>Mix_IT</th>
-          <td>0.000045</td>
-          <td>0.014004</td>
-          <td>0.018009</td>
-          <td>0.058283</td>
-          <td>9.096001e-01</td>
-          <td>0.000058</td>
+          <td>0.000073</td>
+          <td>0.013993</td>
+          <td>0.017943</td>
+          <td>0.058663</td>
+          <td>9.092658e-01</td>
+          <td>0.000063</td>
         </tr>
       </tbody>
     </table>
