@@ -1,4 +1,4 @@
-Generation Residual
+Production Residual
 =====================
 
 For Switzerland, additional data are gathered since the ENTSO-E data do not inform on 100% of the production means (i.e. less tracking of medium- or low-voltage production such as run-off river hydropower). Information from Swissgrid, the local Transmission System Operation (TSO), is used to adjust the exchange flows at the Swiss borders, and to add the missing domestic production not covered by ENTSO-E data.

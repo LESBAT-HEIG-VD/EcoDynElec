@@ -6,7 +6,7 @@ The electricity tracking algorithm is at the heart of EcoDynElec. This methodolo
 .. figure:: images/tracking.png
     :alt: Module tracking
     
-    *Figure 1: Structure of the ``tracking`` module of EcoDynElec.*
+    *Figure 1: Structure of the tracking module of EcoDynElec.*
     
     
 The whole principle of the electricity tracking is based on the fundamental equation of life-cycle-assessment (`Heijungs and Suh, 2002 <https://books.google.ca/books?id=pLwqBgAAQBAJ&dq=computational+structure+of+life+cycle+assessment&lr=>`_). The technology matrix is noted A, though the present description uses (I-A) as the matrix to invert, while the reference does invert the technology matrix A. This is only a question of notations but the maths are similar. The proper algorithm is executed as shown in Figure 2:
