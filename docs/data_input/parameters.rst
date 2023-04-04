@@ -1,7 +1,7 @@
 Configuration
-=======================
+=============
 
-The EcoDynElec software allows high-level customization via some configuration procedures. This document gives an exhaustive description of all the options, classified under the **three standard sections of the configuration***. Tutorials in the *How to use* section show how to actually set the configuration:
+The EcoDynElec software allows high-level customization via some configuration procedures. This document gives an exhaustive description of all the options, classified under the **three standard sections of the configuration**. Tutorials in the *How to use* section show how to actually set the configuration:
     * `solely using python <https://ecodynelec.readthedocs.io/en/latest/examples/with_python.html#configuration>`__
     * `using a spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html#configuration>`__
     * for details about the `downloading procedure <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#download-via-ecodynelec>`__
@@ -40,7 +40,7 @@ File path settings are in the "Filepath" tab of the spreadsheet, or attributes o
 * **exchange directory** (spreadsheet) / ``Parameter.path.exchanges`` (python): Directory containing the exchanges data. This is also the directory where downloaded files are saved. Path can be relative to the location where the user's script is executed, or the absolute path.
 * **saving directory** (spreadsheet) / ``Parameter.path.savedir`` (python): Directory where to save computation results. Results are only returned in Python if the field is empty or None. Path can be relative to the location where the user's script is executed, or the absolute path. Default is None.
 * **UI vector** (spreadsheet) / ``Parameter.path.ui_vector`` (python): The location of impact per unit type in a single table format. Default file from the support files is used if None is given.
-* **mapping file** (spreadsheet) / ``Parameter.path.mapping`` (python): The location of a mapping file. A blank example is available for download on the `git repository <https://gitlab.com/fledee/ecodynelec/-/raw/main/support_files/mapping_template.xlsx?inline=false>`_. Default UI vector from the support files is used if None is given.
+* **mapping file** (spreadsheet) / ``Parameter.path.mapping`` (python): The location of a mapping file. A blank example is available for download on the `git repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/support_files/mapping_template.xlsx>`_. Default UI vector from the support files is used if None is given.
 * **neighboring file** (spreadsheet) / ``Parameter.path.neighbours`` (python): The location of a file reporting the connectivity between European countries. Default file from the support files is used if None is given.
 * **gap file** (spreadsheet) / ``Parameter.path.gap`` (python): The location of a file containing estimates of the composition of the Swiss residual. Default file from the support files is used if None is given.
 * **file swissGrid** (spreadsheet) / ``Parameter.path.swissGrid`` (python): The location of a file containing information from SwissGrid. Default file from the support files is used if None is given.
@@ -51,7 +51,7 @@ File path settings are in the "Filepath" tab of the spreadsheet, or attributes o
 
 Server Parameters
 -------------------
-Server settings are in the "Server" tab of the spreadsheet, or attributes of the object ``Parameter.server``. They allow to configure the connection to the ENTSO-E server to retrieve data, as detailed in the dedicated `supplementary information <https://ecodynelec.readthedocs.io/en/latest/supplementary/download.html>`_ and `example <https://ecodynelec.readthedocs.io/en/latest/examples/Downloading.html>`_ pages.
+Server settings are in the "Server" tab of the spreadsheet, or attributes of the object ``Parameter.server``. They allow to configure the connection to the ENTSO-E server to retrieve data, as detailed in the dedicated `download tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`_.
 
 * **host** (spreadsheet) / ``Parameter.server.host`` (python): Name of the sftp host. Default is ``sftp-transparencyentsoe.eu``.
 * **port** (spreadsheet) / ``Parameter.server.port`` (python): ID number of the port to use. Default is 22.

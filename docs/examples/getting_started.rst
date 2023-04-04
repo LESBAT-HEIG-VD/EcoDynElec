@@ -2,11 +2,12 @@ Getting started
 ===============
 
 EcoDynElec must first be downloaded from its `Git
-repository <https://gitlab.com/fledee/ecodynelec>`__, by using a prompt
-(example below) or any other method:
+repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec.git>`__, by using a prompt
+(example below) or any other method::
 
->> cd /path/to/where/to/download/ecodynelec
->> git clone https://gitlab.com/fledee/ecodynelec.git
+    >> cd /path/to/where/to/download/ecodynelec
+    
+    >> git clone https://github.com/LESBAT-HEIG-VD/EcoDynElec.git
 
 After cloning the repository, the package can be used and installed in
 different ways, as explained below.
@@ -19,10 +20,11 @@ be used to install EcoDynElec from your local copy of the git. To do
 so, use a prompt or a terminal and move inside the ``ecodynelec/``
 directory. From there, use ``pip`` (example) or ``conda`` to install.
 The following attempt will trigger the installation by executing the
-``setup.py`` file.
+``setup.py`` file::
 
->> cd /path-to-ecodynelec-copy/ecodynelec/
->> python -m pip install ecodynelec
+    >> cd /path-to-ecodynelec-copy/ecodynelec/
+    
+    >> python -m pip install ecodynelec
 
 Now EcoDynElec can be imported and used as any other python package.
 If you wish to contribute in developing EcoDynElec, using the
@@ -32,10 +34,11 @@ documentation <https://pip.pypa.io/en/stable/topics/local-project-installs/#edit
 An alternative is to use python to directly trigger the ``setup.py``
 file within the ``ecodynelec/`` directory. More on this in the `official
 Python
-documentation <https://docs.python.org/3/install/#distutils-based-source-distributions>`__.
+documentation <https://docs.python.org/3/install/#distutils-based-source-distributions>`__::
 
->> cd /path-to-ecodynelec-copy/ecodynelec/
->> python setup.py install
+    >> cd /path-to-ecodynelec-copy/ecodynelec/
+    
+    >> python setup.py install
 
 If experiencing issues using EcoDynElec in notebooks, the
 “*guaranteed install*” below may be a good and cheap alternative.

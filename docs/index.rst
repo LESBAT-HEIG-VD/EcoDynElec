@@ -16,11 +16,11 @@ EcoDynElec software tracks the origin of electricity accross european countries 
 Getting started
 ===============
 
-``ecodynelec`` must first be cloned from its `Git repository <https://gitlab.com/fledee/ecodynelec>`__, by using prompt (example below) or any other method::
+``ecodynelec`` must first be cloned from its `Git repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec>`__, by using prompt (example below) or any other method::
 
     >> cd path/to/where/to/download/elecodyn
     
-    >> git clone https://gitlab.com/fledee/ecodynelec.git
+    >> git clone https://github.com/LESBAT-HEIG-VD/EcoDynElec.git
 
 After cloning the repository, the package can be used and installed in different ways, as explained below.
 
@@ -38,7 +38,7 @@ to install.::
 
 An alternative is to use python to trigger the ``setup.py`` file within the ``ecodynelec/``
 directory. More on this in the `official Python documentation 
-<https://docs.python.org/3/install/#distutils-based-source-distributions>`__.::
+<https://docs.python.org/3/install/#distutils-based-source-distributions>`__::
 
     >> cd /path-to-ecodynelec-copy/ecodynelec/
 
@@ -80,6 +80,8 @@ only in the current script.
 Contributions
 =============
 EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâtiments <https://www.aramis.admin.ch/Texte/?ProjectID=41804>`_.
+
+P.Padey et al., 2020, 'Dynamic Life Cycle Assessment of the building electricity demand', *Erneuern! Sanierungsstrategien für den Gebäudepark, Status Seminar brenet (Building and Renewable Energies Network of Technology)*, Aarau Schweiz, `doi <https://www.researchgate.net/publication/349139291_Dynamic_Life_Cycle_Assessment_of_the_building_electricity_demand>`__.
 
 
 .. toctree::

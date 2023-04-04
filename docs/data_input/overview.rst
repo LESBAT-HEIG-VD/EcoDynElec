@@ -41,9 +41,9 @@ However, **for the software to being fully operational**, a default `Functional 
 
 Configuration spreadsheet
 **********************************
-EcoDynElec was designed to being used in Python. Thus each computation needs its configuration. The `configuration <https://ecodynelec.readthedocs.io/en/latest/data_input/parameter.html>`__ page goes over all available options. The procedures to set the configuration was extensively described in dedicated tutorials, one relying `solely on Python <https://ecodynelec.readthedocs.io/en/latest/examples/with_python.html>`__ and the other relying on a `configuration spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html>`__, for which templates can be downloaded from the `GitHub repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec/tree/main/examples>`__.
+EcoDynElec was designed to being used in Python. Thus each computation needs its configuration. The `configuration <https://ecodynelec.readthedocs.io/en/latest/data_input/parameters.html>`__ page goes over all available options. The procedures to set the configuration was extensively described in dedicated tutorials, one relying `solely on Python <https://ecodynelec.readthedocs.io/en/latest/examples/with_python.html>`__ and the other relying on a `configuration spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html>`__, for which templates can be downloaded from the `GitHub repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec/tree/main/examples>`__.
 
-The configuration is considered as *a necessary input data* and it **requires the user input**: no "***complete***" default setting is provided, only some elements have default values and/or refer to default data files as mentioned in this page.
+The configuration is considered as *a necessary input data* and it **requires the user input**: no "*complete*" default setting is provided, only some elements have default values and/or refer to default data files as mentioned in this page.
 
 
 
