@@ -11,7 +11,7 @@ This section details the connection between EcoDynElec and data of different nat
 
 ENTSO-E Electricity Data
 *************************
-EcoDynElec was built around electricity data from the `ENTSO-E <https://transparency.entsoe.eu/>`__, specifically the *Generation per production type* and the *Cross-Border Physical Flows*.
+EcoDynElec was built around electricity data from the `ENTSO-E <https://transparency.entsoe.eu>`__, specifically the *Generation per production type* and the *Cross-Border Physical Flows*.
 
 **No ENTSO-E data is provided with EcoDynElec**, however the tool allows all necessary transformation, from the `download of required data <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__ directly from the dataset, to the `data cleaning <https://ecodynelec.readthedocs.io/en/latest/data_input/data_cleaning.html>`__, to the `cross referencing <https://ecodynelec.readthedocs.io/en/latest/data_input/residual.html>`__, before performing the `electricity tracking <https://ecodynelec.readthedocs.io/en/latest/structure/tracking.html>`__ and computation of `environmental impacts <https://ecodynelec.readthedocs.io/en/latest/structure/impacts.html>`__. Specifically, the `data cleaning <https://ecodynelec.readthedocs.io/en/latest/data_input/data_cleaning.html>`__ procedure of electricity data is detailed in a dedicated page.
 
@@ -31,7 +31,7 @@ A specific page was dedicated to the topic of `LCA data <https://ecodynelec.read
 
 The data itself is **not provided per default**, for licensing reasons. Thus extracting data from LCA database and softwares is left to the user. The user can directly fill the template and provide it to EcoDynElec, as some functions of EcoDynElec were specifically tailored to extract relevant information from excel spreadsheets with this exact formatting.
 
-However, **for the software to being fully operational**, a default `Functional Unit file <https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/ecodynelec/data/Functional_Unit_Vector.csv>`__ was created. This file contains, for 6 countries only (AT, CH, DE, FR, IT, CZ) and 4 impact categories, the results of LCA data processing *through the mapping spreadsheet*. If no LCA data is provided by the user, EcoDynElec will try and use this default file. More information is provided in the `LCA data <https://ecodynelec.readthedocs.io/en/latest/data_input/lca_data.html>`__ page as well.
+However, **for the software to being fully operational**, a default `Functional Unit file <https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/ecodynelec/data/Unit_Impact_Vector.csv>`__ was created. This file contains, for 6 countries only (AT, CH, DE, FR, IT, CZ) and 4 impact categories, the results of LCA data processing *through the mapping spreadsheet*. If no LCA data is provided by the user, EcoDynElec will try and use this default file. More information is provided in the `LCA data <https://ecodynelec.readthedocs.io/en/latest/data_input/lca_data.html>`__ page as well.
 
 
 

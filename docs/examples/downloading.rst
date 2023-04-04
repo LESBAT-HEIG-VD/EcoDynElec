@@ -28,7 +28,7 @@ files are located in ``/TP_export/PhysicalFlows_12.1.G/``. *Figure 1*
 give details on how to proceed with FileZilla.
 
 
-.. figure:: ./images/Filezilla.png.png
+.. figure:: ./images/Filezilla.png
     :alt: FileZilla interface
 
     *Figure 1: Download files using FileZilla*
