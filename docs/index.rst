@@ -86,14 +86,15 @@ EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâ
     :maxdepth: 1
     :caption: Input Data
 
-    data_input/download
-    data_input/mapping_usage
+    data_input/overview
     data_input/parameters
-    data_input/auxilary_files
-    data_input/functional_unit
+    data_input/lca_data
+    data_input/download
+    data_input/data_cleaning
+    data_input/residual
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
     :caption: Structure
 
     structure/overview
@@ -107,11 +108,13 @@ EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâ
     :maxdepth: 1
     :caption: How to use
     
-    examples/Handle_parameters
-    examples/Downloading
-    examples/Execute_main_pipeline
-    examples/Exploit_results
-    examples/Electricity_mix_map
+    examples/getting_started
+    examples/with_python
+    examples/with_spreadsheet
+    examples/downloading
+    examples/lca_data
+    examples/electricity_mix_matrix
+    
 
 .. toctree::
     :maxdepth: 2
