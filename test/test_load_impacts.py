@@ -29,14 +29,14 @@ class TestLoadImpacts(unittest.TestCase):
         
         
     ###########################
-    #### EXTRACT FU
-    def test_extractFU_isFrame(self):
-        self.assertIsInstance( load_impacts.extract_FU(path_fu=None, ctry=['AT','CH','CZ','DE','FR','IT'],
+    #### EXTRACT UI
+    def test_extractUI_isFrame(self):
+        self.assertIsInstance( load_impacts.extract_UI(path_ui=None, ctry=['AT','CH','CZ','DE','FR','IT'],
                                                        target='CH', residual=False),
                               frame.DataFrame)
         
-    def test_extractFU_isFrameResidual(self):
-        self.assertIsInstance( load_impacts.extract_FU(path_fu=None, ctry=['AT','CH','CZ','DE','FR','IT'],
+    def test_extractUI_isFrameResidual(self):
+        self.assertIsInstance( load_impacts.extract_UI(path_ui=None, ctry=['AT','CH','CZ','DE','FR','IT'],
                                                        target='CH', residual=True),
                               frame.DataFrame)
         

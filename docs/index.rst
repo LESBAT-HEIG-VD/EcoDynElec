@@ -89,7 +89,6 @@ EcoDynElec did contribute to the project `EcoDynBat - Ecobilan Dynamique des Bâ
     data_input/overview
     data_input/parameters
     data_input/lca_data
-    data_input/download
     data_input/data_cleaning
     data_input/residual
 

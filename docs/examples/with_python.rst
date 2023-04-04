@@ -1,10 +1,10 @@
 Using fully with Python
 =======================
 
-``ecodynelec`` offers the possibility to being fully used via Python.
+EcoDynElec offers the possibility to being fully used via Python.
 This tutorial shows the different steps and possibilities, relying
 solely on operations doable within a python script or notebook. As the
-configuration of ``ecodynelec`` pipeline execution may benefit from more
+configuration of EcoDynElec pipeline execution may benefit from more
 visual interaction, an alternative is suggested in the “`Using with a
 spreadsheet-based
 configuraion <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html>`__”
@@ -13,14 +13,14 @@ tutorial.
 Initialization
 --------------
 
-To download and install ``ecodynelec`` to being used as a python
+To download and install EcoDynElec to being used as a python
 package, the user is referred to either the `getting started
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/getting_started.html>`__.
 
 Configuration
 -------------
 
-The configuration of ``ecodynelec`` is handled by the ``parameter``
+The configuration of EcoDynElec is handled by the ``parameter``
 module.
 
 .. code:: ipython3
@@ -63,7 +63,7 @@ setting
     Filepath to generation --> None
     Filepath to exchanges --> None
     Filepath to savedir --> None
-    Filepath to fu_vector --> None
+    Filepath to ui_vector --> None
     Filepath to mapping --> None
     Filepath to neighbours --> None
     Filepath to gap --> None
@@ -94,7 +94,7 @@ where to write and save information before, during and after the
 computation. It is accessible with the syntax ``my_config.path.element``
 * the third block deals with information related to the ENTSO-E server,
 as electricity data from the ENTSO-E server is at the center of
-``ecodynelec``. More on this topic is covered on the next paragraph and
+EcoDynElec. More on this topic is covered on the next paragraph and
 on the dedicated `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__.
 
@@ -144,14 +144,14 @@ Downloading Entso-E data
 The `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__
 covers the specificities about how to download the ENTSO-E data or
-include the download as part of the ``ecodynelec`` pipeline execution.
-This feature is not triggered per default and ``ecodynelec`` is
+include the download as part of the EcoDynElec pipeline execution.
+This feature is not triggered per default and EcoDynElec is
 expecting to find already downloaded ENTSO-E files.
 
 Execution
 ---------
 
-``ecodynelec`` is build out of a myriad of modules that can be used
+EcoDynElec is build out of a myriad of modules that can be used
 relatively independently, under the condition that inputs data is shaped
 the correct way. Fortunately, the entire pipeline starting from a set of
 parameters and computing down to the calculation of impact metrics.

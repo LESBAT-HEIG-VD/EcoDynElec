@@ -16,8 +16,8 @@ class TestAuxiliary(unittest.TestCase):
     
     ########################
     ### TESTS ON get_default_file
-    def test_get_default_fileFUVector(self):
-        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Functional_Unit_Vector.csv')))
+    def test_get_default_fileUIVector(self):
+        self.assertTrue(os.path.isfile(auxiliary.get_default_file('Unit_Impact_Vector.csv')))
     
     def test_get_default_fileNeighbourhood(self):
         self.assertTrue(os.path.isfile(auxiliary.get_default_file('Neighbourhood_EU.csv')))

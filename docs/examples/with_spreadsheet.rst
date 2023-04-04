@@ -1,9 +1,9 @@
 Using with a spreadsheet-based configuration
 ============================================
 
-``ecodynelec`` offers the possibility to configure the execution via a
+EcoDynElec offers the possibility to configure the execution via a
 spreadsheet, for more user-friendly handling. This tutorial shows the
-different steps and possibilities in this regard. As ``ecodynelec`` is
+different steps and possibilities in this regard. As EcoDynElec is
 firstly designed for research purposes, there also is the possibility to
 entirely rely on a python-based configuration , as developed in the
 “`Using fully with
@@ -13,14 +13,14 @@ tutorial.
 Initialization
 --------------
 
-To download and install ``ecodynelec`` to being used as a python
+To download and install EcoDynElec to being used as a python
 package, the user is referred to either the `getting started
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/getting_started.html>`__.
 
 Configuration
 -------------
 
-The configuration of ``ecodynelec`` is to be handled in a spreadsheet.
+The configuration of EcoDynElec is to be handled in a spreadsheet.
 Figure 1-3 show the three sections of the spreadsheet used in this
 example. The spreadsheet can be downloaded from the `github
 repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_example.xlsx>`__.
@@ -63,14 +63,14 @@ correspond to any existing file on your local machine.
 
 the third tab (*Figure 3*) deals with information related to the ENTSO-E
 server, as electricity data from the ENTSO-E server is at the center of
-``ecodynelec``. More on this topic is covered on the next paragraph and
+EcoDynElec. More on this topic is covered on the next paragraph and
 on the dedicated `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__.
 **Note** that per default, the field ``use server`` is set to FALSE,
 i.e. no download will occur. Also note that the ``username`` field is
 supposed to be an email address.
 
-.. |Server tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_ServerExample.png?raw=true
+
 
 Downloading Entso-E data
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,14 +78,14 @@ Downloading Entso-E data
 The `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__
 covers the specificities about how to download the ENTSO-E data or
-include the download as part of the ``ecodynelec`` pipeline execution.
-This feature is not triggered per default and ``ecodynelec`` is
+include the download as part of the EcoDynElec pipeline execution.
+This feature is not triggered per default and EcoDynElec is
 expecting to find already downloaded ENTSO-E files.
 
 Execution
 ---------
 
-``ecodynelec`` is build out of a myriad of modules that can be used
+EcoDynElec is build out of a myriad of modules that can be used
 relatively independently, under the condition that inputs data is shaped
 the correct way. Fortunately, the entire pipeline starting from a set of
 parameters and computing down to the calculation of impact metrics.

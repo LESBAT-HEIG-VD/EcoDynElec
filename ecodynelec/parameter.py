@@ -207,7 +207,7 @@ class Filepath():
             directory containing cross-border flow  files from ENTSO-E database
         savedir: str
             directory where to save the results. Default: None (no saving)
-        fu_vector: str
+        ui_vector: str
             file with the impact matrix in a directly usable format as .csv
             (impact per kWh produced for each production unit)
         mapping: str
@@ -245,7 +245,7 @@ class Filepath():
         self.exchanges = None
         self.savedir = None
         
-        self.fu_vector = None
+        self.ui_vector = None
         self.mapping = None
         self.neighbours = None
         self.gap = None
@@ -259,7 +259,7 @@ class Filepath():
         
     def __repr__(self):
         attributes = ["generation","exchanges","savedir",
-                      "fu_vector","mapping","neighbours","gap","swissGrid",
+                      "ui_vector","mapping","neighbours","gap","swissGrid",
                       "networkLosses"]
         text = ""
         for a in attributes:
@@ -300,7 +300,7 @@ class Filepath():
         self.exchanges = param_excel.loc['exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
         
-        self.fu_vector = param_excel.loc['FU vector'].iloc[0]
+        self.ui_vector = param_excel.loc['UI vector'].iloc[0]
         self.mapping = param_excel.loc['mapping file'].iloc[0]
         self.neighbours = param_excel.loc['neighboring file'].iloc[0]
         self.gap = param_excel.loc['gap file'].iloc[0]

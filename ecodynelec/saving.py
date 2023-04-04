@@ -27,7 +27,7 @@ def save_impact_vector(impact_matrix, savedir, cst_import=False, residual=False)
     add_on = ""
     if cst_import: add_on += "_CstImp"
     if residual: add_on += "_Res"
-    file_name = f"Impact_Vector{add_on}.csv"
+    file_name = f"Unit_Impact_Vector{add_on}.csv"
     
     impact_matrix.to_csv(savedir + file_name, index=True)
 

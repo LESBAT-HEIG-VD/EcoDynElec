@@ -16,88 +16,88 @@ from ecodynelec.preprocessing.auxiliary import get_default_file
 
 #################################
 # ################################
-# EXTRACT FUNCTIONAL UNIT VECTOR
+# EXTRACT UNIT IMPACT VECTOR
 # ################################
 # ################################
 
 # -
 
-def extract_FU(path_fu, ctry:list=None, target:str='CH', residual:bool=False, cst_imports:bool=False):
-    """Function to extract and modify the FU vector from a .csv file"""
+def extract_UI(path_ui, ctry:list=None, target:str='CH', residual:bool=False, cst_imports:bool=False):
+    """Function to extract and modify the UI vector from a .csv file"""
     ### Get default file if None
-    if path_fu is None:
-        path_fu = get_default_file(name='Functional_Unit_Vector.csv')
+    if path_ui is None:
+        path_ui = get_default_file(name='Unit_Impact_Vector.csv')
     
-    ### Import the FU
-    fu = pd.read_csv(path_fu, index_col=[0])
+    ### Import the UI
+    ui = pd.read_csv(path_ui, index_col=[0])
     
     ### Selection of countries
-    fu = select_fu_indexes(fu, ctry=ctry, residual=residual)
+    ui = select_ui_indexes(ui, ctry=ctry, residual=residual)
     
     ### Create constant import impacts
     if cst_imports:
-        fu = set_constant_imports(fu, target=target)
+        ui = set_constant_imports(ui, target=target)
     
-    return fu
+    return ui
 
 # +
 
 #################################
 # ################################
-# SET CONSTANT IMPORTS FROM FU
+# SET CONSTANT IMPORTS FROM UI
 # ################################
 # ################################
 
 # -
 
-def set_constant_imports(fu, target:str='CH'):
+def set_constant_imports(ui, target:str='CH'):
     """Set the impacts of non-target countries to average Entsoe"""
     
     ### Selection of unique countries
-    countries = np.unique( [i.split("_")[-1] for i in fu.index] )
+    countries = np.unique( [i.split("_")[-1] for i in ui.index] )
     
     # The indexes to systematically exclude
-    exclude = ['Mix_Other'] + [i for i in fu.index if str(i).endswith(f'_{target}')]
+    exclude = ['Mix_Other'] + [i for i in ui.index if str(i).endswith(f'_{target}')]
     # The value to turn all but target into
-    how = fu.loc['Mix_Other',:]
+    how = ui.loc['Mix_Other',:]
     
     ### Change the information
-    new_fu = fu.copy()
-    new_fu.loc[~new_fu.index.isin(exclude),:] = how.values
-    return new_fu
+    new_ui = ui.copy()
+    new_ui.loc[~new_ui.index.isin(exclude),:] = how.values
+    return new_ui
 
 # +
 
 #################################
 # ################################
-# SET CONSTANT IMPORTS FROM FU
+# SET CONSTANT IMPORTS FROM UI
 # ################################
 # ################################
 
 # -
 
-def select_fu_indexes(fu, ctry:list=None, residual:bool=False):
-    """Selects relevant rows from complete FU vector"""
+def select_ui_indexes(ui, ctry:list=None, residual:bool=False):
+    """Selects relevant rows from complete UI vector"""
     if ctry is not None:
         # Consider the "Mix Other"
         places = list(ctry) + ['Other']
 
         # Copy the indexes
-        idx = pd.Series(fu.index)
+        idx = pd.Series(ui.index)
 
         # Production units per country
         selection = np.logical_or.reduce( [idx.apply(lambda x:str(x).endswith(f'_{p}')).values
                                             for p in places] )
     
     else: # Select for all countries
-        selection = np.full((fu.shape[0],), True) # Vector of TRUE
+        selection = np.full((ui.shape[0],), True) # Vector of TRUE
     
     # Deal with residual
     if not residual:
         selection = np.logical_and(selection,
                                    ~(idx.apply(lambda x:str(x).startswith('Residual'))).values)
     
-    return fu.loc[selection,:]
+    return ui.loc[selection,:]
 
 # +
 

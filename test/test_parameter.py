@@ -163,7 +163,7 @@ class TestParameterPaths(unittest.TestCase):
         self.list_attributes = []
         self.date_attributes = []
         self.str_attributes = []
-        self.strNone_attributes = ["generation","exchanges","savedir","fu_vector",
+        self.strNone_attributes = ["generation","exchanges","savedir","ui_vector",
                                    "mapping","neighbours","gap","swissGrid","networkLosses"]
         self.bool_attributes = []
         self.int_attributes = []

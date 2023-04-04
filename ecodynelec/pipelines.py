@@ -20,7 +20,7 @@ from ecodynelec.parameter import Parameter
 
 from ecodynelec.preprocessing.downloading import download
 import ecodynelec.preprocessing.auxiliary as aux
-from ecodynelec.preprocessing.load_impacts import extract_mapping, extract_FU
+from ecodynelec.preprocessing.load_impacts import extract_mapping, extract_UI
 from ecodynelec.preprocessing.loading import import_data
 from ecodynelec.preprocessing.residual import include_local_residual
 
@@ -51,7 +51,7 @@ def execute(config, missing_mapping='error', is_verbose=False):
     Parameters
     ----------
         config: ecodynelec.Parameter or str
-            a set of confugration parameters to govern the computation,
+            a set of configration parameters to govern the computation,
             either as Parameter object or str pointing at an xlsx file.
         missing_mapping: str, default to 'error'
             strategy for handling producing units with not mapping.
@@ -116,14 +116,14 @@ def execute(config, missing_mapping='error', is_verbose=False):
         prod_gap = aux.load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
     else: prod_gap=None
 
-    # Load impact matrix (FU vector by default)
+    # Load impact matrix (UI vector by default)
     if p.path.mapping is not None: # Priority to the mapping spreadhseet, as soon as it is specified
         impact_matrix = extract_mapping(ctry=p.ctry, mapping_path=p.path.mapping, cst_import=p.cst_imports,
                                             residual=np.logical_or(p.residual_global, p.residual_local),
                                             target=p.target, is_verbose=is_verbose)
     
-    else: # If no mapping specified, go for the FU vector: it can grab the default vector automatically
-        impact_matrix = extract_FU(path_fu=p.path.fu_vector, ctry=p.ctry, target=p.target,
+    else: # If no mapping specified, go for the UI vector: it can grab the default vector automatically
+        impact_matrix = extract_UI(path_ui=p.path.ui_vector, ctry=p.ctry, target=p.target,
                                    cst_imports=p.cst_imports,
                                    residual=np.logical_or(p.residual_global, p.residual_local))
         

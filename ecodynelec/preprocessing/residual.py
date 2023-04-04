@@ -123,7 +123,7 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
 # -
 
 def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=None, freq='H', target='CH'):
-    """Funcion to include a local residual directly into the electric mix information.
+    """Function to include a local residual directly into the electric mix information.
 
     Parameters
     ----------

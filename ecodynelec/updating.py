@@ -48,7 +48,7 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
         raise FileNotFoundError(f"Need to specify a directory containing updated files to save them into software files.")
         
     ### Verify the names if using path_dir
-    expected = ["Neighbourhood_EU.csv","Functional_Unit_Vector.csv","SFOE_data.csv","Residual_model.xlsx"]
+    expected = ["Neighbourhood_EU.csv","Unit_Impact_Vector.csv","SFOE_data.csv","Residual_model.xlsx"]
     files = os.listdir(path_dir)
     if not all(exp in files for exp in expected):
         missing = [f for f in expected if f not in files]
@@ -58,8 +58,8 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
     ### Process all common updates
     update_neighbours(os.path.join(path_dir,"Neighbourhood_EU.csv"))
     if is_verbose: print(f"Updated Neighbourhood file")
-    update_FUVector(os.path.join(path_dir,"Functional_Unit_Vector.csv"))
-    if is_verbose: print(f"Updated FU vector file")
+    update_UIVector(os.path.join(path_dir,"Unit_Impact_Vector.csv"))
+    if is_verbose: print(f"Updated UI vector file")
     update_Losses(os.path.join(path_dir,"SFOE_data.csv"))
     if is_verbose: print(f"Updated Losses file")
     update_residual_share(os.path.join(path_dir,"Residual_model.xlsx"), save=True)
@@ -107,8 +107,8 @@ def update_copy(path, name):
 def update_neighbours(path):
     update_copy(path, "Neighbourhood_EU.csv")
     
-def update_FUVector(path):
-    update_copy(path, "Functional_Unit_Vector.csv")
+def update_UIVector(path):
+    update_copy(path, "Unit_Impact_Vector.csv")
     
 def update_Losses(path):
     update_copy(path, "Pertes_OFEN.csv")

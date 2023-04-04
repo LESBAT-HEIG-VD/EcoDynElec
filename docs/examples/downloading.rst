@@ -1,11 +1,11 @@
 Downloading ENTSO-E data
 ========================
 
-Data from the ENTSO-E is at the heat of ``ecodynelec``. Though
-``ecodynelec`` integrates the possibility to download the required data
+Data from the ENTSO-E is at the heat of EcoDynElec. Though
+EcoDynElec integrates the possibility to download the required data
 from ENTSO-E servers directly, and can also deal with already manually
 downloaded data. This tutorial details the different possibilities to
-download the ENTSO-E data, i.e. with and without ``ecodynelec``.
+download the ENTSO-E data, i.e. with and without EcoDynElec.
 
 In any case, \ **an account must be created**\  on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__ for using the SFTP service
@@ -36,10 +36,10 @@ give details on how to proceed with FileZilla.
 
 
 
-Downloading via ``ecodynelec``
+Downloading via EcoDynElec
 ------------------------------
 
-The data can be downloaded via ``ecodynelec``.
+The data can be downloaded via EcoDynElec.
 
 First, the configuration must be adapted, either using a
 `spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#configuration-via-spreadsheet>`__
@@ -58,7 +58,7 @@ give more details on the latter.
 Configuration via spreadsheet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The spreadsheet used in this tutorial can be downloaded from the `examples on the github <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_download.xlsx>`__.
+The spreadsheet used in this tutorial can be downloaded from the `examples on the GitHub <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_download.xlsx>`__.
 
 
 .. figure:: ./images/ParameterExcel_ServerDownload.png
@@ -187,7 +187,7 @@ additional specific parameters otherwise not accessible. However for a
 more generic usage, the downloading feature has also been integrated to
 the `whole computation
 pipeline <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#downloading-via-ecodynelec>`__
-of ``ecodynelec``.
+of EcoDynElec.
 
 .. code:: ipython3
 
@@ -197,7 +197,7 @@ Here all parameters are specified, however only ``config`` is mandatory,
 and every other parameter use default values if not specified.
 
 **Note** that the configuration used here relies on the
-``Spreadsheet_download.xlsx``, but similarly to the whole ``ecodynelec``
+``Spreadsheet_download.xlsx``, but similarly to the whole EcoDynElec
 pipeline, the ``config=`` parameter can also be a ``Parameter`` object,
 such as the ``my_config`` that was built in the `above
 section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#configuration-in-python>`__.
@@ -213,7 +213,7 @@ section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#c
 
 .. parsed-literal::
 
-    Username:  ledee.public@gmail.com
+    Username:  user@mail.com
     Password:  ········
 
 
@@ -231,14 +231,14 @@ section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#c
 The download can be a time consuming process, Thus in the previous cell,
 the few extra parameters help deciding whether or not downloading a
 specific file from the server. This comes handy only in the case of
-re-using ``ecodynelec`` regularly, an occasional or one-time usage will
+re-using EcoDynElec regularly, an occasional or one-time usage will
 not be affected by these extra parameters.
 
 -  ``threshold_minutes``: if the last modification of a file on the
    server occurred *less than* ``threshold_minutes`` *after* the last
    download of that file (if the downloaded file still exist on the
    user’s computer too), the remote file is not downloaded. **Default is
-   15 min**. The server “modifies” files regularly, either with no
+   15 min**. The server "modifies" files regularly, either with no
    changes in the data (simple server maintenance) or some data
    modifications (as new information comes in). The parameter allows to
    skip a file if the file on the server is considered as not new
