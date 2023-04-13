@@ -39,7 +39,7 @@ the first tab (*Figure 1*) contains the elements to configure the
 execution itself.
 
 
-.. figure:: ./images/ParameterExcel_ParamExample.png
+.. figure:: ./images/ParameterExcel_PathsExample.png
     :alt: Spreadsheet paths
     :scale: 80
 
@@ -55,7 +55,7 @@ left blank, and an error is returned if the information passed does not
 correspond to any existing file on your local machine.
 
 
-.. figure:: ./images/ParameterExcel_PathsExample.png
+.. figure:: ./images/ParameterExcel_ServerExample.png
     :alt: Spreadsheet server
     :scale: 80
 
