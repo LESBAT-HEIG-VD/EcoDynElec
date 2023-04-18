@@ -8,27 +8,20 @@ This module contains:
     - localize_from_utc: shifts the time-zone from results.
 """
 import numpy as np
-import pandas as pd
-import os
 
-
-
-
+import ecodynelec.preprocessing.auxiliary as aux
+from ecodynelec import saving
+from ecodynelec.checking import check_mapping
+from ecodynelec.impacts import compute_impacts
 # +
 ####### Local modules
 from ecodynelec.parameter import Parameter
-
 from ecodynelec.preprocessing.downloading import download
-import ecodynelec.preprocessing.auxiliary as aux
 from ecodynelec.preprocessing.load_impacts import extract_mapping, extract_UI
 from ecodynelec.preprocessing.loading import import_data
 from ecodynelec.preprocessing.residual import include_local_residual
-
 from ecodynelec.tracking import track_mix
-from ecodynelec.impacts import compute_impacts
-from ecodynelec.checking import check_mapping
 
-from ecodynelec import saving
 
 # +
 
@@ -51,7 +44,7 @@ def execute(config, missing_mapping='error', is_verbose=False):
     Parameters
     ----------
         config: ecodynelec.Parameter or str
-            a set of configration parameters to govern the computation,
+            a set of configuration parameters to govern the computation,
             either as Parameter object or str pointing at an xlsx file.
         missing_mapping: str, default to 'error'
             strategy for handling producing units with not mapping.

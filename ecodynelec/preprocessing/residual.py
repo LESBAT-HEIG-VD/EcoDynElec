@@ -3,7 +3,6 @@ not considered in ENTSO-E utility-level data.
 """
 import numpy as np
 import pandas as pd
-import os
 
 ########### Local functions
 from ecodynelec.checking import check_residual_availability
@@ -91,7 +90,7 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
     for f in Gen.keys():
         if f=="CH":
             # Check the availability of residual data
-            check_residual_avaliability(prod=Gen[f], residual=prod_gap, freq=freq)
+            check_residual_availability(prod=Gen[f], residual=prod_gap, freq=freq)
             
             # set the two residual kinds as CH prod
             Gen[f] = import_residual(Gen[f], sg_data=sg_data, gap=prod_gap)
@@ -146,7 +145,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
         mix table enhanced with local residual information
     """
     # Check the availability
-    check_residual_avaliability(prod=local_prod, residual=gap, freq=freq)
+    check_residual_availability(prod=local_prod, residual=gap, freq=freq)
     
     # Relative part of the residual production in the elec produced & entering the target country
     residual = define_local_gap(local_prod=local_prod, sg_data=sg_data, freq=freq, gap=gap)
