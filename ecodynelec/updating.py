@@ -13,12 +13,7 @@ from time import time
 from concurrent.futures import ProcessPoolExecutor
 
 from ecodynelec.preprocessing.auxiliary import get_default_file
-
-
-
-
-
-
+from ecodynelec.preprocessing.loading import adjust_generation, import_generation
 
 
 def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
@@ -131,7 +126,87 @@ def update_residual_share(path, save=True):
     
     return df
 
+def extract_entsoe_daily_generation_for_residuals(config, path_dir=None, n_hours=2, days_around=7, limit=.4, save=True, is_verbose=False):
+    """
+    Extracts the daily entsoe generation data that will be used for the residual share estimation. The extracted data
+    corresponds to the days in the 'Redisual_model.xlsx' file. The data is saved in a file named
+    'daily_entsoe_data_for_residual.csv' in path_dir.
 
+   **Note that the required entsoe data isn't downloaded automatically. See downloading.py for more information.**
+
+    Parameters
+    ----------
+    config: ecodynelec.Parameter or str
+        a set of configuration parameters to govern the computation,
+        either as Parameter object or str pointing at an xlsx file.
+
+        Only the 'target', 'start', 'end', 'path.generation' and 'path.exchanges' parameters are used.
+    path_dir: str, optional
+        path to the directory containing updated files. Typically, this is the `support_files/`
+        directory of the cloned git repository of EcoDynElec. The directory must contain ALL
+        the files of interest, otherwise the execution is aboarded.
+        If None, an attempt to use a default path is made, with no promises.
+    n_hours: int, default to 2
+        max number of successive missing hours to be considered as occasional event
+    days_around: int, default to 7
+        number of days after and before a gap to consider to create a 'typical mean day'
+    limit: float, default to 0.4
+        max relative length of a gap to fill the data. Longer gaps are filled with zeros.
+    save: bool, optional
+        to decide whether to overwrite the software files with the new extracted data
+        default is True.
+    is_verbose: bool, optional
+        to display information. Default to False.
+
+    Returns
+    --------
+        A pandas.DataFrame containing the daily entsoe data that will be used for the residual share estimation.
+    """
+
+    ### Verify the path_dir
+    if path_dir is None:
+        ### Try to reach a default directory
+        path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
+
+    if not os.path.isdir(path_dir):  # Verify if path is valid
+        raise FileNotFoundError(
+            f"Need to specify a directory containing updated files to save them into software files.")
+
+    start = config.start
+    end = config.end
+    freq = 'D'
+    ### Get the days when we need to search for entsoe data
+    if is_verbose: print(f"Extracting days from Residual_model.xlsx")
+    residual_model = pd.read_excel(path_dir+'/Residual_model.xlsx', header=16, index_col=0)
+    dates = residual_model.columns
+    date_range = pd.date_range(start=start, end=end, freq=freq)
+    dates = [date.strftime('%Y-%m-%d') for date in dates if date in date_range]
+    ### Compute generation data for all days in the range
+    if is_verbose: print(f"Computing {config.target} generation data")
+    generation_per_day = import_generation(path_gen=config.path.generation, path_prep=config.path.exchanges, ctry=[config.target],
+                            start=start, end=end,
+                            savedir=config.path.savedir, n_hours=n_hours, days_around=days_around, limit=limit,
+                            clean_generation=False, is_verbose=is_verbose)  # import generation data
+    generation_per_day = adjust_generation(generation_per_day, freq=freq, residual_global=False, sg_data=None,
+                                                 prod_gap=None, is_verbose=is_verbose)  # adjust the generation data
+    ### And save it
+    if save:
+        if is_verbose: print(f"Saving {config.target} generation data")
+        csv_content = ''
+        csv_content += ';'
+        for date in dates:
+            csv_content += date + ';'
+        csv_content += '\n'
+        for production in generation_per_day[config.target].columns:
+            csv_content += production.replace(f'_{config.target}', '').replace('_', ' ') + ';'
+            for date in dates:
+                csv_content += str(generation_per_day[config.target][production].loc[date] / 1000).replace('.', ',') + ';'
+            csv_content += '\n'
+
+        csv_file = open(path_dir+'/daily_entsoe_data_for_residual.csv', 'w')
+        csv_file.write(csv_content)
+        csv_file.close()
+    return generation_per_day
 
 
 
