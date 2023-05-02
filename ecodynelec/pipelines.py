@@ -143,6 +143,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     -------
     dict
         a collection of tables containing the dynamic impacts of 1kWh of electricity
+        todo explain
     """
 
     if progress_bar:
