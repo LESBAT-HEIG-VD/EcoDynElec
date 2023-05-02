@@ -119,8 +119,9 @@ def update_residual_share(path, save=True):
     # Error will be raised by pandas if needed
     
     ### Extraction
-    interest = {'Centrales au fil de l’eau': "Hydro_Res",
-                'Centrales therm. classiques et renouvelables':"Other_Res"}
+    interest = {'Centrales au fil de l’eau': "Hydro_Run-of-river_and_poundage_Res",
+                'Centrales à accumulation': "Hydro_Water_Reservoir_Res",
+                'Centrales therm. classiques et renouvelables': "Other_Res"}
     df = pd.read_excel(path, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
     df = (df/df.sum(axis=0)).T
     

@@ -22,7 +22,7 @@ from ecodynelec.preprocessing.auxiliary import get_default_file
 
 # -
 
-def extract_UI(path_ui, ctry:list=None, target:str='CH', residual:bool=False, cst_imports:bool=False):
+def extract_UI(path_ui, ctry:list=None, target='CH', residual:bool=False, cst_imports:bool=False):
     """Function to extract and modify the UI vector from a .csv file"""
     ### Get default file if None
     if path_ui is None:

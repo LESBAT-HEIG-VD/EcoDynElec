@@ -219,11 +219,12 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True) # Load csv file from user
     
     else:
-        ### Extraction tailored for the .xlsx in support files
-        interest = {'Centrales au fil de l’eau': "Hydro_Res",
-                    'Centrales therm. classiques et renouvelables':"Other_Res"}
+        # cannot use the function in update, due to a circular import
+        interest = {'Centrales au fil de l’eau': "Hydro_Run-of-river_and_poundage_Res",
+                    'Centrales à accumulation': "Hydro_Water_Reservoir_Res",
+                    'Centrales therm. classiques et renouvelables': "Other_Res"}
         df = pd.read_excel(path_gap, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
-        df = (df/df.sum(axis=0)).T
+        df = (df / df.sum(axis=0)).T
         df.index = pd.to_datetime(df.index,yearfirst=True) # time data
     
     ###########################
@@ -248,7 +249,7 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     if end is not None:
         end = pd.to_datetime(end) # Savety, redefine as datetime
         res_end = end + pd.offsets.MonthEnd(0) # Round at the end of the last month
-    df = df.loc[res_start:res_end, ['Hydro_Res','Other_Res']] # Select information only for good duration
+    df = df.loc[res_start:res_end, ['Hydro_Run-of-river_and_poundage_Res','Hydro_Water_Reservoir_Res','Other_Res']] # Select information only for good duration
     if start is None: res_start = df.index[0]
     if end is None: res_end = df.index[-1]
     

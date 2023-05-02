@@ -19,8 +19,7 @@ from ecodynelec.preprocessing.auxiliary import load_rawEntso
 ###########################
 
 
-def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residual_global=False,
-              return_matrix=False, is_verbose=False):
+def track_mix(raw_data=None, freq='H', network_losses=None, residual_global=False, is_verbose=False):
     """Performs the electricity tracking. Master function for the electricity mix computation.
 
     Parameters
@@ -32,8 +31,6 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
             frequency of time steps
         network_losses: pandas.Series, default to None
             vector of estimate for grid losses at every time step.
-        target: str, default to None
-            the target / studied country (str)
         residual_global: bool, default to False
             whether to include a local production residual as production unit during the electricity
             tracking computation.
@@ -60,19 +57,15 @@ def track_mix(raw_data=None, freq='H', network_losses=None, target=None, residua
         uP = get_grid_losses(df, losses=network_losses)
     else:
         uP = pd.Series(data=1,index=df.index) # Grid losses not considered -> 1
-    
-    u = set_FU_vector(all_sources=all_sources, target=target)
-        
-    
+
+    #u = set_FU_vector(all_sources=all_sources, target=target)
     
     if is_verbose: print("Tracking origin of electricity...")
-    mixE = compute_tracking(df, all_sources=all_sources, u=u, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
-                            prod_means=prod_means, residual=residual_global,freq=freq,
-                            return_matrix=return_matrix, is_verbose=is_verbose)
-    
+    mixE = compute_tracking(df, all_sources=all_sources, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
+                            prod_means=prod_means, residual=residual_global,freq=freq, is_verbose=is_verbose)
 
     if is_verbose: print("\n\tElectricity tracking: {:.1f} sec.\n".format(time()-t0))
-    return mixE
+    return mixE #df is the raw power per source (kWh or MWh)
 
 
 #
@@ -171,8 +164,8 @@ def set_FU_vector(all_sources, target='CH'):
 # ###########################
 #
 
-def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
-                     residual=False, freq='H', return_matrix=False, is_verbose=False):
+def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
+                     residual=False, freq='H', is_verbose=False):
     """Function leading the electricity tracking: by building the technology matrix, computing the
     inversion and selecting of the information for the target country.
     
@@ -186,19 +179,12 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
             functional unit vector, full of zeros and with ones for the targeted countries
         uP: array-like
             vector that indicates the amount of energy before losses to obtain 1kWh of consumable elec
-        ctry: array-like
-            sorted list of involved countries
-        ctry_mix: array-like
-            list of countries where eletricity can come from, including 'Other'
         prod_means: array-like
             list of production means, without mixes
         residual: bool, default to False
             if residual are considered
         freq: str, default to 'H'
             frequency of a time step
-        return_matrix: bool, default to False
-            to solely return the mix in a target country (if False) or the inverted technology matrices
-            at each time step (if True)
         is_verbose: bool, default to False
             show text during computation.
     
@@ -207,10 +193,7 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
     pandas.DataFrame
         table with the electricity mix in the target country.
     """
-    if not return_matrix:
-        mixE = pd.DataFrame(data=None,index=data.index,columns=all_sources, dtype='float32') # Output DataFrame
-    else:
-        mixE = []
+    mixE = []
     
     if is_verbose:
         check_frequency(freq)
@@ -244,15 +227,8 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
         # Inversion & reintegrtion of the empty lines and columns
         #########################################################
         Ainv = invert_technology_matrix(A, presence, L=L)
-        
-        #################################
-        # Select only target country
-        #################################
-        if not return_matrix:
-            # Extraction of the target country (multiply Ainv, FU vector and losses for that step)
-            mixE.iloc[t,:] = np.dot(Ainv, u*uP.iloc[t]) # Extract for target country
-        else:
-            mixE.append( pd.DataFrame(Ainv, index=all_sources, columns=all_sources, dtype="float32") )
+
+        mixE.append( pd.DataFrame(np.dot(Ainv, uP.iloc[t]), index=all_sources, columns=all_sources, dtype="float32") )
     
     #######################################################################
     # Clear columns related to residual in other countries than CH
@@ -260,14 +236,10 @@ def compute_tracking(data, all_sources, u, uP, ctry, ctry_mix, prod_means,
 
     # Possibly non-used residue columns are deleted (Only residual for CH can be considered)
     if residual:
-        if not return_matrix:
-            mixE = mixE.drop(columns=[k for k in mixE.columns
-                                      if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
-        else:
-            mixE = [m.drop(columns=[k for k in m.columns
-                                    if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
-                    for m in mixE]
-
+        mixE = [m.drop(columns=[k for k in m.columns
+                                if ((k.split("_")[0]=="Residual")&(k[-3:]!="_CH"))])
+                for m in mixE]
+    mixE = pd.concat(mixE, axis=0, keys=data.index)
     return mixE
 
 
