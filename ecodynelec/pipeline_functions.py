@@ -263,9 +263,9 @@ def get_impacts(mix_dict: dict, impact_matrix: pd.DataFrame, missing_mapping: st
     return imp_dict
 
 
-def get_productions(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.DataFrame, mix_dict: dict):
+def get_productions_imports_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.DataFrame, mix_dict: dict):
     """
-    Compute the production of each country, in kWh, for each production type, at each time step.
+    Compute the production and imports for each country, in kWh, for each production type, at each time step.
 
     Parameters
     ----------
@@ -281,36 +281,28 @@ def get_productions(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.D
     Returns
     -------
     prod_dict: dict of DataFrame
-        A dictionary of countries and their production, in kWh, for each production type.
+        A dictionary of countries and their production/imports, in kWh, for each production type.
     """
 
     raw_prod_dict = {}
     for target in parameters.target:
-        target_sources = [col for col in raw_prod_exch.columns if
-                          col.endswith(target) and not col.startswith('Mix')]
-        if target == 'CH' and parameters.residual_local and sg is not None:
-            # CH is a special case, because we need to add the residual
+        if target == 'CH' and parameters.residual_local:
+            if sg is None:
+                raise ValueError("To compute the local residual, SwissGrid data must be provided.")
+            # CH is a special case, because we need to add the local residual, which is not included in
+            # the raw production and exchange data
             # We compute the net power consumption (production + import - export) at each time step
             # then we multiply it by the relative mix matrix to get the mix in kWh
-            # target_sources = [col for col in raw_prod_exch.columns if col.endswith(target)]
-            # total_consumption = raw_prod_exch[target_sources].sum(axis=1)
-            # export = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
-            # total_consumption = total_consumption - export
-            # local_sources = [col for col in target_sources if not col.startswith('Mix_')]
-            # # If residual_local is True, the residual is not yet included in the total consumption
-            # if target == 'CH' and parameters.residual_local and sg is not None:
-            #     # see residual.import_residual
-            #     residual = sg.loc[:, 'Production_CH'] - raw_prod_exch[local_sources].sum(axis=1)
-            #     total_consumption = total_consumption + residual
-            # raw_prod_dict[target] = mix_dict[target].multiply(total_consumption, axis=0)
-            # raw_prod_dict[target] = raw_prod_dict[target][local_sources]
-
             total_prod = sg.loc[:, 'Production_CH']
-            mixed_prod = mix_dict[target][target_sources].multiply(total_prod, axis=0)
-            raw_prod_dict[target] = mixed_prod
+            imported = raw_prod_exch[[col for col in raw_prod_exch.columns if col.startswith(f'Mix_') and col.endswith(target)]].sum(axis=1)
+            exported = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
+            total_consumption = total_prod + imported - exported
+            raw_prod_dict[target] = mix_dict[target].multiply(total_consumption, axis=0)
         else:
             # For other countries, the raw prod exchange data is already valid (there is no residual to add)
             # So we just get the right columns
+            target_sources = [col for col in raw_prod_exch.columns if
+                              col.endswith(target)]
             raw_prod_dict[target] = raw_prod_exch[target_sources]
     return raw_prod_dict
 
