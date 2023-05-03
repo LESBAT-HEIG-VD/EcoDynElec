@@ -13,7 +13,7 @@ from ecodynelec.checking import check_mapping
 # +
 ####### Local modules
 from ecodynelec.pipeline_functions import load_config, check_download, load_raw_prod_exchanges, get_mix, get_impacts, \
-    translate_to_timezone, save_results, load_impact_matrix, get_productions
+    translate_to_timezone, save_results, load_impact_matrix, get_productions_imports_kwh
 from ecodynelec.progress_info import ProgressInfo
 
 
@@ -161,7 +161,8 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     Returns
     -------
         raw_prod_dict: pd.DataFrame or dict of pd.DataFrame
-            A table containing the production, in kWh, for each production source in the target country.
+            A table containing the production, in kWh, for each electricity source for the target country (local and
+            import sources).
             Note if there are multiple target countries, the data is returned in a dict of each target's production table.
         mix_dict: pd.DataFrame or dict of pd.DataFrame
             A table containing the relative consumption mix of the target country, in %, for each production source
@@ -227,7 +228,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
         mix_dict[mix] = mix_dict[mix].drop(
             mix_dict[mix].loc[:, [k.startswith('Mix') and not k.endswith('Other') for k in mix_dict[mix].columns]],
             axis=1).astype('float32')
-    raw_prod_dict = get_productions(p, raw_prodExch, sg, mix_dict)
+    raw_prod_dict = get_productions_imports_kwh(p, raw_prodExch, sg, mix_dict)
 
     ###############################
     ###### TRANSLATE INTO TIMEZONE
