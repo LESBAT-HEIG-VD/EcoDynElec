@@ -15,7 +15,7 @@ def generate_config():
     config.path.exchanges = os.path.join(parent_dir, "examples/test_data/exchanges/")
     return config
 
-def test_prod_mix_impact_result(tester, raw_prod_dict, mix_dict, imp_dict):
+def test_prod_mix_impact_result(tester, config, country, raw_prod_dict, mix_dict, imp_dict):
     ## raw_prod_dict test
     ### Test the type
     tester.assertIsInstance(raw_prod_dict, pd.DataFrame, msg='raw_prod_dict is DataFrame')
@@ -26,7 +26,9 @@ def test_prod_mix_impact_result(tester, raw_prod_dict, mix_dict, imp_dict):
 
     ## Test contents
     pd.testing.assert_index_equal(raw_prod_dict.index, mix_dict.index)
-    [tester.assertIn(c, mix_dict.columns, msg=f"{c} in mix_dict columns") for c in raw_prod_dict.columns]
+    [tester.assertIn(c, mix_dict.columns, msg=f'{c} in mix_dict columns') for c in raw_prod_dict.columns if not c.startswith('Mix_')] #Check that prod columns are in mix_dict
+    [tester.assertIn(f'Mix_{c}_{country}', raw_prod_dict.columns, msg=f'Mix_{c}_{country} in raw_prod_dict columns') for c in config.ctry if c != country] #Check that import columns are in raw_prod_dict
+    tester.assertIn(f'Mix_Other_{country}', raw_prod_dict.columns, msg='Mix_Other in raw_prod_dict columns')
 
     ## Impact dict test
     ### Test the type
@@ -68,14 +70,14 @@ class TestPipelines(unittest.TestCase):
         config = generate_config()
         config.target = 'FR'
         raw_prod_dict, mix_dict, imp_dict = pipelines.get_prod_mix_impacts(config=config)
-        test_prod_mix_impact_result(self, raw_prod_dict, mix_dict, imp_dict)
+        test_prod_mix_impact_result(self, config, 'FR', raw_prod_dict, mix_dict, imp_dict)
 
     def test_get_prod_mix_impacts_simple_target_ch_residual(self):
         config = generate_config()
         config.target = 'CH'
         config.residual_local = True
         raw_prod_dict, mix_dict, imp_dict = pipelines.get_prod_mix_impacts(config=config)
-        test_prod_mix_impact_result(self, raw_prod_dict, mix_dict, imp_dict)
+        test_prod_mix_impact_result(self, config, 'CH', raw_prod_dict, mix_dict, imp_dict)
 
     def test_get_prod_mix_impacts_multi_target(self):
         config = generate_config()
@@ -89,7 +91,7 @@ class TestPipelines(unittest.TestCase):
 
         ### Test the contents
         for target in config.target:
-            test_prod_mix_impact_result(self, raw_prod_dicts[target], mix_dicts[target], imp_dicts[target])
+            test_prod_mix_impact_result(self, config, target, raw_prod_dicts[target], mix_dicts[target], imp_dicts[target])
 
     def test_matrices(self):
         config = generate_config()

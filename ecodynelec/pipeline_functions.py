@@ -297,7 +297,13 @@ def get_productions_imports_kwh(parameters: Parameter, raw_prod_exch: pd.DataFra
             imported = raw_prod_exch[[col for col in raw_prod_exch.columns if col.startswith(f'Mix_') and col.endswith(target)]].sum(axis=1)
             exported = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
             total_consumption = total_prod + imported - exported
-            raw_prod_dict[target] = mix_dict[target].multiply(total_consumption, axis=0)
+            prod_df = mix_dict[target].multiply(total_consumption, axis=0)
+            # Merge import sources together (to create 'Mix_XX_CH' columns)
+            raw_prod_dict[target] = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
+            for c in parameters.ctry:
+                if c != target:
+                    raw_prod_dict[target][f'Mix_{c}_{target}'] = prod_df[[col for col in prod_df.columns if col.endswith(f'_{c}')]].sum(axis=1)
+            raw_prod_dict[target][f'Mix_Other_{target}'] = prod_df['Mix_Other']
         else:
             # For other countries, the raw prod exchange data is already valid (there is no residual to add)
             # So we just get the right columns
