@@ -230,7 +230,8 @@ def load_files(path_dir, start=None, end=None, destination=None, origin=None, da
     useful = ['DateTime', destination, 'ResolutionCode', origin, data]  # columns to keep
 
     files = _get_file_list(start=start, end=end, path_dir=path_dir)  # gather file pathways
-
+    if len(files) == 0:
+        raise FileNotFoundError(f"No file found in {path_dir} between {start} and {end}. Make sure to download the required entsoe data.")
     t0 = time()
     if progress_bar: progress_bar.set_sub_label(f"Extract {len(files)} files...")
     # Single processing

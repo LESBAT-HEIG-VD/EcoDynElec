@@ -3,7 +3,7 @@ from IPython.core.display_functions import display
 
 
 class ProgressInfo:
-    def __init__(self, label: str, max: int, color: str = None, width: str = '80%') -> None:
+    def __init__(self, label: str = 'not set', max: int = 10, color: str = None, width: str = '80%') -> None:
         super().__init__()
         self.l0label = label
         self.label = widgets.Label(value=label)
