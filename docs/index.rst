@@ -123,6 +123,7 @@ P.Padey et al., 2020, 'Dynamic Life Cycle Assessment of the building electricity
     :hidden:
 
     modules/pipelines
+    modules/pipeline_functions
     modules/parameter
     modules/impacts
     modules/tracking
