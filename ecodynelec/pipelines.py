@@ -161,10 +161,11 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     Returns
     -------
         raw_prod_dict: pd.DataFrame or dict of pd.DataFrame
-            A table containing the production, in kWh, for each production source.
+            A table containing the production, in kWh, for each production source in the target country.
             Note if there are multiple target countries, the data is returned in a dict of each target's production table.
         mix_dict: pd.DataFrame or dict of pd.DataFrame
-            A table containing the relative consumption mix of the target country, in %, for each production source.
+            A table containing the relative consumption mix of the target country, in %, for each production source
+            (local and import sources).
             Note if there are multiple target countries, the data is returned in a dict of each target's mix table.
         imp_dict: dict of pd.DataFrame or dict of dict of pd.DataFrame
             a collection of tables containing the dynamic impacts of 1kWh of electricity

@@ -168,6 +168,7 @@ class Parameter():
 
         self.ctry = np.sort(param_excel.loc["countries"].dropna().values)
         self.target = param_excel.loc['target'].iloc[0]
+        if isinstance(self.target, str): self.target = [self.target]
         
         self.start = self._dates_from_excel(param_excel.loc['start'])
         self.end = self._dates_from_excel(param_excel.loc['end'])

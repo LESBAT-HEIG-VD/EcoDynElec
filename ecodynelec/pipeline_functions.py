@@ -131,13 +131,13 @@ def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: 
         progress_bar.set_sub_label('Load ENTSO-E data...')
 
     # Load generation and exchange data from entso-e
-    raw_prodExch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, involved_countries=neighbours,
+    raw_prod_exch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, involved_countries=neighbours,
                                prod_gap=prod_gap, sg_data=sg_data,
                                path_gen=p.path.generation, path_imp=p.path.exchanges,
                                savedir=p.path.savedir, net_exchange=p.net_exchanges,
                                residual_global=p.residual_global, correct_imp=p.sg_imports,
                                clean_data=p.data_cleaning, is_verbose=is_verbose, progress_bar=progress_bar)
-    return raw_prodExch, prod_gap, sg_data
+    return raw_prod_exch, prod_gap, sg_data
 
 
 def load_impact_matrix(parameters: Parameter, is_verbose: bool = False):
@@ -283,28 +283,34 @@ def get_productions(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.D
     prod_dict: dict of DataFrame
         A dictionary of countries and their production, in kWh, for each production type.
     """
+
     raw_prod_dict = {}
     for target in parameters.target:
-        if target == 'CH':
+        target_sources = [col for col in raw_prod_exch.columns if
+                          col.endswith(target) and not col.startswith('Mix')]
+        if target == 'CH' and parameters.residual_local and sg is not None:
             # CH is a special case, because we need to add the residual
             # We compute the net power consumption (production + import - export) at each time step
             # then we multiply it by the relative mix matrix to get the mix in kWh
-            target_sources = [col for col in raw_prod_exch.columns if col.endswith(target)]
-            total_consumption = raw_prod_exch[target_sources].sum(axis=1)
-            export = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
-            total_consumption = total_consumption - export
-            # If residual_local is True, the residual is not yet included in the total consumption
-            if target == 'CH' and parameters.residual_local and sg is not None:
-                # see residual.import_residual
-                local_sources = [col for col in target_sources if not col.startswith('Mix_')]
-                residual = sg.loc[:, 'Production_CH'] - raw_prod_exch[local_sources].sum(axis=1)
-                total_consumption = total_consumption + residual
-            raw_prod_dict[target] = mix_dict[target].multiply(total_consumption, axis=0)
+            # target_sources = [col for col in raw_prod_exch.columns if col.endswith(target)]
+            # total_consumption = raw_prod_exch[target_sources].sum(axis=1)
+            # export = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
+            # total_consumption = total_consumption - export
+            # local_sources = [col for col in target_sources if not col.startswith('Mix_')]
+            # # If residual_local is True, the residual is not yet included in the total consumption
+            # if target == 'CH' and parameters.residual_local and sg is not None:
+            #     # see residual.import_residual
+            #     residual = sg.loc[:, 'Production_CH'] - raw_prod_exch[local_sources].sum(axis=1)
+            #     total_consumption = total_consumption + residual
+            # raw_prod_dict[target] = mix_dict[target].multiply(total_consumption, axis=0)
+            # raw_prod_dict[target] = raw_prod_dict[target][local_sources]
+
+            total_prod = sg.loc[:, 'Production_CH']
+            mixed_prod = mix_dict[target][target_sources].multiply(total_prod, axis=0)
+            raw_prod_dict[target] = mixed_prod
         else:
             # For other countries, the raw prod exchange data is already valid (there is no residual to add)
             # So we just get the right columns
-            target_sources = [col for col in raw_prod_exch.columns if
-                              col.endswith(target) and not col.startswith('Mix')]
             raw_prod_dict[target] = raw_prod_exch[target_sources]
     return raw_prod_dict
 
