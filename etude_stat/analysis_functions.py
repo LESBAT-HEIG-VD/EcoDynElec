@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-from examples.mix_analysis.analysis_functions import compute_per_country, get_metrics, plot_years
+from examples.mix_analysis.analysis_functions import compute_per_country, get_metrics, plot_years, plot_typical_days
 
 
 def format_data(dict_per_year, group_by_country=True):
@@ -93,21 +93,6 @@ def plot_boxplot(seasonal_data, grouped_data, label, ylabel):
     ax.set_ylabel(ylabel)
     ax.set_title(f'Seasonal Boxplot of {label}')
     plt.show()
-
-
-def plot_typical_days(seasonal_data, grouped_data, label, ylabel, fig=None, ax=None):
-    season_labels = [*grouped_data.groups.keys()]
-    if fig is None or ax is None:
-        fig, ax = plt.subplots(1, len(season_labels), sharey=True, figsize=(12, 3))
-    for i in range(len(season_labels)):
-        a = ax[i]
-        by_hour = seasonal_data[i].groupby(seasonal_data[i].index.hour).mean()
-        a.plot(by_hour)
-        a.set_title(f'{season_labels[i]}')
-        a.set_xlabel('Hour of the day')
-        a.set_ylabel(ylabel)
-    fig.suptitle(f'{label} on average day per season')
-    fig.tight_layout()
 
 
 # Main analysis function

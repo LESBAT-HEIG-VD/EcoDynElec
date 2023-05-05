@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as seaborn
+from matplotlib import pyplot as plt
+
 from ecodynelec.parameter import Parameter
 
 from ecodynelec.pipelines import get_prod_mix_impacts
@@ -232,3 +234,17 @@ def plot_hourly_heatmap(dataframe: pd.DataFrame, column: str, xlabels: list[str]
     ax.set_title(f'{label} per hour of the day')
     ax.set_xlabel('Time interval: day')
     ax.set_ylabel('Hour of the day')
+
+
+def plot_typical_days(seasonal_data, season_labels, label, ylabel, fig=None, ax=None):
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, len(season_labels), sharey=True, figsize=(12, 3))
+    for i in range(len(season_labels)):
+        a = ax[i]
+        by_hour = seasonal_data[i].groupby(seasonal_data[i].index.hour).mean()
+        a.plot(by_hour)
+        a.set_title(f'{season_labels[i]}')
+        a.set_xlabel('Hour of the day')
+        a.set_ylabel(ylabel)
+    fig.suptitle(f'{label} per season')
+    fig.tight_layout()
