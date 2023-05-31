@@ -147,7 +147,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
     check_residual_availability(prod=local_prod, residual=gap, freq=freq)
 
     # Relative part of the residual production in the elec produced & entering the target country
-    residual = define_local_gap(local_prod=local_prod, sg_data=sg_data, freq=freq, gap=gap)
+    residual = define_local_gap(local_prod=local_prod, sg_data=sg_data, gap=gap)
 
     # Adapt the mix to relative residual production
     new_mix = adjust_mix_local(mix_data=mix_data, local_residual=residual, target=target)
@@ -161,7 +161,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
 # ## Define local gap
 # -
 
-def define_local_gap(local_prod, sg_data, freq='H', gap=None):
+def define_local_gap(local_prod, sg_data, gap=None):
     """Function to define the relative part of residual in the electricity in the target country.
 
     Parameters
@@ -170,8 +170,6 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None):
             production data for a single country
         sg_data: pandas.DataFrame, default to None
             information from SwissGrid
-        freq: str, default to 'H'
-            the frequency of time step
         gap: pandas.DataFrame, default to None
             information about the nature of the residual
 
@@ -191,8 +189,9 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None):
 
     ## Compute relative amount of residual column(s)
     residual_col = [k for k in d.columns if k.split("_")[0] == "Residual"]
+    total = d.sum(axis=1)
     for k in residual_col:
-        d.loc[:, k] /= d.sum(axis=1)
+        d.loc[:, k] /= total
 
     return d.loc[:, residual_col]
 
