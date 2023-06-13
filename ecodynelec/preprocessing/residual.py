@@ -191,8 +191,9 @@ def define_local_gap(local_prod, sg_data, freq='H', gap=None):
 
     ## Compute relative amount of residual column(s)
     residual_col = [k for k in d.columns if k.split("_")[0] == "Residual"]
+    summ = d.sum(axis=1)
     for k in residual_col:
-        d.loc[:, k] /= d.sum(axis=1)
+        d.loc[:, k] /= summ
 
     return d.loc[:, residual_col]
 

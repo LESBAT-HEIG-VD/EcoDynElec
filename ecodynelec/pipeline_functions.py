@@ -106,7 +106,14 @@ def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: 
         progress_bar.set_sub_label('Load auxiliary datasets...')
     # Load SwissGrid -> if Residual or SG exchanges
     if np.logical_or(np.logical_or(p.residual_global, p.residual_local), p.sg_imports):
-        sg_data = aux.load_swissGrid(path_sg=p.path.swissGrid, start=p.start, end=p.end, freq=p.freq)
+        # Load SwissGrid data, adjusting the date parameters for the time zone difference
+        # EcoDynElec is using UTC while SwissGrid is using Europe/Zurich (UTC+1)
+        # We use the most little time step possible to avoid issues with the time zone
+        sg_data = aux.load_swissGrid(path_sg=p.path.swissGrid, start=p.start+pd.Timedelta(hours=1), end=p.end+pd.Timedelta(hours=1), freq='15min')
+        # Shift the SwissGrid data index back by one hour to convert from Europe/Zurich to UTC
+        sg_data.index.shift(-1, freq='H', inplace=True)
+        # Resample the SwissGrid data to the desired frequency, after the time zone conversion
+        sg_data = sg_data.resample(p.freq).sum()
     else:
         sg_data = None
     if progress_bar:
@@ -296,7 +303,8 @@ def get_productions_imports_kwh(parameters: Parameter, raw_prod_exch: pd.DataFra
             total_prod = sg.loc[:, 'Production_CH']
             imported = raw_prod_exch[[col for col in raw_prod_exch.columns if col.startswith(f'Mix_') and col.endswith(target)]].sum(axis=1)
             exported = raw_prod_exch[[col for col in raw_prod_exch if col.startswith(f'Mix_{target}')]].sum(axis=1)
-            total_consumption = total_prod + imported - exported
+            # todo what is good here
+            total_consumption = total_prod + imported# - exported
             prod_df = mix_dict[target].multiply(total_consumption, axis=0)
             # Merge import sources together (to create 'Mix_XX_CH' columns)
             raw_prod_dict[target] = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
