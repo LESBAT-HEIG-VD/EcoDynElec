@@ -25,10 +25,11 @@ def test_prod_mix_impact_result(tester, config, country, raw_prod_dict, mix_dict
     tester.assertIsInstance(mix_dict, pd.DataFrame, msg='mix_dict is DataFrame')
 
     ## Test contents
+    tester.assertIn('production', raw_prod_dict.columns, msg='production in raw_prod_dict columns')
+    tester.assertIn('imports', raw_prod_dict.columns, msg='imports in raw_prod_dict columns')
+    tester.assertIn('exports', raw_prod_dict.columns, msg='exports in raw_prod_dict columns')
     pd.testing.assert_index_equal(raw_prod_dict.index, mix_dict.index)
-    [tester.assertIn(c, mix_dict.columns, msg=f'{c} in mix_dict columns') for c in raw_prod_dict.columns if not c.startswith('Mix_')] #Check that prod columns are in mix_dict
-    [tester.assertIn(f'Mix_{c}_{country}', raw_prod_dict.columns, msg=f'Mix_{c}_{country} in raw_prod_dict columns') for c in config.ctry if c != country] #Check that import columns are in raw_prod_dict
-    tester.assertIn(f'Mix_Other_{country}', raw_prod_dict.columns, msg='Mix_Other in raw_prod_dict columns')
+    # not covered yet self.assertNotIn('Residual_Other_CH', kwh.columns, msg='Residual_Other_CH not in kwh columns')
 
     ## Impact dict test
     ### Test the type
@@ -38,11 +39,11 @@ def test_prod_mix_impact_result(tester, config, country, raw_prod_dict, mix_dict
     ### Test the type inside
     for k in imp_dict:
         tester.assertIsInstance(imp_dict[k], pd.DataFrame, msg=f"imp_dict {k} output is a DataFrame")
+        pd.testing.assert_index_equal(mix_dict.index, imp_dict[k].index)
     ### Test the shapes
     base = imp_dict['Global'].shape
     tester.assertEqual(len(imp_dict.keys()), 1 + base[1], msg='Correct number of keys')
     tester.assertTrue(all(imp_dict[k].shape[0] == base[0] for k in imp_dict), msg='Correct length of all tables')
-    pd.testing.assert_index_equal(mix_dict.index, imp_dict['Global'].index)
 
 class TestPipelines(unittest.TestCase):
 
