@@ -13,7 +13,7 @@ from ecodynelec.checking import check_mapping
 # +
 ####### Local modules
 from ecodynelec.pipeline_functions import load_config, check_download, load_raw_prod_exchanges, get_mix, get_impacts, \
-    translate_to_timezone, save_results, load_impact_matrix, get_productions_imports_kwh
+    translate_to_timezone, save_results, load_impact_matrix, get_flows_kwh
 from ecodynelec.progress_info import ProgressInfo
 
 
@@ -111,7 +111,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     ######
     if progress_bar:
         progress_bar.progress('Save data...')
-    _, _, imp_dict = translate_to_timezone(p, raw_prod_dict=None, mix_dict=None, imp_dict=imp_dict,
+    _, _, imp_dict = translate_to_timezone(p, flows_dict=None, mix_dict=None, imp_dict=imp_dict,
                                            is_verbose=is_verbose)
 
     ################################
@@ -141,7 +141,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
 
     This function returns:
     - the impacts of the electricity mix of the target countries (returned by :py:func:`execute`)
-    - the intermediate results, relative mixes per target country and mixes of production in kWh
+    - the intermediate results, relative mixes per target country and mixes of consumption in kWh
 
     Parameters
     ----------
@@ -163,7 +163,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
         raw_prod_dict: pd.DataFrame or dict of pd.DataFrame
             A table containing the production, in kWh, for each electricity source for the target country (local and
             import sources).
-            Note if there are multiple target countries, the data is returned in a dict of each target's production table.
+            Note if there are multiple target countries, the data is returned in a dict of each target's production table
         mix_dict: pd.DataFrame or dict of pd.DataFrame
             A table containing the relative consumption mix of the target country, in %, for each production source
             (local and import sources).
@@ -228,27 +228,27 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
         mix_dict[mix] = mix_dict[mix].drop(
             mix_dict[mix].loc[:, [k.startswith('Mix') and not k.endswith('Other') for k in mix_dict[mix].columns]],
             axis=1).astype('float32')
-    raw_prod_dict = get_productions_imports_kwh(p, raw_prodExch, sg, mix_dict)
+    flows_dict = get_flows_kwh(p, raw_prodExch, sg)
 
     ###############################
     ###### TRANSLATE INTO TIMEZONE
     ######
     if progress_bar:
         progress_bar.progress('Save data...')
-    raw_prod_dict, mix_dict, imp_dict = translate_to_timezone(p, raw_prod_dict, mix_dict, imp_dict,
+    flows_dict, mix_dict, imp_dict = translate_to_timezone(p, flows_dict, mix_dict, imp_dict,
                                                               is_verbose=is_verbose)
 
     ################################
     ####### SAVE DATA
     #######
-    save_results(p, raw_prod_dict, impact_matrix, mix_dict, imp_dict, is_verbose=is_verbose)
+    save_results(p, flows_dict, impact_matrix, mix_dict, imp_dict, is_verbose=is_verbose)
 
     if progress_bar:
         progress_bar.progress('Done.')
     if is_verbose: print("done.")
     if n_target == 1:
-        return raw_prod_dict[p.target[0]], mix_dict[p.target[0]], imp_dict[p.target[0]]
-    return raw_prod_dict, mix_dict, imp_dict
+        return flows_dict[p.target[0]], mix_dict[p.target[0]], imp_dict[p.target[0]]
+    return flows_dict, mix_dict, imp_dict
 
 
 ########################################

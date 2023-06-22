@@ -35,36 +35,42 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
     Returns
     -------
     See ecodynelec.pipelines.get_prod_mix_impacts for explanations
-    raw_mixs: dict of dict of pandas.DataFrame
-        Contains for each year a dict of the raw productions for each target country
+    flows_dict: dict of dict of pandas.DataFrame
+        Contains for each year a dict of the raw productions/imports/exports for each target country
     mixs: dict of dict of pandas.DataFrame
         Contains for each year a dict of the electric mix shares for each target country
     impacts: dict of dict of pandas.DataFrame
         Contains for each year a dict of the climate change (gwp) impacts for each target country
     """
-    raw_mixs = {}  # Raw mixes per year
+    flows_dict = {}  # Productions/imports/exports in kwh per year
     mixs = {}  # Energetic mixes per year
     impacts = {}  # Climate change impacts per year
-    progress_info_year = ProgressInfo('Compute ' + years[0] + '...', len(years) + 1, width='90%')
-    progress_info_computation = ProgressInfo('', 11, color='lightgreen', width='90%')
+    if show_progress:
+        progress_info_year = ProgressInfo('Compute ' + years[0] + '...', len(years) + 1, width='90%')
+        progress_info_computation = ProgressInfo('', 11, color='lightgreen', width='90%')
+    else:
+        progress_info_computation = None
     for year in years:
         if is_verbose: print('Compute ', year)
-        progress_info_year.progress('Compute ' + year + '...', 0)
+        if show_progress:
+            progress_info_year.progress('Compute ' + year + '...', 0)
         config.start = year + '-01-01 00:00'
         config.end = year + '-12-31 23:59'
         config.path.savedir = savedir + year + "/"
         raw, mix, imp = get_prod_mix_impacts(config=config, is_verbose=is_verbose,
                                              progress_bar=progress_info_computation)
-        progress_info_year.progress()
-        raw_mixs[year] = raw
+        if show_progress:
+            progress_info_year.progress()
+        flows_dict[year] = raw
         mixs[year] = mix
         if isinstance(mix, dict):  # multi target
             impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}
         else:  # single target
             impacts[year] = imp['Climate Change']
-    progress_info_year.progress('Done!')
-    progress_info_computation.hide()
-    return raw_mixs, mixs, impacts
+    if show_progress:
+        progress_info_year.progress('Done!')
+        progress_info_computation.hide()
+    return flows_dict, mixs, impacts
 
 
 def load_data(config: Parameter, years: list[str], savedir: str = './mix_analysis/results/'):
@@ -85,23 +91,23 @@ def load_data(config: Parameter, years: list[str], savedir: str = './mix_analysi
     ### Formating the time extension (see ecodynelec.saving)
     tPass = {'15min': '15min', '30min': '30min', "H": "hour", "D": "day", 'd': 'day', 'W': "week",
              "w": "week", "MS": "month", "M": "month", "YS": "year", "Y": "year"}
-    raw_mixs = {}  # Raw mix per year
+    flows_dict = {}  # Productions/imports/exports in kwh per year
     mixs = {}  # Energetic mix per year
     impacts = {}  # Climate change impact per year
     for year in years:
-        raw_mixs[year] = {}
+        flows_dict[year] = {}
         mixs[year] = {}
         impacts[year] = {}
         for country in config.target:
             fsavedir = savedir + year + "/" + country + "/"
-            raw_mixs[year][country] = pd.read_csv(fsavedir + f"RawProdExch_{tPass[config.freq]}.csv", index_col=0,
+            flows_dict[year][country] = pd.read_csv(fsavedir + f"RawFlows_{tPass[config.freq]}.csv", index_col=0,
                                                   parse_dates=True)
             mixs[year][country] = pd.read_csv(fsavedir + f"Mix_{tPass[config.freq]}.csv", index_col=0,
                                               parse_dates=True)
             impacts[year][country] = pd.read_csv(fsavedir + f"Impact_Climate Change_{tPass[config.freq]}.csv",
                                                  index_col=0,
                                                  parse_dates=True)
-    return raw_mixs, mixs, impacts
+    return flows_dict, mixs, impacts
 
 
 def format_data_0(dict_per_year: dict):
