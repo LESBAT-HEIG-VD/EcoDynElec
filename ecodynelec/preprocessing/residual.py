@@ -147,7 +147,7 @@ def include_local_residual(mix_data=None, sg_data=None, local_prod=None, gap=Non
     check_residual_availability(prod=local_prod, residual=gap, freq=freq)
 
     # Relative part of the residual production in the elec produced & entering the target country
-    residual = define_local_gap(local_prod=local_prod, sg_data=sg_data, freq=freq, gap=gap)
+    residual = define_local_gap(local_prod=local_prod, sg_data=sg_data, gap=gap)
 
     # Adapt the mix to relative residual production
     new_mix = adjust_mix_local(mix_data=mix_data, local_residual=residual, target=target)
