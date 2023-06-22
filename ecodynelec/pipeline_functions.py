@@ -448,14 +448,10 @@ def mix_to_kwh(parameters: Parameter, flows_df: pd.DataFrame, mix_df: pd.DataFra
     if total_kwh is None:
         raise ValueError('You must specify at least one of the following return_data: P, +I')
     prod_df = mix_df.multiply(total_kwh, axis=0)
-    power_df = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
-    # Merge import sources together (to create 'Mix_XX_CH' columns)
     if '+I' in return_data:
-        for c in parameters.ctry:
-            if c != target:
-                power_df[f'Mix_{c}_{target}'] = prod_df[
-                    [col for col in prod_df.columns if col.endswith(f'_{c}')]].sum(axis=1)
-        power_df[f'Mix_Other_{target}'] = prod_df['Mix_Other']
+        power_df = prod_df.copy()
+    else: # Ignore import sources
+        power_df = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
     # Rescale to the desired total_kwh
     power_df = power_df.multiply((total_kwh.divide(power_df.sum(axis=1), axis=0)), axis=0)
     return power_df
