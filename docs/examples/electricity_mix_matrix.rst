@@ -1,13 +1,13 @@
 Compute electric mix for all countries
 ======================================
 
-The main pipeline of EcoDynElec presented in tutorials
+The main pipeline of ``ecodynelec`` presented in tutorials
 `1 <https://ecodynelec.readthedocs.io/en/latest/examples/with_python.html#execution>`__
 and
 `2 <https://ecodynelec.readthedocs.io/en/latest/examples/with_spreadsheet.html#execution>`__
 only compute the electricity mix and impacts for one target country.
 
-However EcoDynElec can compute the electric mix for all considered
+However ``ecodynelec`` can compute the electric mix for all considered
 countries, **all at once**. In facts, this information is an
 intermediate result in the main pipeline. The feature of extracting this
 intermediate result was added due to its potential usefulness. This
