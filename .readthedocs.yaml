@@ -15,7 +15,7 @@ formats:
 
 python:
     # Install our Python packages before building the doc
-    version: 3.7
+    version: 3.11
     install:
         - requirements: requirements.txt
         - requirements: docs/requirements.txt
