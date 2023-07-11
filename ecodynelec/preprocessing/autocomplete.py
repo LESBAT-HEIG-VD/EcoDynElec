@@ -15,8 +15,8 @@ import pandas as pd
 ###############################
 ### PILOTE FUNCTION
 ###
-def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
-                 ignore:bool=False, is_verbose:bool=False):
+def autocomplete(data:dict, n_hours:int=2, days_around:int=7, daytype_only:bool=False,
+                 limit:float=.3, ignore:bool=False, is_verbose:bool=False):
     """
     Main function to auto-complete the data. Works with generation and import.
 
@@ -30,6 +30,9 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
         days_around: int, default to 7
             number of days before and after a long gap to be used
             when creating an average day to complete the gap.
+        daytype_only: bool, default is False
+            fills long gap using an average day build only with
+            days of similar type (weekday, Saturday, Sunday)
         limit: float, default to 0.3
             max relative size of gap to allow an autocomplete. If a
             gap is longer than this fraction of the data, it will be
@@ -85,10 +88,16 @@ def autocomplete(data:dict, n_hours:int=2, days_around:int=7, limit:float=.3,
     excess_gaps = sort_gaps(all_gaps, lower=excess_thresholds,
                             lengths=lengths) # Sort gaps for excess
     
+    ### SPLIT LONG GAPS INTO DAYS
+    if daytype_only: #Modify the condition later
+        long_gaps = {c: {field: longs_into_days(long_gaps[c][field], indexes=data[c].loc[:,field].index, n_hours=n_hours)
+                         for field in long_gaps[c]} for c in long_gaps}
+                    
+                
     ### FILL LONG GAPS
     deltas = set_deltas(new_data, resolution, days_around=days_around)
     new_data = fill_all_periods(new_data, period_indexes=long_gaps,
-                                deltas=deltas, is_verbose=is_verbose)
+                                deltas=deltas, daytype_only=daytype_only, is_verbose=is_verbose)
     
     ### FILL GAPS TO SKIP WITH ZEROS
     new_data = fill_all_excess(new_data, period_indexes=excess_gaps)
@@ -317,11 +326,25 @@ def add_specific_gaps(all_gaps, name, length, long_gaps):
     return long_gaps
 
 
+def longs_into_days(gaps, indexes, n_hours=2):
+    new_set = []
+    for gap in gaps:
+        idx = indexes[gap[1]:gap[2]] # Get the dates
+        incl = np.unique(idx.dayofyear) # Days in that gap
+        if len(incl)==1: # Single day
+            new_set.append(gap)
+        else: # Multiple days
+            for d in incl: # add subsection per day if more than n_hours steps (or sure it is "short")
+                subidx = np.argwhere(idx.dayofyear==d).ravel()+gap[1]
+                if len(subidx)>n_hours: new_set.append([len(subidx), subidx[0], subidx[-1]])
+    return np.array(new_set)
+
+
 ###############################
 ###############################
 ### COMPLETE GAPS
 ###
-def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbose:bool=False):
+def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, daytype_only:bool=False, is_verbose:bool=False):
     """Fills all long gaps.
 
     Parameters
@@ -333,6 +356,8 @@ def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbo
         deltas: dict
             collection of number of time steps to create the average days around gaps.
             Structure is `{country: {unit: {gap_id: int} } }`.
+        daytype_only: bool
+            uses an average day build only with days of similar type (weekday, Saturday, Sunday)
         is_verbose: bool, default to False
             to display information.
     """
@@ -340,17 +365,24 @@ def fill_all_periods(data:dict, period_indexes:np.ndarray, deltas:dict, is_verbo
         ### Fill the periods
         for j,k in enumerate(data[c]): # For all elements of each country
             if is_verbose: print(f"\t{c} ({i+1:02d}/{len(data):02d}); field {j+1:02d}/{len(data[c]):02d})"+" "*10, end='\r')
-            data[c][k] = fill_one_series(data[c][k], period_indexes[c][k], delta=deltas[c][k]) # Fill the data
+            data[c][k] = fill_one_series(data[c][k], period_indexes[c][k], delta=deltas[c][k],
+                                         daytype_only=daytype_only) # Fill the data
     
     if is_verbose: print("\tCompleted."+" "*30)
     return data
     
-def fill_one_series(data, period_indexes, delta):
+def fill_one_series(data, period_indexes, delta, daytype_only=False):
     """Fills all long gaps for one single series in one country"""
     filled = data.copy()
     for gap in period_indexes:
         ### Create Average Day
-        avg_day = filled.iloc[max(0, gap[1]-delta) : min(gap[2]+delta, filled.shape[0])].groupby(lambda x: x.strftime('%H:%M')).mean()
+        if daytype_only:
+            avg_day = (reduce_to_daytype(filled.iloc[max(0, gap[1]-delta) : min(gap[2]+delta, filled.shape[0])],
+                                         weekday=filled.index[gap[1]].dayofweek)
+                       .groupby(lambda x: x.strftime('%H:%M')).mean())
+        else:
+            avg_day = filled.iloc[max(0, gap[1]-delta) : min(gap[2]+delta, filled.shape[0])].groupby(lambda x: x.strftime('%H:%M')).mean()
+            
         ### Fill the period
         filled.iloc[gap[1]:gap[2]] = fill_one_period(avg_day, to_fill=filled.iloc[gap[1]:gap[2]])
     return filled
@@ -377,6 +409,12 @@ def fill_occasional(data:dict):
     """Fills short gaps of data with linear interpolation."""
     return {c: data[c].interpolate(method='linear', limit_direction='both') for c in data}
 
+def reduce_to_daytype(data, weekday):
+    if weekday<5: # Regular week day
+        return data.loc[data.index.dayofweek<5]
+    else: # Saturday only or Sunday only
+        return data.loc[data.index.dayofweek==weekday]
+    
 
 ##########################
 ### SKIP AUTO-COMPLETE
