@@ -89,10 +89,10 @@ to download. More information on the various configuration possibilities
 available in the `input data
 section <https://ecodynelec.readthedocs.io/en/latest/data_input/parameters.html>`__.
 
-| |Server tab Spreadsheet|
+| |Filepath tab Spreadsheet|
 | *Figure 3: Spreadsheet for configuration: Paths tab*
 
-.. |Server tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_PathsDownload.png?raw=true
+.. |Filepath tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_PathsDownload.png?raw=true
 
 Configuration in Python
 ~~~~~~~~~~~~~~~~~~~~~~~
