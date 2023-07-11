@@ -27,17 +27,17 @@ class TestDownload(unittest.TestCase):
         
         ### Ask for password
         if self.pwd is None:
-            ### First try
-            pwd = getpass("Password for ENTSO-E: ")
-            transport = self.connect(pwd)
+            self.pwd = getpass("Password for ENTSO-E: ")
+
+        # Try to connect
+        transport = self.connect(self.pwd)
+        if not transport:
+            print("Error in credentials. Last try before skipping this section.")
+            self.pwd = getpass("Password: ")
+            transport = self.connect(self.pwd)
             if not transport:
-                print("Error in credentials. Last try before skipping this section.")
-                pwd = getpass("Password: ")
-                transport = self.connect(pwd)
-                if not transport:
-                    raise paramiko.AuthenticationException("Password may be outdated. Try to log online.")
-            self.pwd = pwd
-            self.transport = transport
+                raise paramiko.AuthenticationException("Password may be outdated. Try to log online.")
+        self.transport = transport
             
                 
     def connect(self, pwd):
