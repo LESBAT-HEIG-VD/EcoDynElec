@@ -106,16 +106,17 @@ def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: 
         progress_bar.set_sub_label('Load auxiliary datasets...')
     # Load SwissGrid -> if Residual or SG exchanges
     if np.logical_or(np.logical_or(p.residual_global, p.residual_local), p.sg_imports):
+        if is_verbose: print('Load SwissGrid data...')
         # Load SwissGrid data, adjusting the date parameters for the time zone difference
         # EcoDynElec is using UTC while SwissGrid is using Europe/Zurich (UTC+1 in winter, UTC+2 in summer)
         # The SwissGrid data is already converted to Etc/GMT+1 in by the updating script
         # We use the most little time step possible to avoid issues with the time zones
         range = pd.date_range(start=p.start, end=p.end, freq="15min")
-        range = range.tz_localize('UTC').tz_convert('Etc/GMT+1').tz_localize(
+        range = range.tz_localize('Etc/GMT+1').tz_convert('UTC').tz_localize(
             None)  # Translate to Europe/Zurich timezone then remove tz info (for comparison with data source files)
         sg_data = aux.load_swissGrid(path_sg=p.path.swissGrid, start=str(range[0]), end=str(range[-1]), freq='15min')
         # Shift the SwissGrid data index back by one hour to convert from Etc/GMT+1 to UTC
-        sg_data.index = sg_data.index.tz_localize('Etc/GMT+1').tz_convert('UTC').tz_localize(None)
+        sg_data.index = pd.date_range(start=p.start, end=p.end, freq="15min")
         # Resample the SwissGrid data to the desired frequency, after the time zone conversion
         sg_data = sg_data.resample(p.freq).sum()
     else:

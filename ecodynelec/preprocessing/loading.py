@@ -435,10 +435,10 @@ def set_swissGrid(Cross, sg_data):
     places = ["AT", "DE", "FR", "IT"]  # Neighbours of Swizerland (as the function is only for Swizerland)
 
     for c in places:
-        if f"Mix_{c}_CH" in Cross['CH'].columns:
-            Cross["CH"].loc[:, f"Mix_{c}_CH"] = sg_data.loc[:, f"Mix_{c}_CH"]  # Swiss imprts
+        if c in Cross['CH'].columns:
+            Cross["CH"].loc[:, c] = sg_data.loc[:, f"Mix_{c}_CH"]  # Swiss imports
         if c in Cross.keys():
-            Cross[c].loc[:, f"Mix_CH_{c}"] = sg_data.loc[:, f"Mix_CH_{c}"]  # Swiss exports
+            Cross[c].loc[:, 'CH'] = sg_data.loc[:, f"Mix_CH_{c}"]  # Swiss exports
 
     return Cross
 
