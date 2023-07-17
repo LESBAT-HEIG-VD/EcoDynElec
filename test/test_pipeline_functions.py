@@ -14,6 +14,7 @@ def generate_config():
     config = Parameter()
     config.path.generation = os.path.join(parent_dir, "examples/test_data/generations/")
     config.path.exchanges = os.path.join(parent_dir, "examples/test_data/exchanges/")
+    config.ctry = ['CH', 'FR', 'DE']
     return config
 
 def generate_table():
@@ -56,8 +57,8 @@ class TestPipelineFunctions(unittest.TestCase):
         config.target = ['CH', 'FR']
         # not covered yet config.residual_local = True
         raw_prod_exch = generate_table()
-        mix_dict = pipeline_functions.get_mix(parameters=config, raw_prod_exch=raw_prod_exch, sg_data=None, prod_gap=None)
-        
+        mix_dict = pipeline_functions.get_mix(parameters=config, raw_prod_exch=raw_prod_exch)
+
         ### Test the type
         self.assertIsInstance(mix_dict, dict, msg='mix_dict is dict')
         self.assertIn('CH', mix_dict, msg='mix_dict CH key')
@@ -83,20 +84,33 @@ class TestPipelineFunctions(unittest.TestCase):
         pd.testing.assert_index_equal(mix_matrix[0].index, mix_matrix[0].columns)
         pd.testing.assert_index_equal(mix_matrix[0].index, mix_matrix[1].index)
         pd.testing.assert_index_equal(mix_matrix[0].columns, mix_matrix[1].columns)
-        
+
         # not covered yet self.assertNotIn('Residual_Other_CH', mix_matrix[0].columns, msg='Residual_Other_CH not in mix_matrix columns')
 
-    def test_mix_to_kwh(self):
+
+    def test_prod_mix_and_mix_to_kwh(self):
         config = generate_config()
         raw_prod_exch = generate_table()
-        mix_matrix = pipeline_functions.get_mix(parameters=config, raw_prod_exch=raw_prod_exch, return_matrix=False)
+        prod_mix, cons_mix= pipeline_functions.get_mix(parameters=config, raw_prod_exch=raw_prod_exch, return_matrix=False, return_prod_mix=True)
         country = config.target[0]
-        mix_df = mix_matrix[country]
+        prod_df = prod_mix[country]
+        mix_df = cons_mix[country]
+
+        # Drop non-production lines of the mix (i.e. the first part of the mix matrix)
+        prod_df = prod_df.drop(
+            prod_df.loc[:,
+            [k.startswith('Mix') and not k.endswith('Other') for k in prod_df.columns]],
+            axis=1).astype('float32')
+        prod_df = prod_df / prod_df.sum(axis=1).values.reshape(-1, 1)
+        mix_df = mix_df.drop(
+            mix_df.loc[:, [k.startswith('Mix') and not k.endswith('Other') for k in mix_df.columns]],
+            axis=1).astype('float32')
+
         flows_dict = {'production': pd.Series(index=mix_df.index, data=1000.0), 'imports': pd.Series(index=mix_df.index, data=500.0), 'exports': pd.Series(index=mix_df.index, data=100.0)}
         flows_df = pd.DataFrame.from_dict(flows_dict)
 
         # Test production kwh calculation
-        kwh = pipeline_functions.mix_to_kwh(parameters=config, flows_df=flows_df, mix_df=mix_df, target=country, return_data='+P')
+        kwh = pipeline_functions.get_producing_mix_kwh(flows_df=flows_df, prod_mix_df=prod_df)
         ### Test the type
         self.assertIsInstance(kwh, pd.DataFrame, msg='kwh is DataFrame')
         ### Test the contents
@@ -106,8 +120,7 @@ class TestPipelineFunctions(unittest.TestCase):
          not c.startswith('Mix_')]  # Check that prod columns are in mix_dict
 
         # Test production + imports - exports kwh calculation
-        kwh = pipeline_functions.mix_to_kwh(parameters=config, flows_df=flows_df, mix_df=mix_df, target=country,
-                                            return_data='+P+I-E')
+        kwh = pipeline_functions.get_consuming_mix_kwh(flows_df=flows_df, mix_df=mix_df)
         ### Test the type
         self.assertIsInstance(kwh, pd.DataFrame, msg='kwh is DataFrame')
         ### Test the contents
@@ -115,12 +128,11 @@ class TestPipelineFunctions(unittest.TestCase):
         pd.testing.assert_series_equal(kwh.sum(axis=1), flows_df['production']+flows_df['imports']-flows_df['exports'], check_names=False)
         [self.assertIn(c, mix_df.columns, msg=f'{c} in mix_dict columns') for c in kwh.columns if
          not c.startswith('Mix_')]  # Check that prod columns are in mix_dict
-        [self.assertIn(f'Mix_{c}_{country}', kwh.columns, msg=f'Mix_{c}_{country} in raw_prod_dict columns') for
+        [self.assertIn(f'Plant_{c}', kwh.columns, msg=f'Mix_{c}_{country} in raw_prod_dict columns') for
          c in config.ctry if c != country]  # Check that import columns are in raw_prod_dict
-        self.assertIn(f'Mix_Other_{country}', kwh.columns, msg='Mix_Other in raw_prod_dict columns')
+        self.assertIn(f'Mix_Other', kwh.columns, msg='Mix_Other in raw_prod_dict columns')
 
 
-        
     def test_get_productions(self):
         # needs to be tested with fake data and a local residual
         pass

@@ -357,3 +357,15 @@ def get_default_file(name, level=0, max_level=3):
 
     ### Otherwise, search recursively above (until limit reached)
     return get_default_file(name, level=level + 1)
+
+
+def load_ch_enr_model(ch_enr_model_path, start, end, freq):
+    enr_prod_ch = pd.read_csv(ch_enr_model_path, index_col=0, parse_dates=[0]).astype(float)
+    enr_prod_ch = enr_prod_ch.loc[start+pd.Timedelta('1H'):end+pd.Timedelta('1H')] / 1000 # Convert from kWh to MWh
+    #print('Sliced:', enr_prod_ch)
+    enr_prod_ch.rename(columns={'Wind': 'Wind_Onshore_CH', 'Solar': 'Solar_CH'}, inplace=True)
+    enr_prod_ch = enr_prod_ch.resample(freq).sum() # Sum the production
+    #print('Resampled:', enr_prod_ch)
+    enr_prod_ch.index = enr_prod_ch.index - pd.Timedelta('1H') # Shift the index to the left
+    #print('Shifted:', enr_prod_ch)
+    return enr_prod_ch

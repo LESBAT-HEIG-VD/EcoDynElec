@@ -5,6 +5,7 @@ Module to load production and cross-border flows from ENTSO-E
 import os
 from time import time
 
+import numpy as np
 import pandas as pd
 
 #################### Local functions
@@ -29,7 +30,7 @@ from ecodynelec.progress_info import ProgressInfo
 # -
 
 def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, prod_gap=None, sg_data=None,
-                net_exchange=False,
+                enr_prod_ch=None, net_exchange=False,
                 path_gen=None, gen_preprocessed=None, path_imp=None, imp_preprocessed=None, savedir=None,
                 residual_global=False, correct_imp=True,
                 clean_data=True, n_hours=2, days_around=7, limit=.4, is_verbose=True,
@@ -54,6 +55,9 @@ def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, p
             information about the nature of the residual
         sg_data: pandas.DataFrame, default to None
             information from Swiss Grid
+        enr_prod_ch: pandas.DataFrame, default to None
+            Wind and solar production in Switzerland, as modeled with EcoDynElec-Enr-Model
+            See Parameter.ch_enr_model_path for more information
         net_exchange: bool, default to False
             to simplify cross-border flows to net after resampling
         path_gen: str, default to None
@@ -100,7 +104,7 @@ def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, p
     if progress_bar:
         progress_bar.progress('Adjust generation data...')
     Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
-                            prod_gap=prod_gap, is_verbose=is_verbose)  # adjust the generation data
+                            prod_gap=prod_gap, enr_prod_ch=enr_prod_ch, is_verbose=is_verbose)  # adjust the generation data
 
     if progress_bar:
         progress_bar.progress('Import exchanges data...')
@@ -229,7 +233,7 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
 # -
 
 def adjust_generation(Gen, freq='H', residual_global=False,
-                      sg_data=None, prod_gap=None, is_verbose=False):
+                      sg_data=None, prod_gap=None, enr_prod_ch=None, is_verbose=False):
     """Function that leads organizes the data adjustment.
     It sorts finds and sorts missing values, fills it, resample the data and
     add a residual as global production
@@ -246,6 +250,9 @@ def adjust_generation(Gen, freq='H', residual_global=False,
             information from Swiss Grid
         prod_gap: pandas.DataFrame, default to None
             information about the nature of the residual
+        enr_prod_ch: pandas.DataFrame, default to None
+            Wind and solar production in Switzerland, as modeled with EcoDynElec-Enr-Model
+            See Parameter.ch_enr_model_path for more information
         is_verbose: bool, default to False
             whether to display information or not.
         
@@ -262,6 +269,24 @@ def adjust_generation(Gen, freq='H', residual_global=False,
     if residual_global:
         Gen = include_global_residual(Gen=Gen, freq=freq, sg_data=sg_data, prod_gap=prod_gap,
                                       is_verbose=is_verbose)
+
+    ### Include the enr production as modeled with EcoDynElec-Enr-Model
+    if enr_prod_ch is not None:
+        if residual_global:
+            # If a residual is present, "Residual_Other_CH" already contain the residual wind and solar productions
+            # so we remove it
+            if is_verbose: print('Subtracting enr prod from CH other residual')
+            delta = enr_prod_ch - Gen['CH'].loc[:, enr_prod_ch.columns]
+            Gen['CH'].loc[:, 'Residual_Other_CH'] -= delta.sum(axis=1)
+
+            # The resulting residual is sometimes negative, that should not happen, and for the moment, we simply set it to 0
+            #Gen['CH'].loc[Gen['CH'].index[np.where((Gen['CH'].loc[:, 'Residual_Other_CH'] < 0) & (Gen['CH'].loc[:, 'Residual_Other_CH'] > -50))], 'Residual_Other_CH'] = 0
+            Gen['CH'].loc[Gen['CH'].index[np.where((Gen['CH'].loc[:, 'Residual_Other_CH'] < 0))], 'Residual_Other_CH'] = 0
+            #print('Gen is', Gen['CH'].loc[:, 'Residual_Other_CH'])
+            #print(np.where(Gen['CH'].loc[:, 'Residual_Other_CH'] < 0))
+            #print(Gen['CH']['Residual_Other_CH'].iloc[np.where(Gen['CH'].loc[:, 'Residual_Other_CH'] < 0)])
+            assert np.all(Gen['CH'].loc[:, 'Residual_Other_CH'] >= 0), 'Negative residual'
+        Gen['CH'].loc[:, enr_prod_ch.columns] = enr_prod_ch
 
     return Gen
 

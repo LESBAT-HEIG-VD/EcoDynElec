@@ -66,9 +66,11 @@ def adapt_impacts(impact_data, mix, strategy='error'):
     impact = impact_data.copy()
 
     # adapt the impact data to the production unit for Residual
-    if "Residual_Other_CH" not in mix.columns:
-        if "Residual_Other_CH" in impact.index:
-            impact = impact.drop(index="Residual_Other_CH") # remove from the impacts if not existing in mix
+    residuals = ['Residual_Other_CH', 'Residual_Hydro_Run-of-river_and_poundage_CH', 'Residual_Hydro_Water_Reservoir_CH']
+    for residual in residuals:
+        if residual not in mix.columns:
+            if residual in impact.index:
+                impact = impact.drop(index=residual) # remove from the impacts if not existing in mix
     
     return equalize_impact_vector(impact, mix, strategy=strategy)
 
@@ -107,7 +109,9 @@ def equalize_impact_vector(impact_data, mix, strategy='error'):
     
     ### Create new indexes
     new_impacts = pd.DataFrame( None, index=mix.columns[units_from_mix], columns=impact_data.columns, dtype='float32' )
-    new_impacts.loc[impact_data.index, :] = impact_data # Fill already known
+    # mix may not contain all electricity sources present in impact_data
+    to_fill = impact_data.index.intersection(new_impacts.index)
+    new_impacts.loc[to_fill, :] = impact_data.loc[to_fill, :] # Fill already known
     
     ### Fill the missing values
     if new_impacts.isna().to_numpy().sum()>0: # If some data still missing
@@ -192,7 +196,6 @@ def compute_global_impacts(mix_data, impact_data):
     mix = mix_data.drop(columns=[k for k in mix_data.columns
                                  if ((k.split("_")[0]=="Mix")&(k.find("Other")==-1))]) # delete "Mix"
 
-    
     # Compute the impacts
     pollution = pd.DataFrame(np.dot(mix.values,impact_data.loc[mix.columns].values),
                              index=mix.index,columns=impact_data.columns)

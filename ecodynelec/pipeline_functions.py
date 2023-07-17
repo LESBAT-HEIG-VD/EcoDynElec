@@ -22,15 +22,15 @@ from ecodynelec import saving
 from ecodynelec.impacts import compute_impacts
 from ecodynelec.parameter import Parameter
 from ecodynelec.preprocessing import auxiliary as aux
+from ecodynelec.preprocessing.auxiliary import load_ch_enr_model
 from ecodynelec.preprocessing.downloading import download
 from ecodynelec.preprocessing.load_impacts import extract_mapping, extract_UI
 from ecodynelec.preprocessing.loading import import_data
-from ecodynelec.preprocessing.residual import include_local_residual
 from ecodynelec.progress_info import ProgressInfo
 from ecodynelec.tracking import track_mix
 
 
-def load_config(config):
+def load_config(config) -> Parameter:
     """Loads the configuration parameters.
 
     Parameters
@@ -53,16 +53,13 @@ def load_config(config):
             raise NotImplementedError(f"File extension for {config} is not supported.")
     else:
         raise ValueError('Missing a configuration to pass parameters.')
-    # Check if residual is global OR local
-    if np.logical_and(p.residual_global, p.residual_local):
-        raise ValueError("Residual can not be both global and local.")
     # Convert target to list is not already
     if isinstance(p.target, str):
         p.target = [p.target]
     return p
 
 
-def check_download(parameters: Parameter, is_verbose: bool = False):
+def check_download(parameters: Parameter, is_verbose: bool = False) -> None:
     """Checks if the config requires to download the entso-e data, and if so, downloads it.
 
     Parameters
@@ -79,7 +76,8 @@ def check_download(parameters: Parameter, is_verbose: bool = False):
         download(config=parameters, is_verbose=is_verbose)  # Save files in a local dirrectory
 
 
-def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: ProgressInfo = None):
+def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = False,
+                            progress_bar: ProgressInfo = None) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """Loads the raw production and exchange data from entso-e.
 
     Parameters
@@ -138,13 +136,23 @@ def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: 
     else:
         prod_gap = None
 
+    # Load enr production from EcoDynElec-Enr-Model, if enabled
+    if progress_bar:
+        progress_bar.progress()
+        progress_bar.set_sub_label('Load Swiss enr production model...')
+    if p.ch_enr_model_path is not None and 'CH' in p.ctry:
+        if is_verbose: print('Loading Swiss enr production model')
+        enr_prod_ch = load_ch_enr_model(p.ch_enr_model_path, p.start, p.end, p.freq)
+    else:
+        enr_prod_ch = None
+
     if progress_bar:
         progress_bar.progress()
         progress_bar.set_sub_label('Load ENTSO-E data...')
 
     # Load generation and exchange data from entso-e
     raw_prod_exch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, involved_countries=neighbours,
-                                prod_gap=prod_gap, sg_data=sg_data,
+                                prod_gap=prod_gap, sg_data=sg_data, enr_prod_ch=enr_prod_ch,
                                 path_gen=p.path.generation, path_imp=p.path.exchanges,
                                 savedir=p.path.savedir, net_exchange=p.net_exchanges,
                                 residual_global=p.residual_global, correct_imp=p.sg_imports,
@@ -152,7 +160,7 @@ def load_raw_prod_exchanges(parameters, is_verbose: bool = False, progress_bar: 
     return raw_prod_exch, prod_gap, sg_data
 
 
-def load_impact_matrix(parameters: Parameter, is_verbose: bool = False):
+def load_impact_matrix(parameters: Parameter, is_verbose: bool = False) -> pd.DataFrame:
     """Loads the impact matrix from the specified parameters.
 
     Parameters
@@ -172,19 +180,23 @@ def load_impact_matrix(parameters: Parameter, is_verbose: bool = False):
     if parameters.path.mapping is not None:  # Priority to the mapping spreadhseet, as soon as it is specified
         impact_matrix = extract_mapping(ctry=parameters.ctry, mapping_path=parameters.path.mapping,
                                         cst_import=parameters.cst_imports,
-                                        residual=np.logical_or(parameters.residual_global, parameters.residual_local),
+                                        residual=parameters.residual_global,
                                         target=parameters.target, is_verbose=is_verbose)
     else:  # If no mapping specified, go for the UI vector: it can grab the default vector automatically
         impact_matrix = extract_UI(path_ui=parameters.path.ui_vector, ctry=parameters.ctry, target=parameters.target,
                                    cst_imports=parameters.cst_imports,
-                                   residual=np.logical_or(parameters.residual_global, parameters.residual_local))
+                                   residual=parameters.residual_global)
     return impact_matrix
 
 
-def get_mix(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg_data: pd.DataFrame = None,
-            prod_gap: pd.DataFrame = None, return_matrix: bool = False, is_verbose: bool = False):
+def get_mix(parameters: Parameter, raw_prod_exch: pd.DataFrame, return_matrix: bool = False,
+            return_prod_mix: bool = False,
+            is_verbose: bool = False,
+            progress_bar: ProgressInfo = None):
     """Loads the mix from the specified parameters.
-    Also includes the local residual if return_matrix is False and parameters.residual_local is True.
+    If return_matrix is True, returns the whole consumption mix matrix instead of the mix dictionary.
+    Else, returns the consumption mix dictionary (the impact matrix sorted by target country).
+    If return_prod_mix is True, the production mix in the studied countries is also returned (as a tuple with the consumption mix).
 
     Parameters
     ----------
@@ -192,27 +204,32 @@ def get_mix(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg_data: pd.Data
             Parameters returned by load_config.
         raw_prod_exch: pandas.DataFrame
             The raw production and exchange data, as returned by load_raw_prod_exchanges.
-        sg_data: pandas.DataFrame, default to None
-            The SwissGrid data, as returned by load_raw_prod_exchanges.
-        prod_gap: pandas.DataFrame, default to None
-            The production gap data, as returned by load_raw_prod_exchanges.
         return_matrix: bool, default to False
-            If True, returns the whole mix matrix instead of the mix dictionary
-            (the impact matrix sorted by target country).
+            If True, returns the whole mix matrix instead of the mix dictionary (the impact matrix sorted by target country).
+            (overrides return_prod_mix).
+        return_prod_mix: bool, default to False
+            If True, returns the production mix in the studied countries, as a tuple with the consumption mix.
+            Has no effect if return_matrix is True.
         is_verbose: bool, default to False
+            To display progress information
+        progress_bar: ecodynelec.ProgressInfo, default to None
             To display progress information
 
     Returns
     -------
-        return_matrix is False:
-            A dictionary of pandas.DataFrame, with the mix for each target (parameter.target)
+        return_matrix is False and return_prod_mix is False:
+            A dictionary of pandas.DataFrame, with the consumption mix for each target (parameter.target)
             (containing the contribution of each production mean in 1 kWh consumed in the target country).
             This includes the local residual if parameters.residual_local is True.
+        return_matrix is False and return_prod_mix is True:
+            A tuple (prod_mix_dict, cons_mix_dict) of two dictionaries of pandas.DataFrame, with the consumption mix
+            (containing the contribution of each production mean in 1 kWh consumed in the target country) and
+            the production mix (containing the contribution of each production mean in 1 kWh produced in the studied countries)
+            for each target (parameter.target).
         return_matrix is True:
             The raw table with the electricity mix in the studied countries
             (parameter.ctry + 'Other'), containing each production mean of each country.
-            This does not include the local residual.
-    :type: dict or pandas.DataFrame
+            This is a list of pandas.DataFrame, for each time step.
 
     """
     # Load network losses -> if Network Loss asked
@@ -222,30 +239,43 @@ def get_mix(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg_data: pd.Data
     else:
         network_losses = None
 
-    mix_df = track_mix(raw_data=raw_prod_exch, freq=parameters.freq, network_losses=network_losses,
-                       residual_global=parameters.residual_global,
-                       is_verbose=is_verbose)
+    # Local sources : sources not shared with neighbors and not taken into account during the mix tracking
+    local_sources = parameters.local_productions
+
+    if return_prod_mix:
+        mix_df, prod_mix = track_mix(raw_data=raw_prod_exch, freq=parameters.freq, network_losses=network_losses,
+                                     local_sources=local_sources,
+                                     residual_global=parameters.residual_global, return_prod_mix=return_prod_mix,
+                                     is_verbose=is_verbose, progress_bar=progress_bar)
+    else:
+        mix_df = track_mix(raw_data=raw_prod_exch, freq=parameters.freq, network_losses=network_losses,
+                           local_sources=local_sources,
+                           residual_global=parameters.residual_global, return_prod_mix=return_prod_mix,
+                           is_verbose=is_verbose, progress_bar=progress_bar)
     if return_matrix:
         # old behavior for 'get_inverted_matrix' pipeline
         time_steps = []
         for step in mix_df.index.levels[0]:
             time_steps.append(mix_df.loc[step, :])
         return time_steps
-    mix_dict = {}
+    prod_mix_dict = {}
+    cons_mix_dict = {}
     for target in parameters.target:
-        mix_dict[target] = mix_df[f'Mix_{target}'].unstack()
+        cons_mix_dict[f'{target}'] = mix_df[f'Mix_{target}'].unstack()
+        if return_prod_mix:
+            df = prod_mix[[cl for cl in prod_mix.columns if cl.endswith(f'_{target}')]]
+            # Here we only consider the local production means (not the imports)
+            df = df.drop(columns=[k for k in df.columns if
+                                  k.startswith("Mix_Other_")])  # delete "Mix_Other_xx" (other countries)
+            # Normalize the production mix
+            df = df / df.sum(axis=1).values.reshape(-1, 1)
+            prod_mix_dict[f'{target}'] = df
 
-    if parameters.residual_local:
-        if is_verbose: print("Compute local residual...")
-        for target in parameters.target:
-            local = [k for k in raw_prod_exch.columns if k.endswith(f'_{target}')]
-            mix_dict[target] = include_local_residual(mix_data=mix_dict[target], sg_data=sg_data,
-                                                      local_prod=raw_prod_exch.loc[:, local],
-                                                      gap=prod_gap, freq=parameters.freq, target=target)
-    return mix_dict
+    return (prod_mix_dict, cons_mix_dict) if return_prod_mix else cons_mix_dict
 
 
-def get_impacts(mix_dict: dict, impact_matrix: pd.DataFrame, missing_mapping: str = 'error', is_verbose: bool = False):
+def get_impacts(mix_dict: dict, impact_matrix: pd.DataFrame, missing_mapping: str = 'error',
+                is_verbose: bool = False) -> dict:
     """Computes the impact of the given electrical mix.
 
     Parameters
@@ -275,9 +305,10 @@ def get_impacts(mix_dict: dict, impact_matrix: pd.DataFrame, missing_mapping: st
     return imp_dict
 
 
-def get_flows_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.DataFrame):
+def get_flows_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame) -> dict:
     """
     Compute the total production, imports and exports for each country, in kWh, at each time step.
+    Useful to compute the mixes in kWh (instead of %).
 
     Parameters
     ----------
@@ -285,8 +316,6 @@ def get_flows_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.Dat
         Parameters returned by load_config.
     raw_prod_exch: pandas.DataFrame
         The raw production and exchange data, as returned by load_raw_prod_exchanges.
-    sg: pandas.DataFrame
-        The SwissGrid data, as returned by load_raw_prod_exchanges.
 
     Returns
     -------
@@ -299,16 +328,9 @@ def get_flows_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.Dat
         flows_dict[target] = pd.DataFrame(index=raw_prod_exch.index, columns=['production', 'imports', 'exports'])
         # We compute the incoming power (production + import) at each time step
         # then we multiply it by the relative mix matrix to get the mix in kWh
-        if target == 'CH' and parameters.residual_local:
-            if sg is None:
-                raise ValueError("To compute the local residual, SwissGrid data must be provided.")
-            # CH is a special case, because we need to add the local residual, which is not included in
-            # the raw production and exchange data
-            flows_dict[target]['production'] = sg.loc[:, 'Production_CH']
-        else:
-            flows_dict[target]['production'] = raw_prod_exch[
-                [col for col in raw_prod_exch.columns if not col.startswith(f'Mix_') and col.endswith(target)]].sum(
-                axis=1)
+        flows_dict[target]['production'] = raw_prod_exch[
+            [col for col in raw_prod_exch.columns if not col.startswith(f'Mix_') and col.endswith(target)]].sum(
+            axis=1)
         flows_dict[target]['imports'] = raw_prod_exch[
             [col for col in raw_prod_exch.columns if col.startswith(f'Mix_') and col.endswith(target)]].sum(axis=1)
         flows_dict[target]['exports'] = raw_prod_exch[
@@ -316,7 +338,8 @@ def get_flows_kwh(parameters: Parameter, raw_prod_exch: pd.DataFrame, sg: pd.Dat
     return flows_dict
 
 
-def translate_to_timezone(parameters: Parameter, flows_dict: dict, mix_dict: dict, imp_dict: dict,
+def translate_to_timezone(parameters: Parameter, flows_dict: dict = None, prod_mix_dict: dict = None,
+                          mix_dict: dict = None, prod_imp_dict: dict = None, imp_dict: dict = None,
                           is_verbose: bool = False):
     """Translates the data to the right timezone.
     The data is modified in place.
@@ -328,18 +351,24 @@ def translate_to_timezone(parameters: Parameter, flows_dict: dict, mix_dict: dic
         flows_dict: dict or None
             A dictionary of pandas.DataFrame, with the raw productions/imports/exports (in kWh) for each target.
             As returned by get_flows_kwh.
-        mix_dict: dict or None
-            A dictionary of pandas.DataFrame, with the mix for each target.
+        prod_mix_dict: dict or None
+            A dictionary of pandas.DataFrame, with the production mix for each target.
             As returned by get_mix.
+        mix_dict: dict or None
+            A dictionary of pandas.DataFrame, with the consumption mix for each target.
+            As returned by get_mix.
+        prod_imp_dict: dict or None
+            A dictionary containing the electricity production impacts for each target.
+            As returned by get_impacts.
         imp_dict: dict or None
-            A dictionary containing the impacts for each target.
+            A dictionary containing the electricity consumption impacts for each target.
             As returned by get_impacts.
         is_verbose: bool, default to False
             To display progress information
 
     Returns
     -------
-    (flows_dict, mix_dict, imp_dict): tuple of dict
+    (flows_dict, prod_mix_dict, mix_dict, prod_imp_dict, imp_dict): tuple of dict
         The same dictionaries, with the data translated to the right timezone.
     """
     if parameters.timezone is not None:
@@ -347,16 +376,23 @@ def translate_to_timezone(parameters: Parameter, flows_dict: dict, mix_dict: dic
         for target in parameters.target:
             if flows_dict is not None:
                 flows_dict[target] = localize_from_utc(data=flows_dict[target], timezone=parameters.timezone)
+            if prod_mix_dict is not None:
+                prod_mix_dict[target] = localize_from_utc(data=prod_mix_dict[target], timezone=parameters.timezone)
             if mix_dict is not None:
                 mix_dict[target] = localize_from_utc(data=mix_dict[target], timezone=parameters.timezone)
+            if prod_imp_dict is not None:
+                for k in prod_imp_dict[target].keys():
+                    prod_imp_dict[target][k] = localize_from_utc(data=prod_imp_dict[target][k],
+                                                                 timezone=parameters.timezone)
             if imp_dict is not None:
                 for k in imp_dict[target].keys():
                     imp_dict[target][k] = localize_from_utc(data=imp_dict[target][k], timezone=parameters.timezone)
-    return flows_dict, mix_dict, imp_dict
+    return flows_dict, prod_mix_dict, mix_dict, prod_imp_dict, imp_dict
 
 
 def save_results(parameters: Parameter, flows_dict: dict = None, impact_matrix: pd.DataFrame = None,
-                 mix_dict: dict = None, imp_dict: dict = None, is_verbose: bool = False):
+                 prod_mix_dict: dict = None, mix_dict: dict = None, prod_imp_dict: dict = None, imp_dict: dict = None,
+                 is_verbose: bool = False) -> None:
     """Saves the results in the specified directory (parameters.path.savedir).
 
     Parameters
@@ -368,10 +404,14 @@ def save_results(parameters: Parameter, flows_dict: dict = None, impact_matrix: 
         As returned by get_flows_kwh.
     impact_matrix: pandas.DataFrame or None
         The impact matrix, as returned by load_impact_matrix.
+    prod_mix_dict: dict or None
+        A dictionary of pandas.DataFrame, with the production mix for each target, as returned by get_mix.
     mix_dict: dict or None
-        A dictionary of pandas.DataFrame, with the mix for each target, as returned by get_mix.
+        A dictionary of pandas.DataFrame, with the consumption mix for each target, as returned by get_mix.
+    prod_imp_dict: dict or None
+        A dictionary containing the electricity production impacts for each target, as returned by get_impacts.
     imp_dict: dict or None
-        A dictionary containing the impacts for each target, as returned by get_impacts.
+        A dictionary containing the electricity consumption impacts for each target, as returned by get_impacts.
     is_verbose: bool, default to False
         To display progress information
     """
@@ -379,7 +419,7 @@ def save_results(parameters: Parameter, flows_dict: dict = None, impact_matrix: 
         if is_verbose: print("Save data...")
         if parameters.path.mapping is not None and impact_matrix is not None:  # Impact vector saved only if use of Mapping xlsx
             saving.save_impact_vector(impact_matrix, savedir=parameters.path.savedir, cst_import=parameters.cst_imports,
-                                      residual=np.logical_or(parameters.residual_global, parameters.residual_local))
+                                      residual=parameters.residual_global)
         for country in parameters.target:
             path = os.path.abspath(f'{parameters.path.savedir}{country}/')
             if not os.path.isdir(path):
@@ -388,9 +428,18 @@ def save_results(parameters: Parameter, flows_dict: dict = None, impact_matrix: 
                 saving.save_dataset(data=flows_dict[country], savedir=f'{parameters.path.savedir}{country}/',
                                     name="RawFlows",
                                     freq=parameters.freq)
+            if prod_mix_dict is not None:
+                saving.save_dataset(data=prod_mix_dict[country], savedir=f'{parameters.path.savedir}{country}/',
+                                    name="ProdMix",
+                                    freq=parameters.freq)
             if mix_dict is not None:
                 saving.save_dataset(data=mix_dict[country], savedir=f'{parameters.path.savedir}{country}/', name=f"Mix",
                                     freq=parameters.freq)
+            if prod_imp_dict is not None:
+                imp = prod_imp_dict[country]
+                for k in imp:
+                    saving.save_dataset(data=imp[k], savedir=f'{parameters.path.savedir}{country}/',
+                                        name=f'ProdImpact_{k.replace("_", "-")}', freq=parameters.freq)
             if imp_dict is not None:
                 imp = imp_dict[country]
                 for k in imp:
@@ -398,7 +447,7 @@ def save_results(parameters: Parameter, flows_dict: dict = None, impact_matrix: 
                                         name=f'Impact_{k.replace("_", "-")}', freq=parameters.freq)
 
 
-def localize_from_utc(data: pd.DataFrame, timezone: str = 'CET'):
+def localize_from_utc(data: pd.DataFrame, timezone: str = 'CET') -> pd.DataFrame:
     """Converts the index of a dataframe from UTC to another time zone.
 
     :param data: table with TimeIndex, assumed to be UTC
@@ -410,49 +459,48 @@ def localize_from_utc(data: pd.DataFrame, timezone: str = 'CET'):
     return data.tz_localize(tz='utc').tz_convert(tz=timezone).tz_localize(None)
 
 
-def mix_to_kwh(parameters: Parameter, flows_df: pd.DataFrame, mix_df: pd.DataFrame, target: str, return_data: str):
+def get_producing_mix_kwh(flows_df: pd.DataFrame, prod_mix_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Converts a relative mix to absolute values (in kWh) for the target country. According to the total_kwh values, it will return:
-     - the producing mix in kWh (in this case return_imports can be set to False) if total_kwh is the local electricity production (Prod) at parameters.freq frequency.
-     - the consumption mix in kWh if total_kwh is the local electricity consumption (Prod+Imports-Exports) at parameters.freq frequency.
+    Converts a relative production mix to absolute values (in kWh) for the target country.
+
     Parameters
     ----------
-    parameters: ecodynelec.Parameter
-        Parameters returned by load_config.
-    flows_df: pandas.DataFrame
-        The raw productions/imports/exports (in kWh) for the target country.
-        Returned by get_flows_kwh.
-    mix_df: pandas.DataFrame
-        The electricity mix for the target country.
-        Returned by get_mix.
-    target: str
-        The target country (should be included in parameters.target).
-    return_data: str
-        A string indicating what to return. Can be:
-            - '+P': the production mix in kWh
-            - '+I': the import mix in kWh
-            - '+I-E': the import - export mix in kWh
-            - '+P+I': the production + import mix in kWh
-            - '+P+I-E': the production + import - export mix in kWh
+    flows_df: pd.DataFrame
+        A dataframe containing the raw productions/imports/exports (in kWh) for each target.
+    prod_mix_df: pd.DataFrame
+        A dataframe containing the relative production mix of the target country.
+    Returns
+    -------
+        A dataframe containing the production mix in kWh for the target country.
+    """
+
+    total_kwh = flows_df['production']
+    print('Over total kwh', total_kwh)
+    power_df = prod_mix_df.copy()
+    assert np.isclose(power_df.sum(axis=1).abs().max(), 1), "Production mix sum is not equal to 1"
+    power_df = power_df.multiply(total_kwh, axis=0)
+    return power_df
+
+
+def get_consuming_mix_kwh(flows_df: pd.DataFrame, mix_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Converts a relative consumption mix to absolute values (in kWh) for the target country.
+
+    Parameters
+    ----------
+    flows_df: pd.DataFrame
+        A dataframe containing the raw productions/imports/exports (in kWh) for each target.
+    mix_df: pd.DataFrame
+        A dataframe containing the relative consumption mix of the target country.
 
     Returns
     -------
-    power_df: pandas.DataFrame
-        A dataframe with the production or consumption mix in kWh for the target country.
-
+        A dataframe containing the consumption mix in kWh for the target country.
     """
-    total_kwh = flows_df['production'] if '+P' in return_data else None
-    if '+I' in return_data:
-        total_kwh = total_kwh.add(flows_df['imports'], axis=0) if total_kwh is not None else flows_df['imports']
-        if '-E' in return_data:
-            total_kwh = total_kwh.subtract(flows_df['exports'], axis=0)
-    if total_kwh is None:
-        raise ValueError('You must specify at least one of the following return_data: P, +I')
-    prod_df = mix_df.multiply(total_kwh, axis=0)
-    if '+I' in return_data:
-        power_df = prod_df.copy()
-    else: # Ignore import sources
-        power_df = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
-    # Rescale to the desired total_kwh
-    power_df = power_df.multiply((total_kwh.divide(power_df.sum(axis=1), axis=0)), axis=0)
+
+    total_kwh = flows_df['production'] + flows_df['imports'] - flows_df['exports']
+    print('Over total kwh', total_kwh)
+    power_df = mix_df.copy()
+    assert np.isclose(power_df.sum(axis=1).abs().max(), 1), "Consumption mix sum is not equal to 1"
+    power_df = power_df.multiply(total_kwh, axis=0)
     return power_df

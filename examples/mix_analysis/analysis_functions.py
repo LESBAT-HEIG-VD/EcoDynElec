@@ -43,7 +43,9 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
         Contains for each year a dict of the climate change (gwp) impacts for each target country
     """
     flows_dict = {}  # Productions/imports/exports in kwh per year
+    prods = {}
     mixs = {}  # Energetic mixes per year
+    prod_impacts = {}
     impacts = {}  # Climate change impacts per year
     if show_progress:
         progress_info_year = ProgressInfo('Compute ' + years[0] + '...', len(years) + 1, width='90%')
@@ -57,12 +59,17 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
         config.start = year + '-01-01 00:00'
         config.end = year + '-12-31 23:59'
         config.path.savedir = savedir + year + "/"
-        raw, mix, imp = get_prod_mix_impacts(config=config, is_verbose=is_verbose,
+        raw, prod, mix, prodimp, imp = get_prod_mix_impacts(config=config, is_verbose=is_verbose,
                                              progress_bar=progress_info_computation)
         if show_progress:
             progress_info_year.progress()
         flows_dict[year] = raw
+        prods[year] = prod
         mixs[year] = mix
+        if isinstance(prodimp, dict):  # multi target
+            prod_impacts[year] = {k: prodimp[k]['Climate Change'] for k in prodimp.keys()}
+        else:  # single target
+            prod_impacts[year] = prodimp['Climate Change']
         if isinstance(mix, dict):  # multi target
             impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}
         else:  # single target
@@ -70,7 +77,7 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
     if show_progress:
         progress_info_year.progress('Done!')
         progress_info_computation.hide()
-    return flows_dict, mixs, impacts
+    return flows_dict, prods, mixs, prod_impacts, impacts
 
 
 def load_data(config: Parameter, years: list[str], savedir: str = './mix_analysis/results/'):
@@ -92,22 +99,31 @@ def load_data(config: Parameter, years: list[str], savedir: str = './mix_analysi
     tPass = {'15min': '15min', '30min': '30min', "H": "hour", "D": "day", 'd': 'day', 'W': "week",
              "w": "week", "MS": "month", "M": "month", "YS": "year", "Y": "year"}
     flows_dict = {}  # Productions/imports/exports in kwh per year
+    prods = {}
     mixs = {}  # Energetic mix per year
+    prod_impacts = {}
     impacts = {}  # Climate change impact per year
     for year in years:
         flows_dict[year] = {}
+        prods[year] = {}
         mixs[year] = {}
+        prod_impacts[year] = {}
         impacts[year] = {}
         for country in config.target:
             fsavedir = savedir + year + "/" + country + "/"
             flows_dict[year][country] = pd.read_csv(fsavedir + f"RawFlows_{tPass[config.freq]}.csv", index_col=0,
                                                   parse_dates=True)
+            prods[year][country] = pd.read_csv(fsavedir + f"ProdMix_{tPass[config.freq]}.csv", index_col=0,
+                                              parse_dates=True)
             mixs[year][country] = pd.read_csv(fsavedir + f"Mix_{tPass[config.freq]}.csv", index_col=0,
                                               parse_dates=True)
+            prod_impacts[year][country] = pd.read_csv(fsavedir + f"ProdImpact_Climate Change_{tPass[config.freq]}.csv",
+                                                 index_col=0,
+                                                 parse_dates=True)
             impacts[year][country] = pd.read_csv(fsavedir + f"Impact_Climate Change_{tPass[config.freq]}.csv",
                                                  index_col=0,
                                                  parse_dates=True)
-    return flows_dict, mixs, impacts
+    return flows_dict, prods, mixs, prod_impacts, impacts
 
 
 def format_data_0(dict_per_year: dict):
@@ -254,3 +270,60 @@ def plot_typical_days(seasonal_data, season_labels, label, ylabel, fig=None, ax=
         a.set_ylabel(ylabel)
     fig.suptitle(f'{label} per season')
     fig.tight_layout()
+
+
+
+
+
+
+def mix_to_kwh(parameters: Parameter, flows_df: pd.DataFrame, mix_df: pd.DataFrame, target: str, return_data: str):
+    """
+    DEPRECATED
+    Converts a relative mix to absolute values (in kWh) for the target country. According to the total_kwh values, it will return:
+     - the producing mix in kWh if total_kwh is the local electricity production (Prod) at parameters.freq frequency.
+     - the consumption mix in kWh if total_kwh is the local electricity consumption (Prod+Imports-Exports) at parameters.freq frequency.
+    Parameters
+    ----------
+    parameters: ecodynelec.Parameter
+        Parameters returned by load_config.
+    flows_df: pandas.DataFrame
+        The raw productions/imports/exports (in kWh) for the target country.
+        Returned by get_flows_kwh.
+    mix_df: pandas.DataFrame
+        The electricity mix for the target country.
+        Returned by get_mix.
+    target: str
+        The target country (should be included in parameters.target).
+    return_data: str
+        A string indicating what to return. Can be:
+            - '+P': the production mix in kWh
+            - '+I': the import mix in kWh
+            - '+I-E': the import - export mix in kWh
+            - '+P+I': the production + import mix in kWh
+            - '+P+I-E': the production + import - export mix in kWh
+
+    Returns
+    -------
+    power_df: pandas.DataFrame
+        A dataframe with the production or consumption mix in kWh for the target country.
+
+    """
+    total_kwh = flows_df['production'] if '+P' in return_data else None
+    if '+I' in return_data:
+        total_kwh = total_kwh.add(flows_df['imports'], axis=0) if total_kwh is not None else flows_df['imports']
+        if '-E' in return_data:
+            total_kwh = total_kwh.subtract(flows_df['exports'], axis=0)
+    if total_kwh is None:
+        raise ValueError('You must specify at least one of the following return_data: P, +I')
+    prod_df = mix_df.multiply(total_kwh, axis=0)
+    if '+I' in return_data:
+        power_df = prod_df.copy()
+    else:  # Ignore import sources
+        power_df = prod_df[[col for col in prod_df.columns if col.endswith(f'_{target}')]].copy()
+    # Rescale to the desired total_kwh
+    print('tt kwh', total_kwh)
+    print('power df', power_df.sum(axis=1))
+    print('tt kwh y', total_kwh.sum(axis=0))
+    print('power df y', power_df.sum(axis=1).sum(axis=0))
+    power_df = power_df.multiply((total_kwh.divide(power_df.sum(axis=1), axis=0)), axis=0)
+    return power_df

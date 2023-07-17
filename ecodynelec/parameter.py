@@ -50,12 +50,22 @@ class Parameter():
         net_exchanges: bool
             boolean to consider net exchanges at each border (i.e. no bidirectional transfer
             within one time step)
-        residual_local: bool
-            to include a residual (for CH) as if it was all consumed in the country.
         residual_global: bool
-            to include a residual (for CH) that can be exchanged.
+            to include a residual for CH
         data_cleaning: bool
             to enable automatic data cleaning / filling
+        ch_enr_model_path: str
+            path to the CH wind and solar production data, exported using EcoDynElec-Enr-Model
+        local_productions: dict or None
+            dictionary of local productions, with the following structure:
+            {
+                'country': {
+                    'technology': <float> between 0 and 1 indicating the share of local production from this technology
+                }
+            }
+            Local production is defined as the production that is not shared on the electricity market. This production
+            is entirely consumed locally. This is the case for most of the solar and wind production, for example.
+            If None, local production is assumed to be 0 for all countries and technologies.
     
     Methods
     -------
@@ -69,7 +79,7 @@ class Parameter():
             allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
-    
+
     def __init__(self, excel=None):
         """Gather all necessary information to parametrize the execution of diverse
         functions of the module `ecodynelec.easy_use`.
@@ -81,15 +91,15 @@ class Parameter():
         """
         self.path = Filepath()
         self.server = Server()
-        
+
         self.ctry = sorted(["CH","FR","IT","DE","CZ","AT"])
         self.target = ["CH"]
-        
+
         self.start = pd.to_datetime("2017-02-01 00:00", yearfirst=True) # first considered date
         self.end = pd.to_datetime("2017-02-01 23:00", yearfirst=True) # last considered date
         self.freq = 'H'
         self.timezone = 'UTC'
-        
+
         self.cst_imports = False
         self.sg_imports = False
         self.net_exchanges = False
@@ -97,26 +107,29 @@ class Parameter():
         self.residual_local = False
         self.residual_global = False
         self.data_cleaning = True
-        
+
+        self.ch_enr_model_path = None
+        self.local_productions = None
+
         if excel is not None: # Initialize with an excel file
             self.from_excel(excel)
-        
+
         self._is_frozen = True # Freeze the list of attributes
-        
+
     def __repr__(self):
         text = {}
         attributes = ["ctry","target","start","end","freq","timezone","cst_imports","net_exchanges",
                       "network_losses","sg_imports", "residual_local", "residual_global", 'data_cleaning']
         for a in attributes:
             text[a] = getattr(self, a)
-        
+
         return ( "\n".join( [f"{a} --> {text[a]}" for a in text] )
                 + f"\n\n{self.path} \n{self.server}" )
-        
+
     def __setattr__(self, name, value):
         _booleans = ["cst_imports","sg_imports","net_exchanges","network_losses",
-                     "residual_local","residual_global","data_cleaning"] # Define boolean variables
-        
+                    "residual_global","data_cleaning"] # Define boolean variables
+
         if np.logical_and(self._is_frozen, not hasattr(self, name)):
             raise AttributeError(f"'parameter' object has no attribute '{name}'")
         elif name in ['start','end']:
@@ -132,29 +145,43 @@ class Parameter():
             super().__setattr__(name, bool(value))
         elif name in ['path','server']:
             self._set_subclass(name, value)
+        elif name == 'residual_local':
+            # residual_local isn't supported anymore with the new local production system
+            # by default, we now set residual_global to True and set the resulting residual to be local
+            if bool(value):
+                print("Warning: 'residual_local' is deprecated. Use 'residual_global' and 'local_productions' instead.")
+                print('Automatically setting "residual_global" to True and "local_productions" to 1.0 for all CH residuals...')
+                self.residual_global = True
+                if self.local_productions is None:
+                    self.local_productions = {'CH': {}}
+                self.local_productions['CH']['Residual_Hydro_Water_Reservoir'] = 1.0
+                self.local_productions['CH']['Residual_Hydro_Run-of-river_and_poundage'] = 1.0
+                self.local_productions['CH']['Residual_Other'] = 1.0
+            else:
+                super().__setattr__(name, bool(value))
         else:
             super().__setattr__(name, value) # otherwise just set value
-            
+
     def _set_subclass(self, name, value):
         match = [("path",Filepath),('server',Server)]
         if any([ ((name==n)&(isinstance(value, v))) for n,v in match]):
             super().__setattr__(name, value)
         else:
             raise TypeError(f"{name} attribute can not be of instance {type(value)}")
-    
+
     def _dates_from_excel(self, array):
         adapt = lambda x: ("0" if x<10 else "") + str(x)
         date = array.fillna(0)
         if date.sum()==0: return None
         if len(date)<5: date = pd.Series( np.concatenate([ date, [1,1,0,0][len(date)-5:] ]) )
         return "{0}-{1}-{2} {3}:{4}".format(*date.apply(adapt).values)
-    
+
     def _set_to_None(self):
         "Turn NaN attributes into None (e.g. from Excel, empty cells turns into NaN)"
         attributes = [a for a in dir(self) if ((not a.startswith("_"))&(not callable( getattr(self, a) )))]
         for a in attributes:
             if np.all( pd.isna(getattr(self, a)) ): setattr( self, a, None )
-    
+
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
 
@@ -164,12 +191,12 @@ class Parameter():
                 path to a .xlsx spreadsheet
         """
         param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None, dtype='O')
-        
+
 
         self.ctry = np.sort(param_excel.loc["countries"].dropna().values)
         self.target = param_excel.loc['target'].iloc[0]
         if isinstance(self.target, str): self.target = [self.target]
-        
+
         self.start = self._dates_from_excel(param_excel.loc['start'])
         self.end = self._dates_from_excel(param_excel.loc['end'])
         self.freq = param_excel.loc['frequency'].iloc[0]
@@ -183,10 +210,12 @@ class Parameter():
         self.residual_global = param_excel.loc['residual global'].iloc[0]
         self.data_cleaning = param_excel.loc['data cleaning'].iloc[0]
 
-        
+        self.ch_enr_model_path = param_excel.loc['CH energy model path'].iloc[0]
+        # todo read local_productions from excel
+
         self.path = self.path.from_excel(excel)
         self.server = self.server.from_excel(excel)
-        
+
         self._set_to_None()
         return self
 
@@ -232,7 +261,7 @@ class Filepath():
             allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
-    
+
     def __init__(self, excel=None):
         """Gather parameters about local data files for the execution of diverse
         functions of the module `ecodynelec.easy_use`.
@@ -245,19 +274,19 @@ class Filepath():
         self.generation = None
         self.exchanges = None
         self.savedir = None
-        
+
         self.ui_vector = None
         self.mapping = None
         self.neighbours = None
         self.gap = None
         self.swissGrid = None
         self.networkLosses = None
-        
+
         if excel is not None: # Initialize with an excel file
             self.from_excel(excel)
-        
+
         self._is_frozen = True # Freeze the list of attributes
-        
+
     def __repr__(self):
         attributes = ["generation","exchanges","savedir",
                       "ui_vector","mapping","neighbours","gap","swissGrid",
@@ -266,7 +295,7 @@ class Filepath():
         for a in attributes:
             text += f"Filepath to {a} --> {getattr(self, a)}\n"
         return text
-    
+
     def __setattr__(self, name, value):
         if np.logical_and(self._is_frozen, not hasattr(self, name)):
             raise AttributeError(f"'parameter.path' object has no attribute '{name}'")
@@ -286,7 +315,7 @@ class Filepath():
                 super().__setattr__(name, os.path.abspath(r"{}".format(value))+"/") # Create
             else:
                 raise FileNotFoundError(f'Unidentified file or directory: {os.path.abspath(value)}')
-    
+
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
 
@@ -296,18 +325,18 @@ class Filepath():
                 path to a .xlsx spreadsheet
         """
         param_excel = pd.read_excel(excel, sheet_name="Filepath", index_col=0, header=None)
-        
+
         self.generation = param_excel.loc['generation directory'].iloc[0]
         self.exchanges = param_excel.loc['exchange directory'].iloc[0]
         self.savedir = param_excel.loc['saving directory'].iloc[0]
-        
+
         self.ui_vector = param_excel.loc['UI vector'].iloc[0]
         self.mapping = param_excel.loc['mapping file'].iloc[0]
         self.neighbours = param_excel.loc['neighboring file'].iloc[0]
         self.gap = param_excel.loc['gap file'].iloc[0]
         self.swissGrid = param_excel.loc['file swissGrid'].iloc[0]
         self.networkLosses = param_excel.loc['file grid losses'].iloc[0]
-        
+
         return self
 
 
@@ -357,7 +386,7 @@ class Server():
             allows visualization via `print()`
     """
     _is_frozen = False # Class attribute to prevent new attributes
-    
+
     def __init__(self, excel=None):
         """Gather downloading parameters to configurate the execution of diverse
         functions of the module `ecodynelec.easy_use`.
@@ -370,27 +399,27 @@ class Server():
         # Root of file names on server
         self._nameGenerationFile = "AggregatedGenerationPerType_16.1.B_C.csv"
         self._nameExchangesFile = "PhysicalFlows_12.1.G.csv"
-        
+
         # Directory with files
         self._remoteGenerationDir = "/TP_export/AggregatedGenerationPerType_16.1.B_C/"
         self._remoteExchangesDir = "/TP_export/PhysicalFlows_12.1.G/"
-        
+
         # Information about the server connection
         self.useServer = False
         self.removeUnused = False
         self.host = "sftp-transparency.entsoe.eu"
         self.port = 22
-        
+
         # Connection login
         self.username = None
         self.password = None # Preferable to ask for it. May be interesting to store if we can encrypt.
-        
+
         if excel is not None: # Initialize with an excel file
             self.from_excel(excel)
-        
+
         self._is_frozen = True # Freeze the list of attributes
-        
-        
+
+
     def __repr__(self):
         attributes = ['useServer','host','port','username','password','removeUnused',
                       '_remoteGenerationDir','_remoteExchangesDir']
@@ -400,7 +429,7 @@ class Server():
             elif isinstance( getattr(self, a), str ): text += f"Server for {a} --> {'*'*len(a)}\n"
             else: text += f"Server for {a} --> \n"
         return text
-    
+
     def __setattr__(self, name, value):
         if np.logical_and(self._is_frozen, not hasattr(self, name)):
             raise AttributeError(f"'parameter.server' object has no attribute '{name}'")
@@ -416,8 +445,8 @@ class Server():
             else: raise TypeError(f"{name} attribute can not be {value}")
         else:
             super().__setattr__(name, value) # Set the value
-        
-    
+
+
     def from_excel(self, excel):
         """Extract parameters information from a .xlsx spreadsheet.
 
@@ -427,14 +456,14 @@ class Server():
                 path to a .xlsx spreadsheet
         """
         param_excel = pd.read_excel(excel, sheet_name="Server", index_col=0, header=None)
-        
+
         self.host = param_excel.loc['host'].iloc[0]
         self.port = param_excel.loc['port'].iloc[0]
         self.username = param_excel.loc['username'].iloc[0]
         self.password = param_excel.loc['password'].iloc[0]
         self.useServer = param_excel.loc['use server'].iloc[0]
         self.removeUnused = param_excel.loc['remove unused'].iloc[0]
-        
+
         return self
 
 
