@@ -103,7 +103,7 @@ def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = Fals
     if progress_bar:
         progress_bar.set_sub_label('Load auxiliary datasets...')
     # Load SwissGrid -> if Residual or SG exchanges
-    if np.logical_or(np.logical_or(p.residual_global, p.residual_local), p.sg_imports):
+    if np.logical_or(p.residual_global, p.sg_imports):
         if is_verbose: print('Load SwissGrid data...')
         # Load SwissGrid data, adjusting the date parameters for the time zone difference
         # EcoDynElec is using UTC while SwissGrid is using Europe/Zurich (UTC+1 in winter, UTC+2 in summer)
@@ -131,7 +131,7 @@ def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = Fals
         progress_bar.set_sub_label('Load production gap...')
 
     # Load production gap data -> if Residual
-    if np.logical_or(p.residual_global, p.residual_local):
+    if p.residual_global:
         prod_gap = aux.load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
     else:
         prod_gap = None
@@ -239,17 +239,14 @@ def get_mix(parameters: Parameter, raw_prod_exch: pd.DataFrame, return_matrix: b
     else:
         network_losses = None
 
-    # Local sources : sources not shared with neighbors and not taken into account during the mix tracking
-    local_sources = parameters.local_productions
-
+    # Load production and consumption mixes
     if return_prod_mix:
         mix_df, prod_mix = track_mix(raw_data=raw_prod_exch, freq=parameters.freq, network_losses=network_losses,
-                                     local_sources=local_sources,
                                      residual_global=parameters.residual_global, return_prod_mix=return_prod_mix,
                                      is_verbose=is_verbose, progress_bar=progress_bar)
     else:
+        prod_mix = None
         mix_df = track_mix(raw_data=raw_prod_exch, freq=parameters.freq, network_losses=network_losses,
-                           local_sources=local_sources,
                            residual_global=parameters.residual_global, return_prod_mix=return_prod_mix,
                            is_verbose=is_verbose, progress_bar=progress_bar)
     if return_matrix:

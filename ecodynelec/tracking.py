@@ -20,7 +20,7 @@ from ecodynelec.progress_info import ProgressInfo
 ###########################
 
 
-def track_mix(raw_data, freq='H', network_losses=None, local_sources=None, residual_global=False, return_prod_mix=False, is_verbose=False, progress_bar=None):
+def track_mix(raw_data, freq='H', network_losses=None, residual_global=False, return_prod_mix=False, is_verbose=False, progress_bar=None):
     """Performs the electricity tracking. Master function for the electricity mix computation.
 
     Parameters
@@ -31,9 +31,6 @@ def track_mix(raw_data, freq='H', network_losses=None, local_sources=None, resid
             frequency of time steps
         network_losses: pandas.Series, default to None
             vector of estimate for grid losses at every time step.
-        local_sources: dict, default to None
-            dictionary of local production sources: sources not shared with neighbors and not taken into account during the mix tracking
-            see 'ecodynelec.parameter.local_productions' for details.
         residual_global: bool, default to False
             whether to include a local production residual as production unit during the electricity
             tracking computation.
@@ -65,11 +62,10 @@ def track_mix(raw_data, freq='H', network_losses=None, local_sources=None, resid
     if is_verbose: print("Computing production and local consumption mixes...")
     # production mix : production of each source / total production (for each country) (considering imports as sources)
     prod_mix = compute_producing_mix(df, ctry=ctry, prod_means=prod_means)
-    # local consumption mix : consumption of each source / total consumption (for each country) (without tracking imports/exports)
-    local_mix = compute_local_consumption_mix(df, ctry=ctry)
 
     if is_verbose: print("Tracking origin of electricity...")
-    mixE = compute_tracking(data=prod_mix, all_sources=all_sources, uP=uP, ctry=ctry, ctry_mix=ctry_mix, local_sources=local_sources, local_mix=local_mix,
+    # consumption mix : consumption of each source / total consumption (for each country) (considering alĺ import sources)
+    mixE = compute_tracking(data=prod_mix, all_sources=all_sources, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
                             prod_means=prod_means, residual=residual_global, freq=freq, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if is_verbose: print("\n\tElectricity tracking: {:.1f} sec.\n".format(time() - t0))
@@ -100,33 +96,6 @@ def compute_producing_mix(df, ctry, prod_means):
         total = df[sources].sum(axis=1)
         for src in sources:
             prod_mix[f'{src}'] = df[src] / total
-    return prod_mix
-
-
-def compute_local_consumption_mix(df, ctry):
-    """Computes the local consumption mix for each country.
-    The local consumption mix is the consumption of each source divided by the total consumption of the **target** country.
-    The local consumption mix does not take into account the imports/exports tracking.
-
-    Parameters
-    ----------
-        df: pandas.DataFrame
-            production and exchange data from ENTSO-E.
-        ctry: list of str
-            the list of countries to consider.
-
-    Returns
-    -------
-        pandas.DataFrame
-            table with the local consumption mix in the studied countries (parameter.ctry + 'Other'), containing each production mean of each country at each time step.
-    """
-    prod_mix = pd.DataFrame(index=df.index, columns=df.columns)
-    for c in ctry:
-        sources = [src for src in df.columns if src.endswith(f'_{c}')]
-        exports = [src for src in df.columns if src.startswith(f'Mix_{c}_')]
-        total_consumption = df[sources].sum(axis=1) - df[exports].sum(axis=1)
-        for src in sources:
-            prod_mix[f'{src}'] = df[src] / total_consumption
     return prod_mix
 
 
@@ -236,12 +205,10 @@ def set_FU_vector(all_sources, target='CH'):
 # ###########################
 # ###########################
 #
-cum_time2 = 0
 
-def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_sources = None, local_mix=None,
+def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
                      residual=False, freq='H', is_verbose=False, progress_bar=None):
     """Function leading the electricity tracking: by building the technology matrix and computing the inversion at each time step.
-    The function takes into account the local productions, not shared over the electricity market.
 
     Parameters
     ----------
@@ -257,11 +224,6 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
             list of countries where electricity can come from, including 'Other'
         prod_means: array-like
             list of production means, without mixes
-        local_sources: dict, default to None
-            dictionary of local production sources: sources not shared with neighbors and not taken into account during the mix tracking
-            see 'ecodynelec.parameter.local_productions' for details.
-        local_mix: pandas.DataFrame, default to None
-            the local consumption mix of each country, as returned by compute_local_consumption_mix
         residual: bool, default to False
             if residual are considered
         freq: str, default to 'H'
@@ -289,26 +251,6 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
     else:
         step = data.shape[0]
 
-    if local_sources is not None:
-        # local_sources_df gives the local production of each source for each country, following the structure
-        # of the 'weight' table computed in the build_technology_matrix function
-        local_sources_df = pd.DataFrame(data=0, columns=prod_means, index=ctry)
-        for c, srcs in local_sources.items():
-            assert np.alltrue([k in prod_means for k in srcs.keys()]), f"Local sources {srcs.keys()} for {c} are not all in prod_means"
-            local_sources_df.loc[c, srcs.keys()] = list(srcs.values())
-        local_sources_df.fillna(0, inplace=True)
-
-        # unsure optimisation attempt
-        #res_local_sources = pd.DataFrame(data=0, index=all_sources, columns=all_sources, dtype="float32")
-        #for cntry in local_sources_df.index:
-        #    keys = [f'{k}_{cntry}' for k in local_sources_df.columns]
-        #    s = local_sources_df.loc[cntry];
-        #    s.index = keys
-        #    local_sources_df.loc[keys, f'Mix_{cntry}'] = s
-        #print('Res local srcs:', res_local_sources)
-    else:
-        local_sources_df = None
-
     # Initialise the progress bar
     if progress_bar is not None:
         progress_bar.set_sub_label("Tracking")
@@ -317,7 +259,6 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
         sub_progress_bar = None
 
     # For each considered step of time
-    cum_time = 0
     for t in range(data.shape[0]):
         if sub_progress_bar: sub_progress_bar.progress()
         if ((is_verbose) & (t % step == 0)):
@@ -326,7 +267,7 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
         ##############################################
         # Build the technology matrix A
         ##############################################
-        A = build_technology_matrix(data.iloc[t], ctry, ctry_mix, prod_means, local_sources_df=local_sources_df)
+        A = build_technology_matrix(data.iloc[t], ctry, ctry_mix, prod_means)
         L = A.shape[0]
 
         #######################################################
@@ -340,20 +281,7 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
         Ainv = invert_technology_matrix(A, presence, L=L)
 
         mix_at_t = pd.DataFrame(np.dot(Ainv, uP.iloc[t]), index=all_sources, columns=all_sources, dtype="float32")
-
-        ##########################################
-        # Reintegrate the local production columns
-        ##########################################
-        if local_sources is not None:
-            cum_time += import_local_mix_at_t(mix_at_t=mix_at_t, ctry=ctry, local_sources_df=local_sources_df, local_mix_at_t=local_mix.iloc[t], prod_means=prod_means)
         mixE.append(mix_at_t)
-
-    # todo remove this
-    #print(f'Average time for local production: {cum_time / data.shape[0]}')
-    #print(f'Total time for local production: {cum_time}')
-    #global cum_time2
-    #print(f'Average time for local production 2: {cum_time2 / data.shape[0]}')
-    #print(f'Total time for local production 2: {cum_time2}')
 
     if progress_bar:
         sub_progress_bar.hide()
@@ -371,61 +299,6 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means, local_so
     return mixE
 
 
-def import_local_mix_at_t(mix_at_t, ctry, local_sources_df, local_mix_at_t, prod_means):
-    """
-    For each country, rescale the mix of non-local production to account for the local production
-
-    Parameters
-    ----------
-    mix_at_t : pd.DataFrame
-        Mix of non-local production (production produced locally but shared on the electricity market, and imports), after the inversion
-    ctry : list
-        List of countries
-    local_sources_df : pd.DataFrame
-        dataframe indicating the local sources for each country
-        index: all countries
-        columns: all production means (without country suffix)
-        values: 0 to 1 float indicating the share of local production for each production mean
-    local_mix_at_t : pd.DataFrame
-        The local consumption mix of each country, as returned by compute_local_consumption_mix, at the considered time step
-    prod_means :
-        List of production means
-
-    Returns
-    -------
-    cum_time : float
-        The time spent in this function
-    """
-
-    st = time()
-    # count of country to country Mix_ columns
-    n_mix_col = len(ctry)
-    # energy produced and consumed locally
-    local_energy = pd.DataFrame(data=local_mix_at_t.values.reshape((len(ctry), len(prod_means))),
-                                columns=prod_means, index=ctry, dtype='float32')
-    local_energy = local_energy.multiply(local_sources_df, fill_value=0)
-    # remove 0 lines and columns in local production
-    local_energy = local_energy.loc[local_energy.sum(axis=1) > 0, local_energy.sum(axis=0) > 0]
-    # consumption mix share explained by local production
-    explained_local_share = local_energy.sum(axis=1)
-    # for each country, rescale the mix of non-local production (production produced locally but shared on
-    # the electricity market, and imports), then add the local production
-    for cntry in local_energy.index:
-        # rescale the mix of non-local production
-        mix_at_t.loc[mix_at_t.columns[n_mix_col:], f'Mix_{cntry}'] *= 1 - explained_local_share[cntry]
-        # add the local production
-        cols = [k for k in local_energy.columns if local_energy.loc[cntry, k] > 0]
-        keys = [f'{k}_{cntry}' for k in cols]
-        s = local_energy.loc[cntry, cols]
-        s.index = keys
-        mix_at_t.loc[keys, f'Mix_{cntry}'] = s
-        # re-normalize the data to avoid rounding errors
-        mix_at_t.loc[mix_at_t.columns[n_mix_col:], f'Mix_{cntry}'] = mix_at_t.loc[
-            mix_at_t.columns[n_mix_col:], f'Mix_{cntry}'].divide(
-            mix_at_t.loc[mix_at_t.columns[n_mix_col:], f'Mix_{cntry}'].sum(), axis=0)
-    return time() - st
-
-
 #
 ###############################################################################
 # ###########################
@@ -434,7 +307,7 @@ def import_local_mix_at_t(mix_at_t, ctry, local_sources_df, local_mix_at_t, prod
 # ###########################
 #
 
-def build_technology_matrix(data, ctry, ctry_mix, prod_means, local_sources_df = None):
+def build_technology_matrix(data, ctry, ctry_mix, prod_means):
     """Function building the technology matrix based on the production and exchange data.
 
     Parameters
@@ -447,31 +320,17 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means, local_sources_df =
             list of countries where eletricity can come from, including 'Other'
         prod_means: array-like
             list of production means, without mixes
-        local_sources_df: pandas.DataFrame
-            dataframe indicating the local sources for each country
-            index: all countries
-            columns: all production means (without country suffix)
-            values: 0 to 1 float indicating the share of local production for each production mean
 
     Returns
     -------
     numpy.ndarray
        technology matrix A
-    pandas.DataFrame
-        local productions matrix
     """
     # Gathering the contribution rate of each production unit in the production mix of each country
     weight = pd.DataFrame(data=data.values.reshape((len(ctry), len(prod_means))),
                           columns=prod_means, index=ctry, dtype='float32')
     # Assert that the sum of the production units is equal to 1 for all countries
     assert np.allclose(weight.sum(axis=1), np.ones(len(ctry))), "Production mix sum is not equal to 1 for all countries"
-
-    global cum_time2
-    # Isolate the local production (typically solar and wind productions) that isn't shared with other countries
-    if local_sources_df is not None:
-        st = time()
-        weight = weight.multiply(1 - local_sources_df, fill_value=1)
-        cum_time2 += time() - st
 
     # Normalize the contribution rate of each production unit in the production mix of each country
     weight = weight.divide(weight.sum(axis=1), axis=0)

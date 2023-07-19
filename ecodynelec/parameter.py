@@ -56,16 +56,6 @@ class Parameter():
             to enable automatic data cleaning / filling
         ch_enr_model_path: str
             path to the CH wind and solar production data, exported using EcoDynElec-Enr-Model
-        local_productions: dict or None
-            dictionary of local productions, with the following structure:
-            {
-                'country': {
-                    'technology': <float> between 0 and 1 indicating the share of local production from this technology
-                }
-            }
-            Local production is defined as the production that is not shared on the electricity market. This production
-            is entirely consumed locally. This is the case for most of the solar and wind production, for example.
-            If None, local production is assumed to be 0 for all countries and technologies.
     
     Methods
     -------
@@ -109,7 +99,6 @@ class Parameter():
         self.data_cleaning = True
 
         self.ch_enr_model_path = None
-        self.local_productions = None
 
         if excel is not None: # Initialize with an excel file
             self.from_excel(excel)
@@ -149,14 +138,9 @@ class Parameter():
             # residual_local isn't supported anymore with the new local production system
             # by default, we now set residual_global to True and set the resulting residual to be local
             if bool(value):
-                print("Warning: 'residual_local' is deprecated. Use 'residual_global' and 'local_productions' instead.")
-                print('Automatically setting "residual_global" to True and "local_productions" to 1.0 for all CH residuals...')
+                print("Warning: 'residual_local' is deprecated. Use 'residual_global' instead.")
+                print('Automatically setting "residual_global" to True.')
                 self.residual_global = True
-                if self.local_productions is None:
-                    self.local_productions = {'CH': {}}
-                self.local_productions['CH']['Residual_Hydro_Water_Reservoir'] = 1.0
-                self.local_productions['CH']['Residual_Hydro_Run-of-river_and_poundage'] = 1.0
-                self.local_productions['CH']['Residual_Other'] = 1.0
             else:
                 super().__setattr__(name, bool(value))
         else:
@@ -192,7 +176,6 @@ class Parameter():
         """
         param_excel = pd.read_excel(excel, sheet_name="Parameter", index_col=0, header=None, dtype='O')
 
-
         self.ctry = np.sort(param_excel.loc["countries"].dropna().values)
         self.target = param_excel.loc['target'].iloc[0]
         if isinstance(self.target, str): self.target = [self.target]
@@ -210,8 +193,8 @@ class Parameter():
         self.residual_global = param_excel.loc['residual global'].iloc[0]
         self.data_cleaning = param_excel.loc['data cleaning'].iloc[0]
 
-        self.ch_enr_model_path = param_excel.loc['CH energy model path'].iloc[0]
-        # todo read local_productions from excel
+        if 'CH energy model path' in param_excel.index:
+            self.ch_enr_model_path = param_excel.loc['CH energy model path'].iloc[0]
 
         self.path = self.path.from_excel(excel)
         self.server = self.server.from_excel(excel)
