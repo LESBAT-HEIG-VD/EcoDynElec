@@ -235,7 +235,8 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', enr_prod_residual
 
     # Check if the file contains relative (old format) or absolute values
     if df.iloc[0].sum() < 2:
-        raise ValueError("You should update the residual share file with updating.update_residual_share. It must now contain absolute production values (not relatives)")
+        raise ValueError(
+            "You should update the residual share file with updating.update_residual_share. It must now contain absolute production values (not relatives)")
 
     ###########################
     ##### Adapt the time resolution of raw data
@@ -270,6 +271,7 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', enr_prod_residual
     gap = pd.DataFrame(None, columns=df.columns,
                        index=pd.date_range(start=res_start,
                                            end=max(res_end, df.index[-1]), freq=localFreq))
+
     def remove_enr_prod_residual(dt):
         values = df.loc[dt, :]
         if enr_prod_residual_ch is not None and dt in enr_prod_residual_ch.index:
@@ -418,11 +420,9 @@ def load_ch_enr_model(ch_enr_model_path, start, end, freq):
         'Solar': 'Solar_CH',
         'Waste': 'Waste_CH'
     }
-    enr_prod_ch['Fossil_Gas_CH'] = enr_prod_ch['Biogas'] + enr_prod_ch[
-        'Sewage_gas']  # TODO temporary code, it's totally false
-    enr_prod_ch.drop(columns=['Biogas', 'Sewage_gas'], inplace=True)
-    enr_prod_ch['Biomass_CH'] = enr_prod_ch['Biomass_1_crops'] + enr_prod_ch['Biomass_2_waste']
-    enr_prod_ch.drop(columns=['Biomass_1_crops', 'Biomass_2_waste'], inplace=True)
+    enr_prod_ch['Biomass_CH'] = enr_prod_ch['Biomass_1_crops'] + enr_prod_ch['Biomass_2_waste'] + enr_prod_ch[
+        'Biogas'] + enr_prod_ch['Sewage_gas']
+    enr_prod_ch.drop(columns=['Biomass_1_crops', 'Biomass_2_waste', 'Biogas', 'Sewage_gas'], inplace=True)
     enr_prod_ch.rename(columns=name_map, inplace=True)
     enr_prod_ch.index = enr_prod_ch.index - pd.Timedelta('1H')  # Shift the index to the left
     # Resample the dataframe to the right frequency (and sum the production values)
