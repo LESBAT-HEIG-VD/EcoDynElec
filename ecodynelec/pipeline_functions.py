@@ -92,10 +92,7 @@ def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = Fals
 
     Returns
     -------
-    A tuple of three pandas.DataFrame:
         praw_prodExch: DataFrame with all productions and all exchanges from all included countries.
-        prod_gap: information about the nature of the residual
-        sg_data: production information from Swiss Grid
     """
     p = load_config(parameters)
     check_download(p, is_verbose=is_verbose)
@@ -126,16 +123,6 @@ def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = Fals
     # Load Country of interest -> Always
     neighbours = aux.load_useful_countries(path_neighbour=p.path.neighbours, ctry=p.ctry)
 
-    if progress_bar:
-        progress_bar.progress()
-        progress_bar.set_sub_label('Load production gap...')
-
-    # Load production gap data -> if Residual
-    if p.residual_global:
-        prod_gap = aux.load_gap_content(path_gap=p.path.gap, start=p.start, end=p.end, freq=p.freq, header=59)
-    else:
-        prod_gap = None
-
     # Load enr production from EcoDynElec-Enr-Model, if enabled
     if progress_bar:
         progress_bar.progress()
@@ -152,12 +139,12 @@ def load_raw_prod_exchanges(parameters: Parameter | str, is_verbose: bool = Fals
 
     # Load generation and exchange data from entso-e
     raw_prod_exch = import_data(ctry=p.ctry, start=p.start, end=p.end, freq=p.freq, involved_countries=neighbours,
-                                prod_gap=prod_gap, sg_data=sg_data, enr_prod_ch=enr_prod_ch,
+                                path_gap=p.path.gap, sg_data=sg_data, enr_prod_ch=enr_prod_ch,
                                 path_gen=p.path.generation, path_imp=p.path.exchanges,
                                 savedir=p.path.savedir, net_exchange=p.net_exchanges,
                                 residual_global=p.residual_global, correct_imp=p.sg_imports,
                                 clean_data=p.data_cleaning, is_verbose=is_verbose, progress_bar=progress_bar)
-    return raw_prod_exch, prod_gap, sg_data
+    return raw_prod_exch
 
 
 def load_impact_matrix(parameters: Parameter, is_verbose: bool = False) -> pd.DataFrame:

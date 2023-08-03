@@ -55,7 +55,7 @@ class Parameter():
         data_cleaning: bool
             to enable automatic data cleaning / filling
         ch_enr_model_path: str
-            path to the CH wind and solar production data, exported using EcoDynElec-Enr-Model
+            path to the CH renewable energy production data, exported using EcoDynElec-Enr-Model
     
     Methods
     -------

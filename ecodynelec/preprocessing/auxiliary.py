@@ -186,23 +186,29 @@ def load_grid_losses(network_loss_path, start=None, end=None):
 
 # -
 
-def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
+def load_gap_content(path_gap, start=None, end=None, freq='H', enr_prod_residual_ch=None):
     """
     Function that defines the relative composition of the swiss residual production. The function is very
     file format specific.
+    If enr_prod_residual_ch is not None, it will be subtracted from the "other" residual production before
+    computing the relative composition of each category.
 
     Parameters
     ----------
         path_gap: str
-            path to the file containing residual content information
+            Path to the file containing residual content information.
+            The file must contain absolute values for each category, for each time step (if not, use
+            updating.update_residual_share to update the file).
         start: default to None
             starting date, as datetime or str
         end: default to None
             ending date, as datetime or str
         freq: str, default to "H"
             frequency to resample the data to
-        header: int, default to 59
-            row in the file to use as header
+        enr_prod_residual_ch: default to None
+            Delta between the renewable electricity production of EcoDynElec-EnrModel and the
+            production given by the ENTSO-E data.
+            If not None, the total will be subtracted from the "other" residual category.
 
     Returns
     -------
@@ -218,15 +224,18 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True)  # Load default from software files
     elif os.path.splitext(path_gap)[1] == '.csv':
         df = pd.read_csv(path_gap, index_col=0, parse_dates=True)  # Load csv file from user
-
     else:
         # cannot use the function in update, due to a circular import
         interest = {'Centrales au fil de l’eau': "Hydro_Run-of-river_and_poundage_Res",
                     'Centrales à accumulation': "Hydro_Water_Reservoir_Res",
                     'Centrales therm. classiques et renouvelables': "Other_Res"}
         df = pd.read_excel(path_gap, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
-        df = (df / df.sum(axis=0)).T
+        df = df.T
         df.index = pd.to_datetime(df.index, yearfirst=True)  # time data
+
+    # Check if the file contains relative (old format) or absolute values
+    if df.iloc[0].sum() < 2:
+        raise ValueError("You should update the residual share file with updating.update_residual_share. It must now contain absolute production values (not relatives)")
 
     ###########################
     ##### Adapt the time resolution of raw data
@@ -235,7 +244,7 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     localFreq = freq  # copy frequency
     if freq[0] in ["M", "Y"]:
         localFreq = freq[0] + "S"  # specify at 'start'
-        df = df.resample(localFreq).mean()
+        df = df.resample(localFreq).sum()
     # If in week -> resample with average
     elif freq in ['W', 'w']:
         localFreq = 'd'  # set local freq to day (to later sum in weeks)
@@ -261,17 +270,22 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
     gap = pd.DataFrame(None, columns=df.columns,
                        index=pd.date_range(start=res_start,
                                            end=max(res_end, df.index[-1]), freq=localFreq))
+    def remove_enr_prod_residual(dt):
+        values = df.loc[dt, :]
+        if enr_prod_residual_ch is not None and dt in enr_prod_residual_ch.index:
+            enr = enr_prod_residual_ch.loc[dt, :].sum(axis=0)
+            delta = values['Other_Res'] - enr.sum()
+            delta = delta.clip(min=0)
+        return values.values
 
     if localFreq[0] == 'Y':
         for dt in df.index:
             localize = (gap.index.year == dt.year)
-            gap.loc[localize, :] = df.loc[dt, :].values
-
+            gap.loc[localize, :] = remove_enr_prod_residual(dt)
     elif localFreq[0] == "M":
         for dt in df.index:
             localize = ((gap.index.year == dt.year) & (gap.index.month == dt.month))
-            gap.loc[localize, :] = df.loc[dt, :].values
-
+            gap.loc[localize, :] = remove_enr_prod_residual(dt)
     else:
         for dt in df.index:  # everything from (week, ) day to 15 minutes
             if dt.dayofweek <= 4:  # week day
@@ -280,12 +294,13 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', header=59):
             else:
                 localize = ((gap.index.year == dt.year) & (gap.index.month == dt.month)
                             & (gap.index.dayofweek == dt.dayofweek))
-            gap.loc[localize, :] = df.loc[dt, :].values
+            gap.loc[localize, :] = remove_enr_prod_residual(dt)
         gap = gap.dropna(axis=0)
-
         if freq in ["W", "w"]:  # Aggregate into weeks
             gap = gap.fillna(method='ffill').resample(freq).mean()
 
+    # get the relative shares of each technology from the total gap in kWh
+    gap = (gap.divide(gap.sum(axis=1), axis=0))
     return gap.dropna(axis=0)
 
 
@@ -359,13 +374,57 @@ def get_default_file(name, level=0, max_level=3):
     return get_default_file(name, level=level + 1)
 
 
+# +
+
+###########################
+# ##########################
+# Load CH Enr Model data
+# ##########################
+# ##########################
+
+# -
+
 def load_ch_enr_model(ch_enr_model_path, start, end, freq):
+    """
+    Load the CH energy production data from the given path and returns a dataframe with the same format as the
+    processed ENTSO-E production and exchange data.
+
+    Parameters
+    ----------
+    ch_enr_model_path : str
+        Path to the CH energy production data, generated with EcoDynElec-EnrModel
+    start: str
+        Start date of the data to load
+    end: str
+        End date of the data to load
+    freq: str
+        Frequency of the data to return (from H to Y)
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with the same format as the processed ENTSO-E production and exchange data,
+        containing the CH energy production data for the given period
+    """
+
     enr_prod_ch = pd.read_csv(ch_enr_model_path, index_col=0, parse_dates=[0]).astype(float)
-    enr_prod_ch = enr_prod_ch.loc[start+pd.Timedelta('1H'):end+pd.Timedelta('1H')] / 1000 # Convert from kWh to MWh
-    #print('Sliced:', enr_prod_ch)
-    enr_prod_ch.rename(columns={'Wind': 'Wind_Onshore_CH', 'Solar': 'Solar_CH'}, inplace=True)
-    enr_prod_ch = enr_prod_ch.resample(freq).sum() # Sum the production
-    #print('Resampled:', enr_prod_ch)
-    enr_prod_ch.index = enr_prod_ch.index - pd.Timedelta('1H') # Shift the index to the left
-    #print('Shifted:', enr_prod_ch)
+    # Verify that the dataframe contains the right columns
+    assert np.all([c in enr_prod_ch.columns for c in
+                   ['Wind', 'Solar', 'Waste', 'Biogas', 'Sewage_gas', 'Biomass_1_crops', 'Biomass_2_waste']])
+    # Adapt the dataframe to the right format
+    enr_prod_ch = enr_prod_ch.loc[start + pd.Timedelta('1H'):end + pd.Timedelta('1H')] / 1000  # Convert from kWh to MWh
+    name_map = {
+        'Wind': 'Wind_Onshore_CH',
+        'Solar': 'Solar_CH',
+        'Waste': 'Waste_CH'
+    }
+    enr_prod_ch['Fossil_Gas_CH'] = enr_prod_ch['Biogas'] + enr_prod_ch[
+        'Sewage_gas']  # TODO temporary code, it's totally false
+    enr_prod_ch.drop(columns=['Biogas', 'Sewage_gas'], inplace=True)
+    enr_prod_ch['Biomass_CH'] = enr_prod_ch['Biomass_1_crops'] + enr_prod_ch['Biomass_2_waste']
+    enr_prod_ch.drop(columns=['Biomass_1_crops', 'Biomass_2_waste'], inplace=True)
+    enr_prod_ch.rename(columns=name_map, inplace=True)
+    enr_prod_ch.index = enr_prod_ch.index - pd.Timedelta('1H')  # Shift the index to the left
+    # Resample the dataframe to the right frequency (and sum the production values)
+    enr_prod_ch = enr_prod_ch.resample(freq).sum()
     return enr_prod_ch

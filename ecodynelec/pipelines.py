@@ -62,7 +62,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     """
 
     if progress_bar:
-        progress_bar.set_max_value(11)
+        progress_bar.set_max_value(10)
         progress_bar.progress('Load config...', 0)
 
     ###########################
@@ -83,7 +83,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prodExch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
+    raw_prodExch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if progress_bar:
         progress_bar.progress('Load impact matrix...')
@@ -181,7 +181,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     """
 
     if progress_bar:
-        progress_bar.set_max_value(12)
+        progress_bar.set_max_value(11)
         progress_bar.progress('Load config...', 0)
 
     ###########################
@@ -202,7 +202,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prodExch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
+    raw_prodExch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if progress_bar:
         progress_bar.progress('Load impact matrix...')
@@ -295,7 +295,7 @@ def get_inverted_matrix(config, is_verbose=False, progress_bar: ProgressInfo = N
     """
 
     if progress_bar:
-        progress_bar.set_max_value(8)
+        progress_bar.set_max_value(7)
         progress_bar.progress('Load config...', 0)
 
     ###########################
@@ -315,7 +315,7 @@ def get_inverted_matrix(config, is_verbose=False, progress_bar: ProgressInfo = N
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prod_exch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose,
+    raw_prod_exch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose,
                                                           progress_bar=progress_bar)
 
     ########################

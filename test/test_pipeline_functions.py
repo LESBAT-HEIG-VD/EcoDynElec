@@ -43,13 +43,10 @@ class TestPipelineFunctions(unittest.TestCase):
     def test_load_raw_prod_exchanges(self):
         config = generate_config()
         config.residual_global = True # will load prod_gap and sg_data
-        raw_prod_exch, prod_gap, sg_data = pipeline_functions.load_raw_prod_exchanges(parameters=config)
+        raw_prod_exch = pipeline_functions.load_raw_prod_exchanges(parameters=config)
         
         ### Test the types
         self.assertIsInstance(raw_prod_exch, pd.DataFrame, msg='raw_prod_exch is DataFrame')
-        self.assertIsInstance(prod_gap, pd.DataFrame, msg='prod_gap is DataFrame')
-        self.assertIsInstance(sg_data, pd.DataFrame, msg='sg_data is DataFrame')
-        
         # Test of the contents are covered by test_loading.py and test_auxiliary.py
 
     def test_get_mix_dict(self):
