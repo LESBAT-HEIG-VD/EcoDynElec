@@ -8,6 +8,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import tabula as tabula
 
 ################# Local functions
 from ecodynelec.checking import check_frequency
@@ -428,3 +429,128 @@ def load_ch_enr_model(ch_enr_model_path, start, end, freq):
     # Resample the dataframe to the right frequency (and sum the production values)
     enr_prod_ch = enr_prod_ch.resample(freq).sum()
     return enr_prod_ch
+
+
+# +
+
+###########################
+# ##########################
+# Read OFEN pdf files
+# ##########################
+# ##########################
+
+# -
+
+
+def split_cell(cell, index):
+    """ Utility function to split a cell of a table read from tabula """
+    if np.isreal(cell):
+        return 0
+    sp = cell.split(' ')
+    if len(sp) <= index:
+        return 0
+    val = sp[index]
+    return val
+
+
+def post_process_2017(columns):
+    """ Helper to fix the 2017 data read from the OFEN pdf file """
+    # Add missing first line
+    l1dates = ['18.1.2017', '21.1.2017', '22.1.2017', '15.2.2017', '18.2.2017', '19.2.2017', '15.3.2017',
+               '18.3.2017', '19.3.2017', '19.4.2017', '22.4.2017', '23.4.2017']
+    for i in range(0, len(l1dates)):
+        columns[i].insert(0, l1dates[i])
+    return columns
+
+
+def post_process_2022(columns):
+    """ Helper to fix the 2022 data read from the OFEN pdf file """
+    # Remove an empty line
+    for i in range(len(columns)):
+        columns[i].pop(19)
+    # Add missing first line
+    l1dates = ['19.1.2022', '22.1.2022', '23.1.2022', '16.2.2022', '19.2.2022', '20.2.2022', '16.3.2022', '19.3.2022',
+               '20.3.2022', '20.4.2022', '23.4.2022', '24.4.2022']
+    for i in range(0, len(l1dates)):
+        columns[i].insert(0, l1dates[i])
+    # Last two lines are missing in 2022
+    lm2 = ['9.1', '-', '-', '14.5', '-', '-', '9.5', '-', '-', '18.7', '-', '-']
+    lm1 = ['160.1', '-', '-', '162.9', '-', '-', '179.4', '-', '-', '193.9', '-', '-']
+    for i in range(len(columns)):
+        columns[i].append(lm2[i])
+        columns[i].append(lm1[i])
+    return columns
+
+
+def read_ofen_pdf_file(file, post_process_fun, page=31):
+    """
+    Reads an ofen pdf file and extracts a dictionary of typical days with their electricity mix.
+    Supports years from 2017 to 2022. Not tested after.
+    A post-processing function should be provided to fix the data read from the pdf file.
+    This function depends on the year of the data because the format of the pdf file changes between years.
+    Two post-processing functions are provided above for 2017 and 2022.
+
+    Parameters
+    ----------
+    file : str
+        Path to the pdf file to read
+    post_process_fun : function
+        Function to apply to the data read from the pdf file
+        Takes a list of columns as input and returns the modified list of columns
+    page : int
+        Page of the pdf file to read (default: 31)
+    """
+    print('Reading', file)
+    # Read the pdf file
+    tables = tabula.read_pdf(file, pages=page, stream=True)
+    table = tables[0]
+    mapping = table.columns
+    # Reconstruct all columns (some of them are merged by tabula)
+    # Tested with 2017 and 2022
+    # This should work for 2018 and following years
+    columns = []
+    c12 = table[mapping[1]].tolist()
+    c12.insert(0, mapping[1])
+    columns.append([split_cell(s, 0) for s in c12])
+    columns.append([split_cell(s, 1) for s in c12])
+    c3 = table[mapping[2]].tolist()
+    c3.insert(0, mapping[2])
+    columns.append(c3)
+    c45 = table[mapping[4]].tolist()
+    c45.insert(0, mapping[4])
+    columns.append([split_cell(s, 0) for s in c45])
+    columns.append([split_cell(s, 1) for s in c45])
+    c6 = table[mapping[5]].tolist()
+    c6.insert(0, mapping[5])
+    columns.append(c6)
+    c78 = table[mapping[7]].tolist()
+    c78.insert(0, mapping[7])
+    columns.append([split_cell(s, 0) for s in c78])
+    columns.append([split_cell(s, 1) for s in c78])
+    c9 = table[mapping[8]].tolist()
+    c9.insert(0, mapping[8])
+    columns.append(c9)
+    c1011 = table[mapping[10]].tolist()
+    c1011.insert(0, mapping[10])
+    columns.append([split_cell(s, 0) for s in c1011])
+    columns.append([split_cell(s, 1) for s in c1011])
+    c12 = table[mapping[11]].tolist()
+    c12.insert(0, mapping[11])
+    columns.append(c12)
+
+    # Apply custom post-processing depending on the year
+    columns = post_process_fun(columns)
+
+    # Complete all days from the table data
+    days = {}
+    index = 0
+    for column in columns:
+        days[column[index]] = column[index + 1:index + 11]
+    index = 14
+    for column in columns:
+        days[column[index]] = column[index + 1:index + 11]
+    index = 28
+    for column in columns:
+        days[column[index]] = column[index + 1:index + 11]
+    # return the data
+    return days
