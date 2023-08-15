@@ -1,14 +1,12 @@
 """
 Helper methods for the swiss_mix_analysis notebook.
 """
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as seaborn
 from matplotlib import pyplot as plt
 
 from ecodynelec.parameter import Parameter
-
 from ecodynelec.pipelines import get_prod_mix_impacts
 from ecodynelec.progress_info import ProgressInfo
 
@@ -60,20 +58,20 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
         config.end = year + '-12-31 23:59'
         config.path.savedir = savedir + year + "/"
         raw, prod, mix, prodimp, imp = get_prod_mix_impacts(config=config, is_verbose=is_verbose,
-                                             progress_bar=progress_info_computation)
+                                                            progress_bar=progress_info_computation)
         if show_progress:
             progress_info_year.progress()
         flows_dict[year] = raw
         prods[year] = prod
         mixs[year] = mix
-        if isinstance(prodimp, dict):  # multi target
-            prod_impacts[year] = {k: prodimp[k]['Climate Change'] for k in prodimp.keys()}
-        else:  # single target
+        if 'Climate Change' in prodimp.keys:  # single target
             prod_impacts[year] = prodimp['Climate Change']
-        if isinstance(mix, dict):  # multi target
-            impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}
-        else:  # single target
+        else:  # multi target
+            prod_impacts[year] = {k: prodimp[k]['Climate Change'] for k in prodimp.keys()}
+        if 'Climate Change' in imp.keys:  # single target
             impacts[year] = imp['Climate Change']
+        else:  # multi target
+            impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}
     if show_progress:
         progress_info_year.progress('Done!')
         progress_info_computation.hide()
@@ -112,14 +110,14 @@ def load_data(config: Parameter, years: list[str], savedir: str = './mix_analysi
         for country in config.target:
             fsavedir = savedir + year + "/" + country + "/"
             flows_dict[year][country] = pd.read_csv(fsavedir + f"RawFlows_{tPass[config.freq]}.csv", index_col=0,
-                                                  parse_dates=True)
+                                                    parse_dates=True)
             prods[year][country] = pd.read_csv(fsavedir + f"ProdMix_{tPass[config.freq]}.csv", index_col=0,
-                                              parse_dates=True)
+                                               parse_dates=True)
             mixs[year][country] = pd.read_csv(fsavedir + f"Mix_{tPass[config.freq]}.csv", index_col=0,
                                               parse_dates=True)
             prod_impacts[year][country] = pd.read_csv(fsavedir + f"ProdImpact_Climate Change_{tPass[config.freq]}.csv",
-                                                 index_col=0,
-                                                 parse_dates=True)
+                                                      index_col=0,
+                                                      parse_dates=True)
             impacts[year][country] = pd.read_csv(fsavedir + f"Impact_Climate Change_{tPass[config.freq]}.csv",
                                                  index_col=0,
                                                  parse_dates=True)
@@ -159,9 +157,9 @@ def compute_per_country(results: pd.DataFrame):
 
 
 def plot_years():
-    """Plots vertical lines for each year between 2017 and 2021"""
+    """Plots vertical lines for each year between 2017 and 2022"""
     xcoords = pd.DatetimeIndex(['2017-01-01', '2018-01-01', '2019-01-01', '2020-01-01',
-                                '2021-01-01'])
+                                '2021-01-01', '2022-01-01'])
     for xc in xcoords:
         plt.axvline(x=xc, color='black', linestyle='--')
 
@@ -270,10 +268,6 @@ def plot_typical_days(seasonal_data, season_labels, label, ylabel, fig=None, ax=
         a.set_ylabel(ylabel)
     fig.suptitle(f'{label} per season')
     fig.tight_layout()
-
-
-
-
 
 
 def mix_to_kwh(parameters: Parameter, flows_df: pd.DataFrame, mix_df: pd.DataFrame, target: str, return_data: str):
