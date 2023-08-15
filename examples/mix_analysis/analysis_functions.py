@@ -64,11 +64,11 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
         flows_dict[year] = raw
         prods[year] = prod
         mixs[year] = mix
-        if 'Climate Change' in prodimp.keys:  # single target
+        if 'Climate Change' in prodimp.keys():  # single target
             prod_impacts[year] = prodimp['Climate Change']
         else:  # multi target
             prod_impacts[year] = {k: prodimp[k]['Climate Change'] for k in prodimp.keys()}
-        if 'Climate Change' in imp.keys:  # single target
+        if 'Climate Change' in imp.keys():  # single target
             impacts[year] = imp['Climate Change']
         else:  # multi target
             impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}

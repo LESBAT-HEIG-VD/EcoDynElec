@@ -459,7 +459,6 @@ def get_producing_mix_kwh(flows_df: pd.DataFrame, prod_mix_df: pd.DataFrame) -> 
     """
 
     total_kwh = flows_df['production']
-    print('Over total kwh', total_kwh)
     power_df = prod_mix_df.copy()
     assert np.isclose(power_df.sum(axis=1).abs().max(), 1), "Production mix sum is not equal to 1"
     power_df = power_df.multiply(total_kwh, axis=0)
@@ -483,7 +482,6 @@ def get_consuming_mix_kwh(flows_df: pd.DataFrame, mix_df: pd.DataFrame) -> pd.Da
     """
 
     total_kwh = flows_df['production'] + flows_df['imports'] - flows_df['exports']
-    print('Over total kwh', total_kwh)
     power_df = mix_df.copy()
     assert np.isclose(power_df.sum(axis=1).abs().max(), 1), "Consumption mix sum is not equal to 1"
     power_df = power_df.multiply(total_kwh, axis=0)
