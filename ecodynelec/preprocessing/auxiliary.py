@@ -279,6 +279,7 @@ def load_gap_content(path_gap, start=None, end=None, freq='H', enr_prod_residual
             enr = enr_prod_residual_ch.loc[dt, :].sum(axis=0)
             delta = values['Other_Res'] - enr.sum()
             delta = delta.clip(min=0)
+            values['Other_Res'] = delta
         return values.values
 
     if localFreq[0] == 'Y':
