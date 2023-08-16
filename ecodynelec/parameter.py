@@ -55,7 +55,7 @@ class Parameter():
         data_cleaning: bool
             to enable automatic data cleaning / filling
         ch_enr_model_path: str
-            path to the CH renewable energy production data, exported using EcoDynElec-Enr-Model
+            Path to the CH renewable energy production data, exported using EcoDynElec-Enr-Model. When residual global is True, this is used to replace the ``Residual_Other_CH`` category.
     
     Methods
     -------
