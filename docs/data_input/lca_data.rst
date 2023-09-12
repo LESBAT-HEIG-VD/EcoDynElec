@@ -104,6 +104,6 @@ The UI vector file has a specific structure. The first row of data always contai
 
     *Figure 4: Overview of the structure of the default UI vector*
 
-For EcoDynElec to be fully functional even if the user has no access to LCA databases, a **default UI vector was provided** with the software. This default contains the impact values for 6 countries (AT, CH, DE, FR, IT, CZ) and 4 impact categories (Climate Change, Human carcinogenic toxicity, Fine particulate matter formation, Land use), for all producing generation unit types. These values were obtained *processing impact data from the `Ecoinvent <https://ecoinvent.org/>`__ database through the mapping template*.
+For EcoDynElec to be fully functional even if the user has no access to LCA databases, a **default UI vector was provided** with the software. This default contains the impact values for 6 countries (AT, CH, DE, FR, IT, CZ) and 4 impact categories (Carbon intensity, Human carcinogenic toxicity, Fine particulate matter formation, Land use), for all producing generation unit types. These values were obtained *processing impact data from the `Ecoinvent <https://ecoinvent.org/>`__ database through the mapping template*.
 
 The author can only guarantee the adequacy of these default values and can not be held responsible for any erroneous result obtained caused by incorrect or unjustified replacement or modification of the impact values in a mapping spreadsheet or UI vector.

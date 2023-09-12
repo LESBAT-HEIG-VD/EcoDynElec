@@ -1,9 +1,9 @@
 Using with a spreadsheet-based configuration
 ============================================
 
-EcoDynElec offers the possibility to configure the execution via a
+``ecodynelec`` offers the possibility to configure the execution via a
 spreadsheet, for more user-friendly handling. This tutorial shows the
-different steps and possibilities in this regard. As EcoDynElec is
+different steps and possibilities in this regard. As ``ecodynelec`` is
 firstly designed for research purposes, there also is the possibility to
 entirely rely on a python-based configuration , as developed in the
 “`Using fully with
@@ -13,14 +13,14 @@ tutorial.
 Initialization
 --------------
 
-To download and install EcoDynElec to being used as a python
+To download and install ``ecodynelec`` to being used as a python
 package, the user is referred to either the `getting started
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/getting_started.html>`__.
 
 Configuration
 -------------
 
-The configuration of EcoDynElec is to be handled in a spreadsheet.
+The configuration of ``ecodynelec`` is to be handled in a spreadsheet.
 Figure 1-3 show the three sections of the spreadsheet used in this
 example. The spreadsheet can be downloaded from the `github
 repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_example.xlsx>`__.
@@ -29,21 +29,16 @@ The configuration is composed of 3 parts. The detail about the meaning
 of each is developed in the `input data
 section <https://ecodynelec.readthedocs.io/en/latest/data_input/parameters.html>`__.
 
-.. figure:: ./images/ParameterExcel_ParamExample.png
-    :alt: Spreadsheet main
-    :scale: 80
-
-    *Figure 1: Spreadsheet for configuration: main Parameter tab*
+| |Main Tab Spreadsheet|
+| *Figure 1: Spreadsheet for configuration: main Parameter tab*
 
 the first tab (*Figure 1*) contains the elements to configure the
 execution itself.
 
+.. |Main Tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_ParamExample.png?raw=true
 
-.. figure:: ./images/ParameterExcel_PathsExample.png
-    :alt: Spreadsheet paths
-    :scale: 80
-
-    *Figure 2: Spreadsheet for configuration: Paths tab*
+| |Filepath Tab Spreadsheet|
+| *Figure 2: Spreadsheet for configuration: Paths tab*
 
 the second tab (*Figure 2*) deals with all paths to information files,
 directory containing information, or where to write and save information
@@ -54,23 +49,21 @@ every other file path element, *a default file* is used if the field is
 left blank, and an error is returned if the information passed does not
 correspond to any existing file on your local machine.
 
+.. |Filepath Tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_PathsExample.png?raw=true
 
-.. figure:: ./images/ParameterExcel_ServerExample.png
-    :alt: Spreadsheet server
-    :scale: 80
-
-    *Figure 3: Spreadsheet for configuration: Server tab*
+| |Server tab Spreadsheet|
+| *Figure 3: Spreadsheet for configuration: Server tab*
 
 the third tab (*Figure 3*) deals with information related to the ENTSO-E
 server, as electricity data from the ENTSO-E server is at the center of
-EcoDynElec. More on this topic is covered on the next paragraph and
+``ecodynelec``. More on this topic is covered on the next paragraph and
 on the dedicated `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__.
 **Note** that per default, the field ``use server`` is set to FALSE,
 i.e. no download will occur. Also note that the ``username`` field is
 supposed to be an email address.
 
-
+.. |Server tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_ServerExample.png?raw=true
 
 Downloading Entso-E data
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,14 +71,14 @@ Downloading Entso-E data
 The `downloading
 tutorial <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html>`__
 covers the specificities about how to download the ENTSO-E data or
-include the download as part of the EcoDynElec pipeline execution.
-This feature is not triggered per default and EcoDynElec is
+include the download as part of the ``ecodynelec`` pipeline execution.
+This feature is not triggered per default and ``ecodynelec`` is
 expecting to find already downloaded ENTSO-E files.
 
 Execution
 ---------
 
-EcoDynElec is build out of a myriad of modules that can be used
+``ecodynelec`` is build out of a myriad of modules that can be used
 relatively independently, under the condition that inputs data is shaped
 the correct way. Fortunately, the entire pipeline starting from a set of
 parameters and computing down to the calculation of impact metrics.
@@ -111,32 +104,32 @@ paragraphs in this tutorial.
     Load auxiliary datasets...
     Load generation data...
     	Generation data.
-    Data loading: 0.03 sec..
+    Data loading: 0.02 sec..
     Memory usage table: 0.18 MB
     Autocomplete...               5/5)...
     	Completed.                              
-    Extraction raw generation: 0.15 sec.             
-    	Extraction time: 0.18 sec.
+    Extraction raw generation: 0.13 sec.             
+    	Extraction time: 0.16 sec.
     	4/4 - Resample exchanges to H steps...
     Get and reduce importation data...
     	Cross-border flow data.
-    Data loading: 0.02 sec..
+    Data loading: 0.01 sec..
     Memory usage table: 0.04 MB
     Autocomplete...               ...
     	Completed.                              
-    Extraction raw import: 0.10 sec.             
-    	Extraction time: 0.12 sec.
+    Extraction raw import: 0.09 sec.             
+    	Extraction time: 0.11 sec.
     Resample exchanges to H steps...
     Gather generation and importation...
     Import of data: 0.3 sec
     Importing information...
     Tracking origin of electricity...
     	compute for day 1/1   
-    	Electricity tracking: 0.4 sec.
+    	Electricity tracking: 0.3 sec.
     
     Compute the electricity impacts...
     	Global...
-    	Climate Change...
+    	Carbon intensity...
     	Human carcinogenic toxicity...
     	Fine particulate matter formation...
     	Land use...
@@ -172,7 +165,7 @@ impact category:
 
 .. parsed-literal::
 
-    dict_keys(['Global', 'Climate Change', 'Human carcinogenic toxicity', 'Fine particulate matter formation', 'Land use'])
+    dict_keys(['Global', 'Carbon intensity', 'Human carcinogenic toxicity', 'Fine particulate matter formation', 'Land use'])
 
 
 The ``Global`` table is the *sum across all technologies* for each
@@ -204,7 +197,7 @@ index, as it is shown for the first few time steps:
       <thead>
         <tr style="text-align: right;">
           <th></th>
-          <th>Climate Change</th>
+          <th>Carbon intensity</th>
           <th>Human carcinogenic toxicity</th>
           <th>Fine particulate matter formation</th>
           <th>Land use</th>
@@ -266,7 +259,7 @@ possible sources:
 .. parsed-literal::
 
     #############
-    impacts for Climate Change:
+    impacts for Carbon intensity:
 
 
 
@@ -295,7 +288,7 @@ possible sources:
           <th>2017-02-01 02:00:00</th>
         </tr>
         <tr>
-          <th>Climate Change_source</th>
+          <th>Carbon intensity_source</th>
           <th></th>
           <th></th>
           <th></th>
@@ -710,9 +703,9 @@ possible sources:
 Group per country
 ~~~~~~~~~~~~~~~~~
 
-The following piece of code suggests a basic visualization of the
-Climate Change category, grouping the results per country of origin of
-the tracked electricity.
+The following piece of code suggests a basic visualization of the Carbon
+intensity category, grouping the results per country of origin of the
+tracked electricity.
 
 .. code:: ipython3
 
@@ -729,9 +722,9 @@ the tracked electricity.
 
 .. code:: ipython3
 
-    gwp_per_country = compute_per_country(impacts['Climate Change']) # Group Climate Change index impacts per country
+    gwp_per_country = compute_per_country(impacts['Carbon intensity']) # Group Carbon intensity index impacts per country
     gwp_per_country.plot.area(figsize=(12,4), legend='reverse', color=['r','w','y','b','c','k'],
-                              title="Some visualization of the Climate Change index aggregated per country"); # Build the graph
+                              title="Some visualization of the Carbon intensity index aggregated per country"); # Build the graph
 
 
 
@@ -741,9 +734,9 @@ the tracked electricity.
 Group per production type
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following piece of code suggests a basic visualization of the
-Climate Change category, grouping the results per technology of origin
-of the tracked electricity.
+The following piece of code suggests a basic visualization of the Carbon
+intensity category, grouping the results per technology of origin of the
+tracked electricity.
 
 .. code:: ipython3
 
@@ -760,9 +753,9 @@ of the tracked electricity.
 
 .. code:: ipython3
 
-    es13_per_type = compute_per_type(impacts['Climate Change']) # Group Climate Change index impacts per country
+    es13_per_type = compute_per_type(impacts['Carbon intensity']) # Group Carbon intensity index impacts per country
     es13_per_type.plot.area(figsize=(12,8), legend='reverse',
-                            title="Some visualization of the Climate Change index aggregated per source"); # Build the graph
+                            title="Some visualization of the Carbon intensity index aggregated per source"); # Build the graph
 
 
 

@@ -1,11 +1,11 @@
 Downloading ENTSO-E data
 ========================
 
-Data from the ENTSO-E is at the heat of EcoDynElec. Though
-EcoDynElec integrates the possibility to download the required data
+Data from the ENTSO-E is at the heat of ``ecodynelec``. Though
+``ecodynelec`` integrates the possibility to download the required data
 from ENTSO-E servers directly, and can also deal with already manually
 downloaded data. This tutorial details the different possibilities to
-download the ENTSO-E data, i.e. with and without EcoDynElec.
+download the ENTSO-E data, i.e. with and without ``ecodynelec``.
 
 In any case, \ **an account must be created**\  on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__ for using the SFTP service
@@ -16,10 +16,9 @@ Manual downloading
 
 Manual retrieval of the data requires an FTP software. We use
 `FileZilla <https://filezilla-project.org/>`__ to illustrate the
-procedure. Provide the software with:
-* Host: ``sftp://sftp-transparency.entsoe.eu``
-* Port: 22
-* Personal credentials
+procedure. Provide the software with: \* Host:
+``sftp://sftp-transparency.entsoe.eu`` \* Port: 22 \* Personal
+credentials
 
 Navigate through the remote architecture and download the files of
 interest. The generation files are located in
@@ -27,19 +26,15 @@ interest. The generation files are located in
 files are located in ``/TP_export/PhysicalFlows_12.1.G/``. *Figure 1*
 give details on how to proceed with FileZilla.
 
+| |FileZilla handling|
+| *Figure 1: Download files using FileZilla*
 
-.. figure:: ./images/Filezilla.png
-    :alt: FileZilla interface
+.. |FileZilla handling| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/Filezilla.png?raw=true
 
-    *Figure 1: Download files using FileZilla*
-
-
-
-
-Downloading via EcoDynElec
+Downloading via ``ecodynelec``
 ------------------------------
 
-The data can be downloaded via EcoDynElec.
+The data can be downloaded via ``ecodynelec``.
 
 First, the configuration must be adapted, either using a
 `spreadsheet <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#configuration-via-spreadsheet>`__
@@ -58,29 +53,33 @@ give more details on the latter.
 Configuration via spreadsheet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The spreadsheet used in this tutorial can be downloaded from the `examples on the GitHub <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_download.xlsx>`__.
+The spreadsheet used in this tutorial can be downloaded from the
+`examples on the
+github <https://github.com/LESBAT-HEIG-VD/EcoDynElec/raw/main/examples/Spreadsheet_download.xlsx>`__.
 
+| |Server tab Spreadsheet|
+| *Figure 2: Spreadsheet for configuration: Server tab suited for
+  download*
 
-.. figure:: ./images/ParameterExcel_ServerDownload.png
-    :alt: Spreadsheet server
-    :scale: 80
+.. |Server tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_ServerDownload.png?raw=true
 
-    *Figure 2: Spreadsheet for configuration: Server tab suited for download*
-
-
-Each field must be written as presented, in low case. The fields are: 
-* **host**: the address of the sftp server. Per default, we use “*sftp-transparency.entsoe.eu*”.
-* **port**: the port to connect to the server. Per default, the port is *22*.
-* **username**: your username, as created for free on the `ENTSO-E website <https://transparency.entsoe.eu/>`__. It should be an
+Each field must be written as presented, in low case. The fields are: \*
+**host**: the address of the sftp server. Per default, we use
+“*sftp-transparency.entsoe.eu*”. \* **port**: the port to connect to the
+server. Per default, the port is *22*. \* **username**: your username,
+as created for free on the `ENTSO-E
+website <https://transparency.entsoe.eu/>`__. It should be an
 email@address. If the field is left blank in the spreadsheet, the
-credential will be asked when the downloading is launched.
-* **password**: your password, as created for free on the `ENTSO-E
+credential will be asked when the downloading is launched. \*
+**password**: your password, as created for free on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__. For security reasons, we
 do recommend to let the field blank, which will let the ``downloading``
-package ask for the password in a more secured manner.
-* **use server**: **TRUE** if you want to download the data. Blank or **FALSE**
-will not download the data (default).
-* **remove unused**: **TRUE** if you want the target directories (where to download) to be emptied before downloading. Blank or **FALSE** to ignore other files in the target directory (default).
+package ask for the password in a more secured manner. \* **use
+server**: **TRUE** if you want to download the data. Blank or **FALSE**
+will not download the data (default). \* **remove unused**: **TRUE** if
+you want the target directories (where to download) to be emptied before
+downloading. Blank or **FALSE** to ignore other files in the target
+directory (default).
 
 The files will be downloaded and saved in the directories indicated at
 the fields **path generation** and **path exchanges** of the tab
@@ -90,14 +89,10 @@ to download. More information on the various configuration possibilities
 available in the `input data
 section <https://ecodynelec.readthedocs.io/en/latest/data_input/parameters.html>`__.
 
+| |Filepath tab Spreadsheet|
+| *Figure 3: Spreadsheet for configuration: Paths tab*
 
-.. figure:: ./images/ParameterExcel_PathsDownload.png
-    :alt: Spreadsheet paths
-    :scale: 80
-
-    *Figure 3: Spreadsheet for configuration: Paths tab*
-    
-
+.. |Filepath tab Spreadsheet| image:: https://github.com/LESBAT-HEIG-VD/EcoDynElec/blob/main/docs/examples/images/ParameterExcel_PathsDownload.png?raw=true
 
 Configuration in Python
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,29 +124,26 @@ these will be asked later when the downloading starts.
     my_config.server.password = None
 
 Each field is accessible and modifiable with the syntax
-``my_config.server.field``. The fields are:
-* ``host``: the address of the sftp server. Per default, we use “*sftp-transparency.entsoe.eu*”.
-* ``port``: the port to connect to the server. Per default, the port is *22*.
-* ``username``: your username, as created for free on the
+``my_config.server.field``. The fields are: \* ``host``: the address of
+the sftp server. Per default, we use “*sftp-transparency.entsoe.eu*”. \*
+``port``: the port to connect to the server. Per default, the port is
+*22*. \* ``username``: your username, as created for free on the
 `ENTSO-E website <https://transparency.entsoe.eu/>`__. It should be an
 email@address. If the field is left blank in the spreadsheet, the
-credential will be asked when the downloading is launched.
-* ``password``: your password, as created for free on the `ENTSO-E
+credential will be asked when the downloading is launched. \*
+``password``: your password, as created for free on the `ENTSO-E
 website <https://transparency.entsoe.eu/>`__. For security reasons, we
 do recommend to not specify it, which will let the ``downloading``
-package ask for the password in a more secured manner.
-* ``useServer``:
+package ask for the password in a more secured manner. \* ``useServer``:
 **TRUE** if you want to download the data. Blank or **FALSE** will not
-download the data (default).
-* ``removeUnused``: **TRUE** if you want
+download the data (default). \* ``removeUnused``: **TRUE** if you want
 the target directories (where to download) to be emptied before
 downloading. Blank or **FALSE** to ignore other files in the target
-directory (default).
-* ``_remoteGenerationDir``: where to find the
+directory (default). \* ``_remoteGenerationDir``: where to find the
 generation data on the ENTSO-E server. This field should be left per
 default, i.e. not specified. However it is included for flexibility
-purpose if the server modifies its architecture.
-* ``_remoteExchangesDir``: where to find the exchanges data on the ENTSO-E
+purpose if the server modifies its architecture. \*
+``_remoteExchangesDir``: where to find the exchanges data on the ENTSO-E
 server. This field should be left per default, i.e. not specified.
 However it is included for flexibility purpose if the server modifies
 its architecture.
@@ -187,7 +179,7 @@ additional specific parameters otherwise not accessible. However for a
 more generic usage, the downloading feature has also been integrated to
 the `whole computation
 pipeline <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#downloading-via-ecodynelec>`__
-of EcoDynElec.
+of ``ecodynelec``.
 
 .. code:: ipython3
 
@@ -197,7 +189,7 @@ Here all parameters are specified, however only ``config`` is mandatory,
 and every other parameter use default values if not specified.
 
 **Note** that the configuration used here relies on the
-``Spreadsheet_download.xlsx``, but similarly to the whole EcoDynElec
+``Spreadsheet_download.xlsx``, but similarly to the whole ``ecodynelec``
 pipeline, the ``config=`` parameter can also be a ``Parameter`` object,
 such as the ``my_config`` that was built in the `above
 section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#configuration-in-python>`__.
@@ -213,7 +205,7 @@ section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#c
 
 .. parsed-literal::
 
-    Username:  user@mail.com
+    Username:  ledee.public@gmail.com
     Password:  ········
 
 
@@ -231,14 +223,14 @@ section <https://ecodynelec.readthedocs.io/en/latest/examples/downloading.html#c
 The download can be a time consuming process, Thus in the previous cell,
 the few extra parameters help deciding whether or not downloading a
 specific file from the server. This comes handy only in the case of
-re-using EcoDynElec regularly, an occasional or one-time usage will
+re-using ``ecodynelec`` regularly, an occasional or one-time usage will
 not be affected by these extra parameters.
 
 -  ``threshold_minutes``: if the last modification of a file on the
    server occurred *less than* ``threshold_minutes`` *after* the last
    download of that file (if the downloaded file still exist on the
    user’s computer too), the remote file is not downloaded. **Default is
-   15 min**. The server "modifies" files regularly, either with no
+   15 min**. The server “modifies” files regularly, either with no
    changes in the data (simple server maintenance) or some data
    modifications (as new information comes in). The parameter allows to
    skip a file if the file on the server is considered as not new

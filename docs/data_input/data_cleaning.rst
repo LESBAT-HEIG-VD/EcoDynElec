@@ -20,7 +20,7 @@ An excessive gap is a missing chunk of data representing over 30% of the total h
 
 Long gaps
 ~~~~~~~~~~~
-Long gaps are spans of missing data longer than 2h but shorter than 30% of the total horizon of the experiment. The missing data is ***inferred using an average day***, day calculated using 7 days before and after the gap (or rather what is available over these two periods). If the span of missing data is at the start or end of the horizon, only 7 days of available data is used to build the average day. The span of missing data is then filled one time step at a time using the corresponding day time in the average day.
+Long gaps are spans of missing data longer than 2h but shorter than 30% of the total horizon of the experiment. The missing data is **inferred using an average day**, day calculated using 7 days before and after the gap (or rather what is available over these two periods). If the span of missing data is at the start or end of the horizon, only 7 days of available data is used to build the average day. The span of missing data is then filled one time step at a time using the corresponding day time in the average day.
 
 Short gaps
 ~~~~~~~~~~~~~
@@ -30,7 +30,9 @@ A short gap in the **solar generation is always considered as a long gap**. This
 
 These gaps are identified early in the cleaning process, but inferred only at the end, when only these gaps are remaining. This allows to classify the missing solar generation differently and facilitate the application of the linear interpolation.
 
-
+Note
+~~~~~~
+The 2h, span of 7 days and 30% are default values and can be changed using the modularity of the package. An additional functionality enables, for long gaps, to build the average day only using days of the same type (i.e. Weekdays, Saturday or Sunday). These options were not added to themain control options for the sake of simplicity.
 
 
 Required information
