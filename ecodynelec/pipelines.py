@@ -83,7 +83,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prodExch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
+    raw_prodExch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if progress_bar:
         progress_bar.progress('Load impact matrix...')
@@ -97,7 +97,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     ######
     if progress_bar:
         progress_bar.progress('Compute mix tracking...')
-    mix_dict = get_mix(p, raw_prodExch, sg, prod_gap, is_verbose=is_verbose)
+    mix_dict = get_mix(p, raw_prodExch, is_verbose=is_verbose, progress_bar=progress_bar)
 
     ############################
     ###### COMPUTE ELEC IMPACTS
@@ -111,8 +111,7 @@ def execute(config, missing_mapping='error', is_verbose=False, progress_bar: Pro
     ######
     if progress_bar:
         progress_bar.progress('Save data...')
-    _, _, imp_dict = translate_to_timezone(p, flows_dict=None, mix_dict=None, imp_dict=imp_dict,
-                                           is_verbose=is_verbose)
+    _, _, _, _, imp_dict = translate_to_timezone(p, imp_dict=imp_dict, is_verbose=is_verbose)
 
     ################################
     ####### SAVE DATA
@@ -140,8 +139,9 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     electricity tracking; (5) computes the environmental impacts; (6) save and return.
 
     This function returns:
-    - the impacts of the electricity mix of the target countries (returned by :py:func:`execute`)
-    - the intermediate results, relative mixes per target country and mixes of consumption in kWh
+    - the impacts of the electricity production mix of the target countries
+    - the impacts of the electricity consumer mix of the target countries (returned by :py:func:`execute`)
+    - the intermediate results, relative mixes per target country and total production/imports/exports in kWh
 
     Parameters
     ----------
@@ -164,12 +164,19 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
             A table containing the production, in kWh, for each electricity source for the target country (local and
             import sources).
             Note if there are multiple target countries, the data is returned in a dict of each target's production table
+        prod_dict: pd.DataFrame or dict of pd.DataFrame
+            A table containing the relative production mix of the target country, in %, for each production source
+            (only local sources).
+            Note if there are multiple target countries, the data is returned in a dict of each target's mix table.
         mix_dict: pd.DataFrame or dict of pd.DataFrame
             A table containing the relative consumption mix of the target country, in %, for each production source
             (local and import sources).
             Note if there are multiple target countries, the data is returned in a dict of each target's mix table.
+        prod_imp_dict: dict of pd.DataFrame or dict of dict of pd.DataFrame
+            A collection of tables containing the dynamic impacts of the production of 1kWh of electricity in the target country.
+            Note if there are multiple target countries, the data is returned in a dict of each target's impacts.
         imp_dict: dict of pd.DataFrame or dict of dict of pd.DataFrame
-            a collection of tables containing the dynamic impacts of 1kWh of electricity
+            A collection of tables containing the dynamic impacts of 1kWh of consumed electricity in the target country.
             Note if there are multiple target countries, the data is returned in a dict of each target's impacts.
     """
 
@@ -195,7 +202,7 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prodExch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
+    raw_prodExch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if progress_bar:
         progress_bar.progress('Load impact matrix...')
@@ -209,13 +216,14 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
     ######
     if progress_bar:
         progress_bar.progress('Compute mix tracking...')
-    mix_dict = get_mix(p, raw_prodExch, sg, prod_gap, is_verbose=is_verbose)
+    prod_mix_dict, mix_dict = get_mix(p, raw_prodExch, return_prod_mix=True, is_verbose=is_verbose, progress_bar=progress_bar)
 
     ############################
     ###### COMPUTE ELEC IMPACTS
     ######
     if progress_bar:
         progress_bar.progress('Compute impacts...')
+    prod_imp_dict = get_impacts(prod_mix_dict, impact_matrix, missing_mapping, is_verbose=is_verbose)
     imp_dict = get_impacts(mix_dict, impact_matrix, missing_mapping, is_verbose=is_verbose)
 
     ##########################
@@ -225,30 +233,38 @@ def get_prod_mix_impacts(config, missing_mapping='error', is_verbose=False, prog
         progress_bar.progress('Compute mix in kWh...')
     # Drop non-production lines of the mix (i.e. the first part of the mix matrix)
     for mix in mix_dict.keys():
+        prod_mix_dict[mix] = prod_mix_dict[mix].drop(
+            prod_mix_dict[mix].loc[:,
+            [k.startswith('Mix') and not k.endswith('Other') for k in prod_mix_dict[mix].columns]],
+            axis=1).astype('float32')
+        prod_mix_dict[mix] = prod_mix_dict[mix] / prod_mix_dict[mix].sum(axis=1).values.reshape(-1, 1)
         mix_dict[mix] = mix_dict[mix].drop(
             mix_dict[mix].loc[:, [k.startswith('Mix') and not k.endswith('Other') for k in mix_dict[mix].columns]],
             axis=1).astype('float32')
-    flows_dict = get_flows_kwh(p, raw_prodExch, sg)
+    flows_dict = get_flows_kwh(p, raw_prodExch)
 
     ###############################
     ###### TRANSLATE INTO TIMEZONE
     ######
     if progress_bar:
         progress_bar.progress('Save data...')
-    flows_dict, mix_dict, imp_dict = translate_to_timezone(p, flows_dict, mix_dict, imp_dict,
-                                                              is_verbose=is_verbose)
+    flows_dict, prod_mix_dict, mix_dict, prod_imp_dict, imp_dict = translate_to_timezone(p, flows_dict=flows_dict,
+                                                                          prod_mix_dict=prod_mix_dict, mix_dict=mix_dict,
+                                                                          prod_imp_dict=prod_imp_dict, imp_dict=imp_dict,
+                                                                          is_verbose=is_verbose)
 
     ################################
     ####### SAVE DATA
     #######
-    save_results(p, flows_dict, impact_matrix, mix_dict, imp_dict, is_verbose=is_verbose)
+    save_results(p, flows_dict=flows_dict, impact_matrix=impact_matrix, prod_mix_dict=prod_mix_dict, mix_dict=mix_dict,
+                 prod_imp_dict=prod_imp_dict, imp_dict=imp_dict, is_verbose=is_verbose)
 
     if progress_bar:
         progress_bar.progress('Done.')
     if is_verbose: print("done.")
     if n_target == 1:
-        return flows_dict[p.target[0]], mix_dict[p.target[0]], imp_dict[p.target[0]]
-    return flows_dict, mix_dict, imp_dict
+        return flows_dict[p.target[0]], prod_mix_dict[p.target[0]], mix_dict[p.target[0]], prod_imp_dict[p.target[0]], imp_dict[p.target[0]]
+    return flows_dict, prod_mix_dict, mix_dict, prod_imp_dict, imp_dict
 
 
 ########################################
@@ -299,17 +315,17 @@ def get_inverted_matrix(config, is_verbose=False, progress_bar: ProgressInfo = N
     ######
     if progress_bar:
         progress_bar.progress('Load raw prods...')
-    raw_prod_exch, prod_gap, sg = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose, progress_bar=progress_bar)
+    raw_prod_exch = load_raw_prod_exchanges(parameters=p, is_verbose=is_verbose,
+                                                          progress_bar=progress_bar)
 
     ########################
     ###### COMPUTE TRACKING
     ######
     if progress_bar:
         progress_bar.progress('Compute mix tracking...')
-    mix_matrix = get_mix(p, raw_prod_exch, sg, prod_gap, return_matrix=True, is_verbose=is_verbose)
+    mix_matrix = get_mix(p, raw_prod_exch, return_matrix=True, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if progress_bar:
         progress_bar.progress('Done.')
     if is_verbose: print("done.")
     return mix_matrix
-

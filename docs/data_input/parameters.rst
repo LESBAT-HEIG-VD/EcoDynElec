@@ -26,9 +26,10 @@ Main settings are in the "Parameters" tab of the spreadsheet, or attributes of t
 * **exchanges from swissGrid** (spreadsheet) / ``Parameter.sg_imports`` (python): TRUE to replace ENTSO-E cross-border exchanges *at the Swiss borders* with SwissGrid data. Default is FALSE.
 * **net exchanges** (spreadsheet) / ``Parameter.net_exchanges`` (python): TRUE to correct cross-border exchanges so that flow between two countries at each time step is only unidirectional. The correction is made *after* adapting data to the desired frequency. Default is FALSE, i.e. data is treated it is.
 * **network losses** (spreadsheet) / ``Parameter.network_losses`` (python): TRUE to consider the network losses. Default is FALSE.
-* **residual local** (spreadsheet) / ``Parameter.residual_local`` (python): TRUE will include Swiss residual as non-exchangeable production (consumed in CH). Default is FALSE. Cannot be TRUE at the same time as residual global.
+* **residual local** (spreadsheet) / ``Parameter.residual_local`` (python): **Deprecated: it isn't physically representative of the electricity flows. It has now the same effect as residual global.** TRUE will include Swiss residual as non-exchangeable production (consumed in CH). Default is FALSE. Cannot be TRUE at the same time as residual global.
 * **residual global** (spreadsheet) / ``Parameter.residual_global`` (python): TRUE will include Swiss residual as tradeable production. Default is FALSE. Cannot be TRUE at the same time as residual local.
 * **data cleaning** (spreadsheet) / ``Parameter.data_cleaning`` (python): TRUE to turn on the data autocompleting process. Missing data is replaced with zeros otherwise. Default is TRUE.
+* **ch_enr_model_path** (spreadsheet) / ``Parameter.ch_enr_model_path`` (python): Path to the file containing the CH renewable energy production data, exported using EcoDynElec-Enr-Model. When residual global is True, this is used to replace the ``Residual_Other_CH`` category. Default is None.
 
 
 

@@ -227,7 +227,16 @@ def load_files(path_dir, start=None, end=None, destination=None, origin=None, da
     # Types to reduce size of data table
     column_types = {'Year': 'int8', 'Month': 'int8', 'Day': 'int8', 'FlowValue': 'float32',
                     'ActualGenerationOutput': 'float32', 'ActualConsumption': 'float32'}
-    useful = ['DateTime', destination, 'ResolutionCode', origin, data]  # columns to keep
+    if type(data) == dict:
+        useful = [destination, origin] + list(data.values())  # columns to keep
+        date_col = [data['start'], data['end']]
+        area_level = 'CTA'
+        status_col = data['status']
+    else:
+        useful = ['DateTime', destination, 'ResolutionCode', origin, data]  # columns to keep
+        date_col = ['DateTime']
+        area_level = 'CTY'
+        status_col = None
 
     files = _get_file_list(start=start, end=end, path_dir=path_dir)  # gather file pathways
     if len(files) == 0:
@@ -239,12 +248,12 @@ def load_files(path_dir, start=None, end=None, destination=None, origin=None, da
         container = []
         for i, f in enumerate(files):  # For all files
             if is_verbose: print(f"Extract file {i + 1}/{len(files)}...", end="\r")
-            container.append(load_single_files(f, column_types, area, useful))
+            container.append(load_single_files(f, column_types, area, useful, date_col=date_col, area_level=area_level, status_col=status_col))
 
     # Multi-processing
     else:
         if is_verbose: print(f"Extract {len(files)} files...", end='\r')
-        subfunc = partial(load_single_files, column_types=column_types, area=area, useful=useful)
+        subfunc = partial(load_single_files, column_types=column_types, area=area, useful=useful, date_col=date_col, area_level=area_level, status_col=status_col)
         container = []
         with concurrent.futures.ProcessPoolExecutor() as pool:
             for d in pool.map(subfunc, files):
@@ -304,15 +313,17 @@ def _get_file_list(start, end, path_dir):
 # -
 
 
-def load_single_files(file_path, column_types, area, useful):
+def load_single_files(file_path, column_types, area, useful, date_col=['DateTime'], area_level='CTY', status_col=None):
     """Load the ENTSO-E data for a single file
     """
     # Extract the information
-    d = pd.read_csv(file_path, sep="\t", encoding='utf-8', parse_dates=['DateTime'], dtype=column_types)
+    d = pd.read_csv(file_path, sep="\t", encoding='utf-8', parse_dates=date_col, dtype=column_types)
 
     # Only select country level & Useful columns
-    d = d.loc[d.loc[:, area] == "CTY", useful]
-
+    d = d.loc[d.loc[:, area] == area_level, useful]
+    if status_col:
+        d = d.loc[(d[status_col] != 'Cancelled') & (d[status_col] != 'Withdrawn')]
+        d['FromFile'] = file_path
     return d
 
 
@@ -374,6 +385,28 @@ def get_parameters(case):
         destination = 'MapCode'
         origin = 'ProductionType'
         data = 'ActualGenerationOutput'
+        area = 'AreaTypeCode'
+
+    elif case == 'capacities':
+        destination = 'MapCode'
+        origin = 'ProductionType'
+        data = 'AggregatedInstalledCapacity'
+        area = 'AreaTypeCode'
+
+    elif case == 'unavailabilities_gen' or case == 'unavailabilities_prod':
+        destination = 'MapCode'
+        origin = 'ProductionType'
+        data = {
+            'nominal': 'InstalledCapacity',
+            'available': 'AvailableCapacity',
+            'start': 'StartOutage',
+            'end': 'EndOutage',
+            'version': 'Version',
+            'status': 'Status',
+            'id': 'PowerResourceEIC',
+            'mrid': 'MRID',
+            'type': 'Type'
+        }
         area = 'AreaTypeCode'
 
     else:

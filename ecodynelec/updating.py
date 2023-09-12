@@ -7,18 +7,14 @@ requires a specific parametrization of the updater function.
 """
 import os
 import shutil
-import pandas as pd
-import numpy as np
-from time import time
 from concurrent.futures import ProcessPoolExecutor
+from time import time
 
-from ecodynelec.preprocessing.auxiliary import get_default_file
+import numpy as np
+import pandas as pd
 
-
-
-
-
-
+from ecodynelec.preprocessing.auxiliary import get_default_file, read_ofen_pdf_file
+from ecodynelec.preprocessing.loading import adjust_generation, import_generation
 
 
 def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
@@ -43,34 +39,34 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
     if path_dir is None:
         ### Try to reach a default directory
         path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
-    
-    if not os.path.isdir( path_dir ): # Verify if path is valid
-        raise FileNotFoundError(f"Need to specify a directory containing updated files to save them into software files.")
-        
+
+    if not os.path.isdir(path_dir):  # Verify if path is valid
+        raise FileNotFoundError(
+            f"Need to specify a directory containing updated files to save them into software files.")
+
     ### Verify the names if using path_dir
-    expected = ["Neighbourhood_EU.csv","Unit_Impact_Vector.csv","SFOE_data.csv","Residual_model.xlsx"]
+    expected = ["Neighbourhood_EU.csv", "Unit_Impact_Vector.csv", "SFOE_data.csv", "Residual_model.xlsx"]
     files = os.listdir(path_dir)
     if not all(exp in files for exp in expected):
         missing = [f for f in expected if f not in files]
-        raise FileNotFoundError(f"The following files are missing. Please use individual update functions for individual updates. {missing}")
-    
-    
+        raise FileNotFoundError(
+            f"The following files are missing. Please use individual update functions for individual updates. {missing}")
+
     ### Process all common updates
-    update_neighbours(os.path.join(path_dir,"Neighbourhood_EU.csv"))
+    update_neighbours(os.path.join(path_dir, "Neighbourhood_EU.csv"))
     if is_verbose: print(f"Updated Neighbourhood file")
-    update_UIVector(os.path.join(path_dir,"Unit_Impact_Vector.csv"))
+    update_UIVector(os.path.join(path_dir, "Unit_Impact_Vector.csv"))
     if is_verbose: print(f"Updated UI vector file")
-    update_Losses(os.path.join(path_dir,"SFOE_data.csv"))
+    update_Losses(os.path.join(path_dir, "SFOE_data.csv"))
     if is_verbose: print(f"Updated Losses file")
-    update_residual_share(os.path.join(path_dir,"Residual_model.xlsx"), save=True)
+    update_residual_share(os.path.join(path_dir, "Residual_model.xlsx"), save=True)
     if is_verbose: print(f"Updated Residual share file")
-    
-    
+
     ### Go on with SwissGrid
     if path_swissGrid is not None:
         if os.path.isdir(path_swissGrid):
             content = os.listdir(path_swissGrid)
-            if len(content)>0:
+            if len(content) > 0:
                 if all(os.path.splitext(f)[1].startswith(".xls") for f in content):
                     update_sg(path_dir=os.path.abspath(path_swissGrid), save=True, is_verbose=is_verbose)
                 else:
@@ -79,15 +75,10 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
                 raise FileNotFoundError(f"{path_swissGrid} is an empty directory...")
         else:
             raise FileNotFoundError(f"{path_swissGrid} is no directory.")
-    elif is_verbose: print("SwissGrid files were not updated.")
-    
+    elif is_verbose:
+        print("SwissGrid files were not updated.")
+
     return
-
-
-
-
-
-
 
 
 ###################################
@@ -97,43 +88,203 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
 def update_copy(path, name):
     ### Verify
     if not os.path.isfile(path): raise FileNotFoundError(f"Could not find {path}")
-    
+
     ### Where to save
     savepath = get_default_file(name)
-    
+
     ### Copy
     shutil.copy(path, savepath)
 
+
 def update_neighbours(path):
     update_copy(path, "Neighbourhood_EU.csv")
-    
+
+
 def update_UIVector(path):
     update_copy(path, "Unit_Impact_Vector.csv")
-    
+
+
 def update_Losses(path):
     update_copy(path, "Pertes_OFEN.csv")
+
 
 def update_residual_share(path, save=True):
     """Extracts the data relative to residual share estimate and save it in software files"""
     ### Verification
     # Error will be raised by pandas if needed
-    
+
     ### Extraction
     interest = {'Centrales au fil de l’eau': "Hydro_Run-of-river_and_poundage_Res",
                 'Centrales à accumulation': "Hydro_Water_Reservoir_Res",
                 'Centrales therm. classiques et renouvelables': "Other_Res"}
     df = pd.read_excel(path, header=59, index_col=0).loc[interest.keys()].rename(index=interest)
-    df = (df/df.sum(axis=0)).T
-    
+    df = df.T
+
     ### Saving
     if save:
         savepath = get_default_file("Share_residual.csv")
         df.to_csv(savepath, index=True)
-    
+
     return df
 
 
+def extract_entsoe_daily_generation_for_residuals(config, path_dir=None, n_hours=2, days_around=7, limit=.4, save=True,
+                                                  is_verbose=False):
+    """
+    Extracts the daily entsoe generation data that will be used for the residual share estimation. The extracted data
+    corresponds to the days in the 'Redisual_model.xlsx' file. The data is saved in a file named
+    'daily_entsoe_data_for_residual.csv' in path_dir.
 
+   **Note that the required entsoe data isn't downloaded automatically. See downloading.py for more information.**
+
+    Parameters
+    ----------
+    config: ecodynelec.Parameter or str
+        a set of configuration parameters to govern the computation,
+        either as Parameter object or str pointing at an xlsx file.
+
+        Only the 'target', 'start', 'end', 'path.generation' and 'path.exchanges' parameters are used.
+    path_dir: str, optional
+        path to the directory containing updated files. Typically, this is the `support_files/`
+        directory of the cloned git repository of EcoDynElec. The directory must contain ALL
+        the files of interest, otherwise the execution is aborted.
+        If None, an attempt to use a default path is made, with no promises.
+    n_hours: int, default to 2
+        max number of successive missing hours to be considered as occasional event
+    days_around: int, default to 7
+        number of days after and before a gap to consider to create a 'typical mean day'
+    limit: float, default to 0.4
+        max relative length of a gap to fill the data. Longer gaps are filled with zeros.
+    save: bool, optional
+        to decide whether to overwrite the software files with the new extracted data
+        default is True.
+    is_verbose: bool, optional
+        to display information. Default to False.
+
+    Returns
+    --------
+        A pandas.DataFrame containing the daily entsoe data that will be used for the residual share estimation.
+    """
+
+    ### Verify the path_dir
+    if path_dir is None:
+        ### Try to reach a default directory
+        path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
+
+    if not os.path.isdir(path_dir):  # Verify if path is valid
+        raise FileNotFoundError(
+            f"Need to specify a directory containing updated files to save them into software files.")
+
+    start = config.start
+    end = config.end
+    freq = 'D'
+    target = 'CH'
+    ### Get the days when we need to search for entsoe data
+    if is_verbose: print(f"Extracting days from Residual_model.xlsx")
+    residual_model = pd.read_excel(path_dir + '/Residual_model.xlsx', header=16, index_col=0)
+    dates = residual_model.columns
+    print(dates)
+    dates = pd.DatetimeIndex(dates)
+    date_range = pd.date_range(start=start, end=end, freq=freq)
+    dates = [date.strftime('%Y-%m-%d') for date in dates if date in date_range]
+    ### Compute generation data for all days in the range
+    if is_verbose: print(f"Computing {target} generation data")
+    generation_per_day = import_generation(path_gen=config.path.generation, path_prep=config.path.exchanges,
+                                           ctry=[target],
+                                           start=start, end=end,
+                                           savedir=config.path.savedir, n_hours=n_hours, days_around=days_around,
+                                           limit=limit,
+                                           clean_generation=False, is_verbose=is_verbose)  # import generation data
+    generation_per_day = adjust_generation(generation_per_day, freq=freq, residual_global=False, sg_data=None,
+                                           prod_gap=None, enr_prod_ch=None,
+                                           is_verbose=is_verbose)  # adjust the generation data
+    ### And save it
+    if save:
+        if is_verbose: print(f"Saving {target} generation data")
+        csv_content = ''
+        csv_content += ';'
+        for date in dates:
+            csv_content += date + ';'
+        csv_content += '\n'
+        for production in generation_per_day[target].columns:
+            csv_content += production.replace(f'_{target}', '').replace('_', ' ') + ';'
+            for date in dates:
+                csv_content += str(generation_per_day[target][production].loc[date] / 1000).replace('.', ',') + ';'
+            csv_content += '\n'
+
+        csv_file = open(path_dir + '/daily_entsoe_data_for_residual.csv', 'w')
+        csv_file.write(csv_content)
+        csv_file.close()
+    return generation_per_day
+
+
+def extract_ofen_typical_days_for_residual(year, post_process_fun, path_dir=None, save=True):
+    """
+    Extracts the typical days from the OFEN data that will be used for the residual share estimation. The extracted data
+    corresponds to the days in the 'Redisual_model.xlsx' file. The data is saved in a file named
+    'ofen_data/daily_ofen_data_for_residual_year.csv' in path_dir.
+
+   **The input data is the annual report of the OFEN, in a pdf that should be named 'year.pdf' and in the directory path_dir'/ofen_data'.**
+
+    Parameters
+    ----------
+    year: str
+        the year of the OFEN report to use
+    post_process_fun: function
+        A function to post-process the pdf table data.
+        It takes a list of columns and should return the modified list of columns.
+        Refer to auxiliary.read_ofen_pdf_file for details.
+    path_dir: str, optional
+        path to the directory containing input and output files (that will be in a 'ofen_data' sub directory).
+        Typically, this is the `support_files/` directory of the cloned git repository of EcoDynElec.
+        If None, an attempt to use a default path is made, with no promises.
+    save: bool, optional
+        to decide whether to overwrite the software files with the new extracted data
+        default is True.
+
+    Returns
+    --------
+        A dict containing the ofen data of the typical days that will be used for the residual share estimation.
+    """
+
+    ### Verify the path_dir
+    if path_dir is None:
+        ### Try to reach a default directory
+        path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
+
+    if not os.path.isdir(path_dir):  # Verify if path is valid
+        raise FileNotFoundError(
+            f"Need to specify a directory containing updated files to save them into software files.")
+
+    ### Read the pdf file and retrieve the typical days
+    path_dir = os.path.join(path_dir, 'ofen_data')
+    file = os.path.join(path_dir, f'{year}.pdf')
+    if not os.path.isfile(file):
+        raise FileNotFoundError(
+            f"File {file} doesn't exist. Please download it from OFEN website then rename and put it in {path_dir}.")
+    ofen_data = read_ofen_pdf_file(file, post_process_fun=post_process_fun)
+    ### Then save them
+    if save:
+        file = f'{path_dir}/daily_ofen_data_for_residual_{year}.csv'
+        print(f"Saving {year} ofen generation data to {file}")
+        csv_content = ''
+        csv_content += ';'
+        for date in ofen_data.keys():
+            csv_content += date + ';'
+        csv_content += '\n'
+        production_means = ['Centrales au fil de l’eau', 'Centrales à accumulation', 'Centrales nucléaires',
+                            'Centrales therm. classiques et renouvelables', 'Excédent d’importation',
+                            'Fourniture totale', 'Excédent d’exportation', 'Consommation du pays avec pompage',
+                            'Pompage d’accumulation', 'Consommation du pays sans pompage']
+        for i in range(0, len(production_means)):
+            csv_content += production_means[i] + ';'
+            for date in ofen_data.keys():
+                csv_content += str(ofen_data[date][i]).replace('.', ',').replace('-', '0').replace('–', '0') + ';'
+            csv_content += '\n'
+        csv_file = open(file, 'w')
+        csv_file.write(csv_content)
+        csv_file.close()
+    return ofen_data
 
 
 ###################################
@@ -168,75 +319,81 @@ def update_sg(path_dir=None, path_files=None, save=True, is_verbose=False):
         pandas.DataFrame
     """
     ### List the elements / files
-    if (path_dir is None)&(path_files is None):
+    if (path_dir is None) & (path_files is None):
         raise FileNotFoundError("Needs to specify a directory or a list of files")
-    
+
     elif path_dir is not None:
-        files = [os.path.abspath( os.path.join(path_dir, f) )
+        files = [os.path.abspath(os.path.join(path_dir, f))
                  for f in sorted(os.listdir(path_dir))]
     else:
         files = path_files
-        
+
     ### Verification
     faulty = [f for f in files if not os.path.isfile(f)]
     if faulty: raise FileNotFoundError(f"Following files were not found: {faulty}")
-    
+
     ### Extract data
     if is_verbose: print("Extracting SwissGrid files...")
     t0 = time()
     whole_sg = []
     with ProcessPoolExecutor() as pool:
-        for table in pool.map( _prepare_sg_year, files ):
+        for table in pool.map(_prepare_sg_year, files):
             whole_sg.append(table)
     whole_sg = pd.concat(whole_sg, axis=0).sort_index()
     if is_verbose:
-        print(f"\tLoaded {len(files)} tables: {time()-t0:.2f} sec")
-        print(f"\tMemory usage: {whole_sg.memory_usage().sum()/1024**2:.1f} MB")
-    
-    
+        print(f"\tLoaded {len(files)} tables: {time() - t0:.2f} sec")
+        print(f"\tMemory usage: {whole_sg.memory_usage().sum() / 1024 ** 2:.1f} MB")
+
     ### Save the data
     if save:
         target = get_default_file("SwissGrid_total.csv")
         if is_verbose: print(f"Re-writing {target}...")
         ## Build the path to file
         whole_sg.to_csv(target, index=True)
-    
-    ### Return
-    if is_verbose: print(f"Updating SG total: {time()-t0:.2f} sec")
-    return whole_sg
 
+    ### Return
+    if is_verbose: print(f"Updating SG total: {time() - t0:.2f} sec")
+    return whole_sg
 
 
 def _rename_columns_sg(columns):
     new_cols = {}
     for c in columns:
-        if 'energy consumed by end users' in c: new_cols[c] = "Consommation_CH"
-        elif 'energy production' in c: new_cols[c] = 'Production_CH'
-        elif 'energy consumption' in c: new_cols[c] = 'Consommation_Brut_CH'
-        elif "->" in c: new_cols[c] = c.strip()[-6:]
+        if 'energy consumed by end users' in c:
+            new_cols[c] = "Consommation_CH"
+        elif 'energy production' in c:
+            new_cols[c] = 'Production_CH'
+        elif 'energy consumption' in c:
+            new_cols[c] = 'Consommation_Brut_CH'
+        elif "->" in c:
+            new_cols[c] = c.strip()[-6:]
     return new_cols
+
 
 def _set_index_sg(idx):
     start = pd.to_datetime(idx[0])
     new_idx = pd.date_range(start=start, freq='15T', periods=len(idx))
     return new_idx - pd.Timedelta('15min')
 
+
 def _prepare_sg_year(path, year=None):
     if os.path.isfile(path):
         sg_file = path
     else:
-        if year is None: raise ValueError("If path does not point at a file, a year value is needed")
-        elif any(isinstance(year, k) for k in (int,float,np.number)):
+        if year is None:
+            raise ValueError("If path does not point at a file, a year value is needed")
+        elif any(isinstance(year, k) for k in (int, float, np.number)):
             year = str(int(year))
-        elif not isinstance(year, str): raise TypeError(f"year must be a string or a number. Not {year}")
-        
+        elif not isinstance(year, str):
+            raise TypeError(f"year must be a string or a number. Not {year}")
+
         sg_file = os.path.join(path, [f for f in os.listdir(path) if year in f][0])
-        
+
     ### Import data
     col_selection = 'A:D,K:R'
     data = pd.read_excel(sg_file, sheet_name='Zeitreihen0h15', header=0, index_col=0,
-                         parse_dates=False, usecols=col_selection).drop(index='Zeitstempel',errors='ignore')
-    
+                         parse_dates=False, usecols=col_selection).drop(index='Zeitstempel', errors='ignore')
+
     ### Clean data
     data.index = _set_index_sg(data.index)
     return data.rename(columns=_rename_columns_sg(data.columns)).astype("int32")

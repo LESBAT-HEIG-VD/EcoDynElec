@@ -5,6 +5,7 @@ import pandas as pd
 from pandas import DataFrame, MultiIndex
 
 from ecodynelec import tracking
+from ecodynelec.tracking import compute_producing_mix
 
 
 def generate_table():
@@ -44,8 +45,11 @@ class TestTracking(unittest.TestCase):
 
         df = generate_table()
         ctry, ctry_mix, prod_means, all_sources = tracking.reorder_info(df)  # Labels
+        df_mix = compute_producing_mix(df, ctry=ctry, prod_means=prod_means)
+        # the '2*' indicates the number of countries (C1 and C2)
+        self.assertTrue(np.all(df_mix.sum(axis=1).values == 2*np.ones(df_mix.shape[0])), msg='Valid prod mix matrix')
 
-        out = [tracking.build_technology_matrix(df.iloc[i], ctry, ctry_mix, prod_means).round(2)
+        out = [tracking.build_technology_matrix(df_mix.iloc[i], ctry, ctry_mix, prod_means).round(2)
                for i in range(2)]
 
         self.assertTrue(np.all([np.all(out[i] == expected[i]) for i in range(2)]),
@@ -87,6 +91,7 @@ class TestTracking(unittest.TestCase):
         prod_means = ['Plant', 'Mix_C1', 'Mix_C2', 'Mix_Other']
         all_sources = ['Mix_C1', 'Mix_C2', 'Mix_Other', 'Plant_C1', 'Plant_C2']
         Up = pd.Series(1, index=range(2))
+        df_mix = compute_producing_mix(df, ctry=ctry, prod_means=prod_means)
 
         expected = [pd.DataFrame(np.array(vec).reshape(2, 5), columns=all_sources).astype('float32')
                     for vec in
@@ -97,7 +102,7 @@ class TestTracking(unittest.TestCase):
                    ([1.5, .0, .0, .0, .75, .75, .25, .0, .0, .25], [.0, .6, .0, .0, .75, .75, .25, .15, .0, .1])]
 
         ### Check the matrix extraction
-        out = tracking.compute_tracking(df, all_sources, uP=Up, ctry=ctry, ctry_mix=ctry_mix,
+        out = tracking.compute_tracking(df_mix, all_sources, uP=Up, ctry=ctry, ctry_mix=ctry_mix,
                                         prod_means=prod_means)
 
         ### Test the type

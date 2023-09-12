@@ -10,6 +10,7 @@ import pandas as pd
 ############### Local functions
 from ecodynelec.checking import check_frequency
 from ecodynelec.preprocessing.auxiliary import load_rawEntso
+from ecodynelec.progress_info import ProgressInfo
 
 
 #
@@ -19,7 +20,7 @@ from ecodynelec.preprocessing.auxiliary import load_rawEntso
 ###########################
 
 
-def track_mix(raw_data, freq='H', network_losses=None, residual_global=False, is_verbose=False):
+def track_mix(raw_data, freq='H', network_losses=None, residual_global=False, return_prod_mix=False, is_verbose=False, progress_bar=None):
     """Performs the electricity tracking. Master function for the electricity mix computation.
 
     Parameters
@@ -33,13 +34,18 @@ def track_mix(raw_data, freq='H', network_losses=None, residual_global=False, is
         residual_global: bool, default to False
             whether to include a local production residual as production unit during the electricity
             tracking computation.
+        return_prod_mix: bool, default to False
+            whether to return the production mix in addition to the electricity mix.
         is_verbose: bool, default to False
             show text during computation.
+        progress_bar: ProgressInfo, default to None
+            progress bar object to show progress during computation.
 
     Returns
     -------
-    pandas.DataFrame
-        table with the electricity mix in the studied countries (parameter.ctry + 'Other'), containing each production mean of each country at each time step.
+    pandas.DataFrame if return_prod_mix is False, or tuple of pandas.DataFrame if return_prod_mix is True
+        First element: table with the electricity mix in the studied countries (parameter.ctry + 'Other'), containing each production mean of each country at each time step.
+        Second element: table with the production mix in the studied countries (parameter.ctry + 'Other'), containing each production mean of each country at each time step.
     """
 
     t0 = time()  # time measurment
@@ -53,12 +59,44 @@ def track_mix(raw_data, freq='H', network_losses=None, residual_global=False, is
     else:
         uP = pd.Series(data=1, index=df.index)  # Grid losses not considered -> 1
 
+    if is_verbose: print("Computing production and local consumption mixes...")
+    # production mix : production of each source / total production (for each country) (considering imports as sources)
+    prod_mix = compute_producing_mix(df, ctry=ctry, prod_means=prod_means)
+
     if is_verbose: print("Tracking origin of electricity...")
-    mixE = compute_tracking(df, all_sources=all_sources, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
-                            prod_means=prod_means, residual=residual_global, freq=freq, is_verbose=is_verbose)
+    # consumption mix : consumption of each source / total consumption (for each country) (considering alĺ import sources)
+    mixE = compute_tracking(data=prod_mix, all_sources=all_sources, uP=uP, ctry=ctry, ctry_mix=ctry_mix,
+                            prod_means=prod_means, residual=residual_global, freq=freq, is_verbose=is_verbose, progress_bar=progress_bar)
 
     if is_verbose: print("\n\tElectricity tracking: {:.1f} sec.\n".format(time() - t0))
-    return mixE  # df is the raw power per source (kWh or MWh)
+    return (mixE, prod_mix) if return_prod_mix else mixE
+
+
+def compute_producing_mix(df, ctry, prod_means):
+    """Computes the production mix for each country, considering imports as sources (Mix_CNTRY sources).
+    The production mix is the production of each source divided by the total production of the **corresponding** country.
+
+    Parameters
+    ----------
+        df: pandas.DataFrame
+            production and exchange data from ENTSO-E.
+        ctry: list of str
+            the list of countries to consider.
+        prod_means: list of str
+            the list of production means to consider.
+
+    Returns
+    -------
+        pandas.DataFrame
+            table with the production mix in the studied countries (parameter.ctry + 'Other'), containing each production mean of each country at each time step.
+    """
+    prod_mix = pd.DataFrame(index=df.index, columns=df.columns)
+    for c in ctry:
+        sources = [f'{src}_{c}' for src in prod_means]
+        total = df[sources].sum(axis=1)
+        for src in sources:
+            prod_mix[f'{src}'] = df[src] / total
+    return prod_mix
 
 
 #
@@ -84,7 +122,7 @@ def reorder_info(data):
     list
         ctry: sorted list of involved countries
     list
-        ctry_mix: list of countries where eletricity can come from, including 'Other' (list)
+        ctry_mix: list of countries where electricity can come from, including 'Other' (list)
     list
         prod_means: list of production means, without mixes (list)
     list
@@ -169,17 +207,21 @@ def set_FU_vector(all_sources, target='CH'):
 #
 
 def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
-                     residual=False, freq='H', is_verbose=False):
+                     residual=False, freq='H', is_verbose=False, progress_bar=None):
     """Function leading the electricity tracking: by building the technology matrix and computing the inversion at each time step.
 
     Parameters
     ----------
         data: pandas.DataFrame
-            Table with the production and exchange data of all involved countries
+            Table with the production and exchange mix (production of each source / total production (for each country) (considering imports as sources))
         all_sources: array-like
             an ordered list with the mix names and production mean names, without origin
         uP: array-like
             vector that indicates the amount of energy before losses to obtain 1kWh of consumable elec
+        ctry: array-like
+            sorted list of involved countries
+        ctry_mix: array-like
+            list of countries where electricity can come from, including 'Other'
         prod_means: array-like
             list of production means, without mixes
         residual: bool, default to False
@@ -188,6 +230,8 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
             frequency of a time step
         is_verbose: bool, default to False
             show text during computation.
+        progress_bar: ProgressInfo, default to None
+            if not None, a new progress bar is displayed to show the progress of the computation.
     
     Returns
     -------
@@ -207,9 +251,16 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
     else:
         step = data.shape[0]
 
+    # Initialise the progress bar
+    if progress_bar is not None:
+        progress_bar.set_sub_label("Tracking")
+        sub_progress_bar = ProgressInfo(label="Tracking electricity origin", max=data.shape[0])
+    else:
+        sub_progress_bar = None
+
     # For each considered step of time
     for t in range(data.shape[0]):
-
+        if sub_progress_bar: sub_progress_bar.progress()
         if ((is_verbose) & (t % step == 0)):
             print(f"\tcompute for {step_name} {(t // step) + 1}/{total}   ", end="\r")
 
@@ -229,7 +280,12 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
         #########################################################
         Ainv = invert_technology_matrix(A, presence, L=L)
 
-        mixE.append(pd.DataFrame(np.dot(Ainv, uP.iloc[t]), index=all_sources, columns=all_sources, dtype="float32"))
+        mix_at_t = pd.DataFrame(np.dot(Ainv, uP.iloc[t]), index=all_sources, columns=all_sources, dtype="float32")
+        mixE.append(mix_at_t)
+
+    if progress_bar:
+        sub_progress_bar.hide()
+        progress_bar.set_sub_label("Cleaning output...")
 
     #######################################################################
     # Clear columns related to residual in other countries than CH
@@ -237,9 +293,8 @@ def compute_tracking(data, all_sources, uP, ctry, ctry_mix, prod_means,
 
     # Possibly non-used residue columns are deleted (Only residual for CH can be considered)
     if residual:
-        mixE = [m.drop(columns=[k for k in m.columns
-                                if ((k.split("_")[0] == "Residual") & (k[-3:] != "_CH"))])
-                for m in mixE]
+        rem = [k for k in mixE[0].columns if ((k.split("_")[0] == "Residual") & (k[-3:] != "_CH"))]
+        mixE = [m.drop(columns=rem) for m in mixE]
     mixE = pd.concat(mixE, axis=0, keys=data.index)
     return mixE
 
@@ -258,7 +313,7 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means):
     Parameters
     ----------
         data: pandas.DataFrame
-            the production and exchange data
+            Table with the production and exchange mix (production of each source / total production (for each country) (considering imports as sources)) at a given time
         ctry: array-like
             sorted list of involved countries
         ctry_mix: array-like
@@ -271,12 +326,14 @@ def build_technology_matrix(data, ctry, ctry_mix, prod_means):
     numpy.ndarray
        technology matrix A
     """
-    # Gathering production by country in a matrix
-    energy = pd.DataFrame(data=data.values.reshape((len(ctry), len(prod_means))),
+    # Gathering the contribution rate of each production unit in the production mix of each country
+    weight = pd.DataFrame(data=data.values.reshape((len(ctry), len(prod_means))),
                           columns=prod_means, index=ctry, dtype='float32')
+    # Assert that the sum of the production units is equal to 1 for all countries
+    assert np.allclose(weight.sum(axis=1), np.ones(len(ctry))), "Production mix sum is not equal to 1 for all countries"
 
-    # Compute the contribution rate of each production unit in the production mix of each country
-    weight = energy.div(energy.sum(axis=1), axis=0)
+    # Normalize the contribution rate of each production unit in the production mix of each country
+    weight = weight.divide(weight.sum(axis=1), axis=0)
 
     # Shape parameters
     cm = 0  # anchor column number for the blocks containing data

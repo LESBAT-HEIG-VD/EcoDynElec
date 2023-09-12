@@ -5,11 +5,13 @@ Module to load production and cross-border flows from ENTSO-E
 import os
 from time import time
 
+import numpy as np
 import pandas as pd
 
 #################### Local functions
 from ecodynelec.checking import check_frequency, check_regularity_frequency
 from ecodynelec.preprocessing.autocomplete import get_steps_per_hour
+from ecodynelec.preprocessing.auxiliary import load_gap_content
 from ecodynelec.preprocessing.extracting import extract
 from ecodynelec.preprocessing.residual import include_global_residual
 from ecodynelec.progress_info import ProgressInfo
@@ -28,15 +30,15 @@ from ecodynelec.progress_info import ProgressInfo
 
 # -
 
-def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, prod_gap=None, sg_data=None,
-                net_exchange=False,
+def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, path_gap=None, sg_data=None,
+                enr_prod_ch=None, net_exchange=False,
                 path_gen=None, gen_preprocessed=None, path_imp=None, imp_preprocessed=None, savedir=None,
                 residual_global=False, correct_imp=True,
                 clean_data=True, n_hours=2, days_around=7, limit=.4, is_verbose=True,
                 progress_bar: ProgressInfo = None):
     """
     Main function managing the import and pre-treatment of Entso-e production and cross-border flow data.
-    
+
     Parameters
     ----------
         ctry: list
@@ -50,10 +52,14 @@ def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, p
         involved_countries: list, default to None
             list of all countries involved, with the countries to include in the computing
             and their neighbours (to implement the exchanges with 'Other' countries)
-        prod_gap: pandas.DataFrame
-            information about the nature of the residual
+        path_gap: str or None, default to None
+            path to the file containing the information about the nature of the residual
+            refer to parameter.path.gap for more information
         sg_data: pandas.DataFrame, default to None
             information from Swiss Grid
+        enr_prod_ch: pandas.DataFrame, default to None
+            Wind and solar production in Switzerland, as modeled with EcoDynElec-Enr-Model
+            See Parameter.ch_enr_model_path for more information
         net_exchange: bool, default to False
             to simplify cross-border flows to net after resampling
         path_gen: str, default to None
@@ -80,6 +86,8 @@ def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, p
             max relative length of a gap to fill the data. Longer gaps are filled with zeros.
         is_verbose: bool, default to False
             to display information
+        progress_bar: ProgressInfo, default to None
+            to display a progress bar
     
     Returns
     -------
@@ -99,8 +107,8 @@ def import_data(ctry, start=None, end=None, freq="H", involved_countries=None, p
 
     if progress_bar:
         progress_bar.progress('Adjust generation data...')
-    Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data,
-                            prod_gap=prod_gap, is_verbose=is_verbose)  # adjust the generation data
+    Gen = adjust_generation(Gen, freq=freq, residual_global=residual_global, sg_data=sg_data, start=start, end=end,
+                            path_gap=path_gap, enr_prod_ch=enr_prod_ch, is_verbose=is_verbose)  # adjust the generation data
 
     if progress_bar:
         progress_bar.progress('Import exchanges data...')
@@ -228,8 +236,8 @@ def import_generation(ctry, start, end, path_gen=None, path_prep=None, savedir=N
 
 # -
 
-def adjust_generation(Gen, freq='H', residual_global=False,
-                      sg_data=None, prod_gap=None, is_verbose=False):
+def adjust_generation(Gen, freq='H', residual_global=False, start=None, end=None,
+                      sg_data=None, path_gap=None, enr_prod_ch=None, is_verbose=False):
     """Function that leads organizes the data adjustment.
     It sorts finds and sorts missing values, fills it, resample the data and
     add a residual as global production
@@ -242,10 +250,18 @@ def adjust_generation(Gen, freq='H', residual_global=False,
             time step durtion
         residual_global: bool, default to False
             whether to include the residual or not
+        start: str or None, default to None
+            starting date of the study
+        end: str or None, default to None
+            ending date of the study
         sg_data: pandas.DataFrame, default to None
             information from Swiss Grid
-        prod_gap: pandas.DataFrame, default to None
-            information about the nature of the residual
+        path_gap: str or None, default to None
+            path to the file containing the information about the nature of the residual
+            refer to parameter.path.gap for more information
+        enr_prod_ch: pandas.DataFrame, default to None
+            Renewable energy production in Switzerland, as modeled with EcoDynElec-Enr-Model
+            See parameter.ch_enr_model_path for more information
         is_verbose: bool, default to False
             whether to display information or not.
         
@@ -258,11 +274,26 @@ def adjust_generation(Gen, freq='H', residual_global=False,
     if is_verbose: print(f"\t4/{4 + int(residual_global)} - Resample exchanges to {freq} steps...")
     Gen = resample_data(Gen, freq=freq)
 
-    ### Includes residual production
+    ### Load gap data -> if Residual
+    if residual_global:
+        if is_verbose: print('Loading gap data')
+        if enr_prod_ch is not None:
+            delta = enr_prod_ch - Gen['CH'].loc[:, enr_prod_ch.columns]
+            delta[delta < 0] = 0
+        else:
+            delta = None
+        prod_gap = load_gap_content(path_gap=path_gap, start=start, end=end, freq=freq, enr_prod_residual_ch=delta)
+    else:
+        prod_gap = None
+
+    ### Include the enr production as modeled with EcoDynElec-Enr-Model
+    if enr_prod_ch is not None:
+        Gen['CH'].loc[:, enr_prod_ch.columns] = enr_prod_ch
+
+    ### Then include residual production
     if residual_global:
         Gen = include_global_residual(Gen=Gen, freq=freq, sg_data=sg_data, prod_gap=prod_gap,
                                       is_verbose=is_verbose)
-
     return Gen
 
 
@@ -435,10 +466,10 @@ def set_swissGrid(Cross, sg_data):
     places = ["AT", "DE", "FR", "IT"]  # Neighbours of Swizerland (as the function is only for Swizerland)
 
     for c in places:
-        if f"Mix_{c}_CH" in Cross['CH'].columns:
-            Cross["CH"].loc[:, f"Mix_{c}_CH"] = sg_data.loc[:, f"Mix_{c}_CH"]  # Swiss imprts
+        if c in Cross['CH'].columns:
+            Cross["CH"].loc[:, c] = sg_data.loc[:, f"Mix_{c}_CH"]  # Swiss imports
         if c in Cross.keys():
-            Cross[c].loc[:, f"Mix_CH_{c}"] = sg_data.loc[:, f"Mix_CH_{c}"]  # Swiss exports
+            Cross[c].loc[:, 'CH'] = sg_data.loc[:, f"Mix_CH_{c}"]  # Swiss exports
 
     return Cross
 

@@ -101,7 +101,7 @@ def include_global_residual(Gen=None, freq='H', sg_data=None, prod_gap=None, is_
             Gen[f]["Residual_Hydro_Water_Reservoir_{}".format(f)] = np.zeros((Gen[f].shape[0], 1))
             Gen[f]["Residual_Hydro_Run-of-river_and_poundage_{}".format(f)] = np.zeros((Gen[f].shape[0], 1))
             Gen[f]["Residual_Other_{}".format(f)] = np.zeros((Gen[f].shape[0], 1))
-            Gen[f] = Gen[f][list(Gen[f].columns[-2:]) + list(Gen[f].columns[:-2])]  # Move empty residual
+            Gen[f] = Gen[f][list(Gen[f].columns[-3:]) + list(Gen[f].columns[:-3])]  # Move empty residual
 
     return Gen
 
