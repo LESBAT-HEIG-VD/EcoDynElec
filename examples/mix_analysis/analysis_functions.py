@@ -42,15 +42,15 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
     mixs: dict of dict of pandas.DataFrame
         Contains for each year a dict of the electric mix shares for each target country
     prod_impacts: dict of dict of pandas.DataFrame
-        Contains for each year a dict of the climate change (gwp) impacts for each target country, for the production mix
+        Contains for each year a dict of the carbon intensity (gwp) impacts for each target country, for the production mix
     impacts: dict of dict of pandas.DataFrame
-        Contains for each year a dict of the climate change (gwp) impacts for each target country, for the consumption mix
+        Contains for each year a dict of the carbon intensity (gwp) impacts for each target country, for the consumption mix
     """
     flows_dict = {}  # Productions/imports/exports in kwh per year
     prods = {}
     mixs = {}  # Energetic mixes per year
     prod_impacts = {}
-    impacts = {}  # Climate change impacts per year
+    impacts = {}  # Carbon intensity impacts per year
     if show_progress:
         progress_info_year = ProgressInfo('Compute ' + years[0] + '...', len(years) + 1, width='90%')
         progress_info_computation = ProgressInfo('', 11, color='lightgreen', width='90%')
@@ -70,14 +70,14 @@ def generate_data(config, years: list[str], savedir: str = './mix_analysis/resul
         flows_dict[year] = raw
         prods[year] = prod
         mixs[year] = mix
-        if 'Climate Change' in prodimp.keys():  # single target
-            prod_impacts[year] = prodimp['Climate Change']
+        if 'Carbon intensity' in prodimp.keys():  # single target
+            prod_impacts[year] = prodimp['Carbon intensity']
         else:  # multi target
-            prod_impacts[year] = {k: prodimp[k]['Climate Change'] for k in prodimp.keys()}
-        if 'Climate Change' in imp.keys():  # single target
-            impacts[year] = imp['Climate Change']
+            prod_impacts[year] = {k: prodimp[k]['Carbon intensity'] for k in prodimp.keys()}
+        if 'Carbon intensity' in imp.keys():  # single target
+            impacts[year] = imp['Carbon intensity']
         else:  # multi target
-            impacts[year] = {k: imp[k]['Climate Change'] for k in imp.keys()}
+            impacts[year] = {k: imp[k]['Carbon intensity'] for k in imp.keys()}
     if show_progress:
         progress_info_year.progress('Done!')
         progress_info_computation.hide()
@@ -125,7 +125,7 @@ def load_data(targets, freq, years: list[str], savedir: str = './mix_analysis/re
     prods = {}
     mixs = {}  # Energetic mix per year
     prod_impacts = {}
-    impacts = {}  # Climate change impact per year
+    impacts = {}  # Carbon intensity impact per year
     for year in years:
         flows_dict[year] = {}
         prods[year] = {}
@@ -140,10 +140,10 @@ def load_data(targets, freq, years: list[str], savedir: str = './mix_analysis/re
                                                parse_dates=True)
             mixs[year][country] = pd.read_csv(fsavedir + f"Mix_{tPass[freq]}.csv", index_col=0,
                                               parse_dates=True)
-            prod_impacts[year][country] = pd.read_csv(fsavedir + f"ProdImpact_Climate Change_{tPass[freq]}.csv",
+            prod_impacts[year][country] = pd.read_csv(fsavedir + f"ProdImpact_Carbon intensity_{tPass[freq]}.csv",
                                                       index_col=0,
                                                       parse_dates=True)
-            impacts[year][country] = pd.read_csv(fsavedir + f"Impact_Climate Change_{tPass[freq]}.csv",
+            impacts[year][country] = pd.read_csv(fsavedir + f"Impact_Carbon intensity_{tPass[freq]}.csv",
                                                  index_col=0,
                                                  parse_dates=True)
     return flows_dict, prods, mixs, prod_impacts, impacts
@@ -315,7 +315,7 @@ def get_metrics(years, data, metrics, freq, label=None):
 
 def plot_hourly_heatmap(dataframe: pd.DataFrame, column: str, xlabels: list[str], label: str, ylabel: str,
                         val_min: float = 0, val_max: float = 1, fig=None, ax=None, cmap: str = 'hot_r',
-                        x_scale: str = 'D'):
+                        x_scale: str = 'D', relative=False):
     """
     Plots the hourly heatmap of the given dataframe (y-axis: hours, x-axis: days or chosen x_scale)
     Parameters
@@ -342,6 +342,8 @@ def plot_hourly_heatmap(dataframe: pd.DataFrame, column: str, xlabels: list[str]
         Colormap to use
     x_scale: str, optional
         Resampling frequency for the x-axis
+    relative: bool, optional
+        If True, the values are rescaled to the maximum value of each column (in percent)
     """
     if fig is None or ax is None:
         fig, ax = plt.subplots(figsize=(12, 4))
@@ -350,10 +352,12 @@ def plot_hourly_heatmap(dataframe: pd.DataFrame, column: str, xlabels: list[str]
     df_pivot.index = pd.DatetimeIndex(df_pivot.index)
     df_pivot = df_pivot.resample(x_scale).mean()
     df_pivot = df_pivot.transpose()
+    if relative:
+        df_pivot = df_pivot.divide(df_pivot.max().max()) * 100
     seaborn.heatmap(df_pivot, ax=ax, cmap=cmap, cbar_kws={'label': ylabel}, vmin=val_min, vmax=val_max)
     xlabels.append('')  # Add an empty label for the last tick
     ax.set_xticks(np.linspace(0, len(df_pivot.columns), len(xlabels)), labels=xlabels)
-    ax.set_title(f'{label} per hour of the day')
+    ax.set_title(f'{label}')
     ax.set_xlabel('Time interval: day')
     ax.set_ylabel('Hour of the day')
 
@@ -367,7 +371,8 @@ def plot_typical_days(seasonal_data, season_labels, label, ylabel, fig=None, ax=
         a.plot(by_hour)
         a.set_title(f'{season_labels[i]}')
         a.set_xlabel('Hour of the day')
-        a.set_ylabel(ylabel)
+        if i == 0:
+            a.set_ylabel(ylabel)
     fig.suptitle(f'{label} per season')
     fig.tight_layout()
 

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 #################### Local functions
-from ecodynelec.checking import check_frequency, check_regularity_frequency
+from ecodynelec.checking import check_frequency, check_regularity_frequency, check_residual_availability
 from ecodynelec.preprocessing.autocomplete import get_steps_per_hour
 from ecodynelec.preprocessing.auxiliary import load_gap_content
 from ecodynelec.preprocessing.extracting import extract
@@ -288,6 +288,9 @@ def adjust_generation(Gen, freq='H', residual_global=False, start=None, end=None
 
     ### Include the enr production as modeled with EcoDynElec-Enr-Model
     if enr_prod_ch is not None:
+        # Check the availability of enr production data
+        check_residual_availability(prod=Gen['CH'], residual=enr_prod_ch, freq=freq)
+        # And include it
         Gen['CH'].loc[:, enr_prod_ch.columns] = enr_prod_ch
 
     ### Then include residual production

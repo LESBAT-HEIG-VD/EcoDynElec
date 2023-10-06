@@ -235,7 +235,7 @@ def extract_ofen_typical_days_for_residual(year, post_process_fun, path_dir=None
         It takes a list of columns and should return the modified list of columns.
         Refer to auxiliary.read_ofen_pdf_file for details.
     path_dir: str, optional
-        path to the directory containing input and output files (that will be in a 'ofen_data' sub directory).
+        path to the directory containing input and output files (that should be in a 'ofen_data' sub directory).
         Typically, this is the `support_files/` directory of the cloned git repository of EcoDynElec.
         If None, an attempt to use a default path is made, with no promises.
     save: bool, optional
