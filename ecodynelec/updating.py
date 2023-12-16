@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from ecodynelec.preprocessing.auxiliary import get_default_file, read_ofen_pdf_file
+from ecodynelec.preprocessing.enr_residual_utils import get_enr_data_from_pronovo_ec
 from ecodynelec.preprocessing.loading import adjust_generation, import_generation
 
 
@@ -78,6 +79,9 @@ def update_all(path_dir=None, path_swissGrid=None, is_verbose=False):
     elif is_verbose:
         print("SwissGrid files were not updated.")
 
+    ### Go on with ENR data
+    update_enr_data_from_pronovo(path_dir, verbose=is_verbose)
+    if is_verbose: print(f"Updated ENR data files")
     return
 
 
@@ -397,3 +401,66 @@ def _prepare_sg_year(path, year=None):
     ### Clean data
     data.index = _set_index_sg(data.index)
     return data.rename(columns=_rename_columns_sg(data.columns)).astype("int32")
+
+
+##############################################
+##### SPECIFIC TO ENERGY CHARTS-PRONOVO ######
+##############################################
+
+
+def update_enr_data_from_pronovo(path_dir=None, output_file=None, verbose=False):
+    """
+    | Function to update the renewable electricity data from Pronovo and Energy Charts.
+    | This updates the `enr_prod_2016-2022_completed.csv` file in the `support_files` directory.
+    | The source files should be manually downloaded following the procedure described in the documentation of the
+        `ecodynelec.preprocessing.enr_residual_utils` module.
+
+    | The source files should be placed in the `path_dir` directory :
+    - a 'pronovo_data' sub-directory should contain the files from Pronovo ('prod_year' directories containing the .csv
+      files downloaded on the Pronovo's website, AND a 'EC_Solar_year.csv' EnergyCharts solar production file to scale the
+      hourly Pronovo data to the real daily production given by EnergyCharts
+      (see `ecodynelec.preprocessing.enr_residual_utils` module documentation))
+    - a 'energy_charts_data' sub-directory should contain the files from Energy Charts
+    - a 'enr_prod_2016-2019.csv' file should be in the `path_dir` directory
+
+    | This file is generated using the Ecd-EnrModel project. It contains predicted solar and wind electricity production
+        from 2016 to 2019.
+
+    Parameters
+    ----------
+    path_dir : str, optional
+        path to the directory containing the source files. Typically, this is the `support_files/`
+        directory of the cloned git repository of EcoDynElec. The directory must contain ALL
+        the files of interest, otherwise the execution is aborted.
+        If None, an attempt to use a default path is made, with no promises.
+    output_file : str, optional
+        path to the file to save the updated data. If None, the file is saved in a 'enr_prod_2016-2022_completed.csv'
+        file in the `path_dir` directory.
+    verbose : bool, optional
+        to display information. Default to False.
+
+    Returns
+    -------
+    None
+    """
+    ### Verify the path_dir
+    if path_dir is None:
+        ### Try to reach a default directory
+        path_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'support_files')
+    if not os.path.isdir(path_dir):  # Verify if path is valid
+        raise FileNotFoundError(
+            f"Need to specify a directory containing updated files to save them into software files.")
+
+    predicted_data = os.path.join(path_dir, 'enr_prod_2016-2019.csv')
+    if not os.path.isfile(predicted_data):
+        raise FileNotFoundError(
+            f"The file {predicted_data} is missing in {path_dir}. Please generate it using Ecd-EnrModel project and save it in {path_dir}.")
+    predicted_data = pd.read_csv(predicted_data, index_col=0, parse_dates=[0])
+    mapped_data = get_enr_data_from_pronovo_ec(path_dir, verbose)
+    ndf = pd.concat([predicted_data, mapped_data], axis=0)
+    ndf.fillna(0, inplace=True)
+    if output_file is None:
+        output_file = os.path.join(path_dir, 'enr_prod_2016-2022_completed.csv')
+    if verbose:
+        print(f"Saving {output_file}...")
+    ndf.to_csv(output_file)
