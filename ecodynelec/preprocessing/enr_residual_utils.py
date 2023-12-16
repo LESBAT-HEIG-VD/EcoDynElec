@@ -205,8 +205,7 @@ def get_enr_data_from_pronovo_ec(path_dir, verbose=False):
     """
     pronovo_data = read_enr_data_from_pronovo(path_dir, verbose=verbose)
     ec_data = read_enr_data_from_energy_charts(path_dir, verbose=verbose)
-    mapped_data = reorganize_enr_data(pronovo_data, ec_data, verbose=verbose)
-    mapped_data = mapped_data.loc['2020-05-01':]
+    mapped_data = reorganize_enr_data(pronovo_data, ec_data)
     return mapped_data
 
 
@@ -284,7 +283,7 @@ def read_enr_data_from_energy_charts(path_dir, verbose=False):
     return df_ec_data
 
 
-def reorganize_enr_data(pronovo_data: pd.DataFrame, ec_data: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+def reorganize_enr_data(pronovo_data: pd.DataFrame, ec_data: pd.DataFrame) -> pd.DataFrame:
     """
     | Reorganizes the pronovo and energy charts data to match the final data format.
     | The reorganized data is the best estimation of the real renewable electricity productions, from what is available.
@@ -296,8 +295,6 @@ def reorganize_enr_data(pronovo_data: pd.DataFrame, ec_data: pd.DataFrame, verbo
         The pronovo data, indexed by date.
     ec_data : pd.DataFrame
         The energy charts data, indexed by date.
-    verbose : bool, optional
-        Whether to print debug information. The default is False.
 
     Returns
     -------

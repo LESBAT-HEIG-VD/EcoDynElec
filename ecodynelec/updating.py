@@ -8,6 +8,7 @@ requires a specific parametrization of the updater function.
 import os
 import shutil
 from concurrent.futures import ProcessPoolExecutor
+from datetime import timedelta
 from time import time
 
 import numpy as np
@@ -457,7 +458,8 @@ def update_enr_data_from_pronovo(path_dir=None, output_file=None, verbose=False)
             f"The file {predicted_data} is missing in {path_dir}. Please generate it using Ecd-EnrModel project and save it in {path_dir}.")
     predicted_data = pd.read_csv(predicted_data, index_col=0, parse_dates=[0])
     mapped_data = get_enr_data_from_pronovo_ec(path_dir, verbose)
-    ndf = pd.concat([predicted_data, mapped_data], axis=0)
+    # Merge the predicted data (ending in 2019) with the mapped data (starting in 2020) and ensure they don't overlap
+    ndf = pd.concat([predicted_data.loc[:(mapped_data.index[0] - timedelta(hours=1))], mapped_data], axis=0)
     ndf.fillna(0, inplace=True)
     if output_file is None:
         output_file = os.path.join(path_dir, 'enr_prod_2016-2022_completed.csv')
