@@ -37,14 +37,14 @@ Typical python installation softwares such as `pip` or `conda` can be used to in
 move inside the `ecodynelec/` directory. From there, use `pip` (example) or `conda`
 to install.
 
-    >> cd /path-to-ecodynelec-copy/ecodynelec/
+    >> cd /path-to-ecodynelec-copy/EcoDynElec/
     
-    >> pip install elecodyn
+    >> python -m pip install ./
 
 An alternative is to use python to trigger the `setup.py` file within the `ecodynelec/`
-directory. More on this in the [official Python documentation](https://docs.python.org/3/install/#distutils-based-source-distributions).
+directory. More on this in the [official Python documentation](https://packaging.python.org/en/latest/tutorials/installing-packages/#installing-from-a-local-src-tree).
 
-    >> cd /path-to-ecodynelec-copy/ecodynelec/
+    >> cd /path-to-ecodynelec-copy/EcoDynElec/
     
     >> python setup.py install
 
