@@ -414,16 +414,15 @@ def update_enr_data_from_pronovo(path_dir=None, output_file=None, verbose=False)
     | Function to update the renewable electricity data from Pronovo and Energy Charts.
     | This updates the `enr_prod_2016-2022_completed.csv` file in the `support_files` directory.
     | The source files should be manually downloaded following the procedure described in the documentation of the
-        `ecodynelec.preprocessing.enr_residual_utils` module.
+        :ref:`ecodynelec.preprocessing.enr_residual_utils <pronovo-and-energycharts-data-downloading>` module.
 
     | The source files should be placed in the `path_dir` directory :
     - a 'pronovo_data' sub-directory should contain the files from Pronovo ('prod_year' directories containing the .csv
       files downloaded on the Pronovo's website, AND a 'EC_Solar_year.csv' EnergyCharts solar production file to scale the
       hourly Pronovo data to the real daily production given by EnergyCharts
-      (see `ecodynelec.preprocessing.enr_residual_utils` module documentation))
+      (see :ref:`ecodynelec.preprocessing.enr_residual_utils <pronovo-and-energycharts-data-downloading>` module documentation)
     - a 'energy_charts_data' sub-directory should contain the files from Energy Charts
     - a 'enr_prod_2016-2019.csv' file should be in the `path_dir` directory
-
     | This file is generated using the Ecd-EnrModel project. It contains predicted solar and wind electricity production
         from 2016 to 2019.
 

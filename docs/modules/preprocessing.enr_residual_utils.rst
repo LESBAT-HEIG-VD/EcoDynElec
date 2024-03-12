@@ -6,6 +6,8 @@ enr_residual_utils
    :undoc-members:
    :show-inheritance:
 
+.. _pronovo-and-energycharts-data-downloading:
+
 Pronovo and EnergyCharts data downloading :
 -------------------------------------------
 
