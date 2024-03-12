@@ -15,6 +15,7 @@ The submodule `extracting <https://ecodynelec.readthedocs.io/en/latest/modules/p
 
 The submodule `residual <https://ecodynelec.readthedocs.io/en/latest/modules/preprocessing.residual.html>`_ handles the creation and integration of a possible residual in the data.
 
+The submodule `enr_residual_utils <https://ecodynelec.readthedocs.io/en/latest/modules/preprocessing.enr_residual_utils.html>`_ contains functions used to read the Pronovo and EnergyCharts data used to complete the renewable production (solar, wind, waste...) and eliminate the residual.
 
 .. toctree::
    :maxdepth: 1
@@ -27,3 +28,4 @@ The submodule `residual <https://ecodynelec.readthedocs.io/en/latest/modules/pre
    preprocessing.load_impacts
    preprocessing.extracting
    preprocessing.residual
+   preprocessing.enr_residual_utils

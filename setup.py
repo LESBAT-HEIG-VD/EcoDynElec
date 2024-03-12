@@ -11,12 +11,12 @@ with open( os.path.join(dir_path,"requirements.txt"), mode='r', encoding='utf8')
 
 setup(
     name="ecodynelec",
-    version="0.1.1",
+    version="0.2.0",
     description="A library for dynamic LCA of european electricity.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="Francois Ledee",
-    author_email="ledee.francois@gmail.com",
+    author="Francois Ledee, Aymeric Bourdy",
+    author_email="ledee.francois@gmail.com, aymericb5@gmail.com",
     url="https://gitlab.com/fledee/ecodynelec/",
     packages=find_packages(dir_path, exclude=['test']),
     include_package_data=True,

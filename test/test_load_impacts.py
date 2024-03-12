@@ -8,13 +8,11 @@ from ecodynelec.preprocessing import load_impacts
 from ecodynelec.preprocessing.auxiliary import get_default_file
 
 
-
 def get_rootpath(level=0):
     rp = os.path.dirname( os.path.abspath(__file__) )
     for _ in range(level):
         rp = os.path.dirname(rp)
     return (rp + "/").replace("\\","/").replace("//","/")
-
 
 
 class TestLoadImpacts(unittest.TestCase):

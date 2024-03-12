@@ -57,9 +57,9 @@ class TestParameterMain(unittest.TestCase):
         
         self.subclass = parameter.Parameter
         
-        self.list_attributes = ['ctry']
+        self.list_attributes = ['target','ctry']
         self.date_attributes = ['start','end']
-        self.str_attributes = ['target','freq','timezone']
+        self.str_attributes = ['freq','timezone']
         self.strNone_attributes = []
         self.bool_attributes = ['cst_imports','sg_imports','net_exchanges','network_losses',
                                 'residual_local', 'residual_global','data_cleaning']
