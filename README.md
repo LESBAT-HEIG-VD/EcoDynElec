@@ -91,7 +91,7 @@ EcoDynElec did contribute to the project [EcoDynBat - Ecobilan Dynamique des Bâ
 
 P.Padey et al., 2020, 'Dynamic Life Cycle Assessment of the building electricity demand', *Erneuern! Sanierungsstrategien für den Gebäudepark, Status Seminar brenet (Building and Renewable Energies Network of Technology)*, Aarau Schweiz, [doi](https://doi.org/10.5281/zenodo.3900180). https://arodes.hes-so.ch/record/6718?ln=fr
 
-Lédée, François and Padey, Pierryves and Goulouti, Kyriaki and Lasvaux, Sebastien and Beloin-Saint-Pierre, Didier, Ecodynelec: Open Python Package to Create Historical Profiles of Environmental Impacts from Regional Electricity Mixes. https://doi.org/10.1016/j.softx.2023.101485
+Lédée, François and Padey, Pierryves and Goulouti, Kyriaki and Lasvaux, Sebastien and Beloin-Saint-Pierre, Didier, 2023, Ecodynelec: Open Python Package to Create Historical Profiles of Environmental Impacts from Regional Electricity Mixes. https://doi.org/10.1016/j.softx.2023.101485
 
 
 ![logo](docs/images/logo.png)
