@@ -2,11 +2,11 @@ Getting started
 ===============
 
 ``ecodynelec`` must first be downloaded from its `Git
-repository <https://gitlab.com/fledee/ecodynelec>`__, by using a prompt
+repository <https://github.com/LESBAT-HEIG-VD/EcoDynElec.git>`__, by using a prompt
 (example below) or any other method:
 
 >> cd /path/to/where/to/download/ecodynelec
->> git clone https://gitlab.com/fledee/ecodynelec.git
+>> git clone https://github.com/LESBAT-HEIG-VD/EcoDynElec.git
 
 After cloning the repository, the package can be used and installed in
 different ways, as explained below.
