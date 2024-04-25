@@ -6,3 +6,5 @@ odfpy # To read .ods files
 paramiko
 matplotlib
 tabula-py
+ipywidgets
+seaborn
