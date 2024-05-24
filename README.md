@@ -1,5 +1,4 @@
-![workflow](docs/images/logo_new.png)
-
+![workflow](docs/images/Logo_new.png)
 # Dynamic Life Cycle Assessment of electricity for ENTSO-E countries
 
 EcoDynElec software tracks the origin of electricity accross european countries based on generation and cross-border exchanges and allows the dynamic evaluation of environmental impacts of electricity.
